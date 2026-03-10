@@ -1,0 +1,45 @@
+# Environment & secrets
+.env
+backend/.env
+cookies.txt
+*.secret
+
+# Database & uploads (user data)
+backend/data/
+data/
+export/
+
+# Beispiele & generierte PDFs
+Beispiele/
+PDFs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# rembg model cache
+u2net/
+
+# Claude Code memory (persönlich)
+.claude/

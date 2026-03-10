@@ -12,39 +12,119 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ---
 
+## Screenshots
+
+### Login
+![Login](docs/screenshots/login.png)
+
+### Set-Übersicht mit Summary-Dashboard
+![Sets](docs/screenshots/sets-overview.png)
+
+### Set bearbeiten mit Bildverarbeitung
+![Set bearbeiten](docs/screenshots/set-edit.png)
+
+### Lagerverwaltung – Kisten
+![Lagerung](docs/screenshots/storage.png)
+
+### Kisteninventur – Welches Set liegt wo?
+![Kisteninventur](docs/screenshots/box-inventory.png)
+
+### Einlagerungsschilder generieren
+![Schilder](docs/screenshots/labels.png)
+
+### Benutzerverwaltung
+![Benutzer](docs/screenshots/users.png)
+
+---
+
 ## Funktionsumfang
 
 ### Set-Verwaltung
-- **CRUD-Operationen**: Sets anlegen, bearbeiten, löschen mit allen relevanten Daten (Name, Hersteller, Artikelnummer, Teilezahl, Steingröße, Kategorie, Unterkategorie, Preis, Status, Anmerkungen)
-- **Inline-Bearbeitung**: Status, Tütenanzahl, Plattenanzahl, Kistenzuordnung und Anmerkungen direkt in der Tabellenansicht ändern
-- **Sortierung & Filterung**: Volles Sorting über alle Spalten via TanStack Table
-- **Summary-Dashboard**: Übersichtskarten mit Gesamtanzahl Sets, Gesamtteile, Gesamtwert sowie Aufschlüsselung nach Steinart
 
-### Bildverarbeitung
-- **Upload & Eckenerkennung**: Bilder hochladen mit automatischer Eckenerkennung (OpenCV Canny Edge Detection, 6 Strategien)
-- **Perspektivkorrektur**: Interaktiver ImageEditor mit manueller Eckplatzierung, Mausrad-Zoom, Drag-to-Pan
-- **Bildanpassungen**: Helligkeit- und Farbintensität-Slider mit Live-Vorschau
-- **Hintergrundentfernung**: Automatische Hintergrundentfernung via rembg (u2net)
-- **Thumbnail-Generierung**: Automatische Erstellung von Thumbnails für Front- und Backcover
-- **Bestehendes Bild erneut bearbeiten**: Bereits hochgeladene Bilder können jederzeit neu bearbeitet werden
+Die Hauptansicht zeigt alle Klemmbausteinsets in einer sortierbaren Tabelle mit Front- und Backcover-Thumbnails. Über der Tabelle bieten Summary-Karten einen schnellen Überblick über den Gesamtbestand: Anzahl Sets, Gesamtteile, Gesamtwert sowie eine Aufschlüsselung nach Steinart.
+
+- **CRUD-Operationen**: Sets anlegen, bearbeiten, löschen mit allen relevanten Daten (Name, Hersteller, Artikelnummer, Teilezahl, Steingröße, Kategorie, Unterkategorie, Preis, Status, Anmerkungen)
+- **Inline-Bearbeitung**: Status, Tütenanzahl, Plattenanzahl, Kistenzuordnung und Anmerkungen lassen sich direkt in der Tabellenansicht ändern – ohne die Bearbeitungsseite öffnen zu müssen
+- **Sortierung & Filterung**: Alle Spalten sind sortierbar (TanStack Table). Filterbar nach Status, Steinart, Hersteller, Kategorie und Unterkategorie. Volltextsuche über Name, Hersteller und Kategorie
+- **Import/Export**: Sets als JSON exportieren und importieren, PDF-Setliste generieren
+
+### Tüten- und Platten-System
+
+Wenn ein Klemmbausteinset eingelagert wird, werden die Einzelteile typischerweise **nicht lose**, sondern in **nummerierte Tüten** und **Grundplatten** verpackt. BrickHub trackt diese Verpackungseinheiten pro Set:
+
+- **Tüten (bag_count)**: Anzahl der Tüten, in die die Teile eines Sets aufgeteilt sind. Bei großen Sets (z.B. LEGO Eiffelturm mit 10.001 Teilen) können das 8 oder mehr Tüten sein. Jede Tüte enthält eine Teilmenge der Steine und wird separat in einer Kiste eingelagert.
+- **Platten (plate_count)**: Anzahl der Grundplatten/Bodenplatten eines Sets. Platten sind zu groß für normale Tüten und werden separat gelagert.
+
+Die Tüten- und Plattenanzahl ist direkt in der Set-Tabelle inline editierbar. Sie spielt eine zentrale Rolle bei der **Schildergenerierung**: Pro Tüte und pro Platte wird automatisch ein eigenes Einlagerungsschild erstellt, das zeigt, zu welchem Set die Tüte/Platte gehört.
+
+**Beispiel**: Ein Set mit 8 Tüten und 3 Platten erzeugt 11 Schilder – eines für jede Verpackungseinheit.
 
 ### Kistenverwaltung (Lager)
-- **Kisten anlegen**: Name, Standort, Füllgrad (0–100%), erlaubte Steinarten
-- **Kompatibilitätsprüfung**: Sets können nur Kisten zugewiesen werden, die zur Steingröße passen
-- **Kisten-Inventar**: Übersicht welche Sets in welcher Kiste liegen, mit sortierbaren Spalten
 
-### Schildergenerierung (PDF)
-- **Setliste als PDF**: Alle Sets als formatierte Liste exportieren (ReportLab)
-- **Einzelschilder**: Schilder mit Cover-Bildern und Set-Informationen generieren
-- **Anpassbares Layout**: Logo-Integration, automatische Seitenumbrüche
+Kisten repräsentieren die physischen Lagerbehälter (z.B. Umzugskartons, Plastikboxen), in denen die eingelagerten Sets aufbewahrt werden. Jede Kiste hat:
+
+- **Name** (z.B. K1, K2, K3): Kurzbezeichnung, die auch auf den Schildern erscheint
+- **Standort** (z.B. Keller, Dachboden): Wo die Kiste physisch steht
+- **Füllheitsgrad** (0–100% in 10er-Schritten): Visuell dargestellt als Fortschrittsbalken. Grün (< 70%), Orange (70–99%), Rot (100% = voll). Volle Kisten können in der Set-Tabelle nicht mehr ausgewählt werden.
+- **Erlaubte Steinarten**: Welche Steingröße in diese Kiste darf. Z.B. nur „Standard" und „Standard, Technik" – oder leer für alle Steinarten. Beim Zuweisen eines Sets zu einer Kiste werden nur kompatible Kisten angeboten.
+
+#### Steinarten-Kompatibilität
+
+Klemmbausteine gibt es in verschiedenen Größen, die nicht zusammen in einer Kiste gelagert werden sollten:
+
+| Steinart | Beschreibung |
+|---|---|
+| **Standard** | Normaler Klemmbaustein (z.B. LEGO, Blue Brixx, Mould King) |
+| **Standard, beleuchtet** | Standard-Steine mit LED-Beleuchtung |
+| **Standard, Technik** | Technik-Steine mit Zahnrädern, Achsen, Motoren |
+| **Mini** | Minibausteine (ca. halbe Größe, z.B. LOZ, Wisehawk) |
+| **Diamond** | Diamond-Blocks / Nanobausteine (sehr klein, z.B. MOYU, Qman) |
+| **Sonder-Steine** | Alles was in keine andere Kategorie passt |
+
+Eine Kiste mit `allowed_stone_types = ["Standard", "Standard, Technik"]` akzeptiert nur Sets dieser Steinarten. Eine Kiste ohne Einschränkung (`[]`) ist mit allen Steinarten kompatibel.
+
+### Kisteninventur
+
+Die Kisteninventur-Seite zeigt alle **eingelagerten Sets** in einer Tabelle, wobei jede Kiste eine eigene Spalte hat. Ein grüner Haken zeigt an, in welcher Kiste ein Set liegt. So sieht man auf einen Blick:
+- Welches Set in welcher Kiste liegt
+- Wie viele Tüten und Platten jedes Set hat
+- Ob die Zuordnung stimmt
+
+Die Kisten-Spalten sind sortierbar – ein Klick auf den Kisten-Header sortiert nach Zugehörigkeit (alle Sets einer Kiste gruppiert).
+
+### Einlagerungsschilder (PDF)
+
+Die Schilder-Seite ermöglicht das Generieren von PDF-Einlagerungsschildern. Pro DIN A4-Seite werden 6 Schilder gedruckt. Jedes Schild enthält:
+- Front- und Backcover des Sets
+- Hersteller, Name, Artikelnummer
+- Tüten-/Plattennummer (z.B. „Tüte 3 von 8")
+- Das BrickHub-Logo
+
+Die Schilder werden ausgedruckt und in die Tüten/an die Platten geheftet, damit man beim Heraussuchen sofort weiß, zu welchem Set eine Tüte gehört.
+
+### Bildverarbeitung
+
+Jedes Set kann ein Front- und Backcover-Bild haben. Der Upload-Prozess beinhaltet:
+
+1. **Bild hochladen**: Foto der Verpackung (Vorder- oder Rückseite)
+2. **Automatische Eckenerkennung**: OpenCV erkennt die Kanten der Verpackung (6 verschiedene Canny-Edge-Strategien)
+3. **Manuelles Feintuning**: Im interaktiven ImageEditor können die 4 Eckpunkte per Drag & Drop korrigiert werden. Unterstützt Mausrad-Zoom und Pan.
+4. **Perspektivkorrektur**: Das Bild wird entzerrt (Perspektivtransformation)
+5. **Helligkeit/Farbe anpassen**: Optional über Slider
+6. **Hintergrundentfernung**: rembg entfernt automatisch den Hintergrund (u2net-Modell)
+7. **Skalierung + Thumbnail**: Finales Bild wird skaliert, Thumbnail generiert
+
+Bereits verarbeitete Bilder können jederzeit erneut bearbeitet werden, ohne das Original neu hochladen zu müssen.
 
 ### Benutzerverwaltung & Authentifizierung
-- **Rollenbasiert**: Admin- und Leser-Rollen (Leser können nur ansehen, Admins können alles bearbeiten)
+
+- **Rollenbasiert**: Admin- und Leser-Rollen. Leser können Sets ansehen und durchsuchen. Admins können Sets anlegen/bearbeiten/löschen, Kisten verwalten und Benutzer administrieren.
 - **Sichere Authentifizierung**: bcrypt (12 Runden) Passwort-Hashing + JWT (HS256) in HTTP-only Cookies
 - **Erster Start**: Setup-Seite zur Erstellung des ersten Admin-Accounts
 - **Passwort ändern/zurücksetzen**: Eigenes Passwort ändern, Admins können Passwörter anderer User zurücksetzen
 
 ### Optionale KI-Integration
+
 - **Ollama-Anbindung** (optional): Automatische Set-Erkennung aus Bildern via LLaVA-Modell
 - Deaktivierbar über Umgebungsvariable (`OLLAMA_ENABLED=false`)
 
@@ -193,7 +273,14 @@ npm run dev
 
 ### Erster Start
 
-Beim ersten Aufruf wird automatisch die Setup-Seite angezeigt, auf der ein Admin-Account erstellt werden muss. Danach kann man sich einloggen und Sets anlegen.
+Beim ersten Aufruf wird automatisch die **Setup-Seite** angezeigt, auf der ein Admin-Account erstellt werden muss. Danach kann man sich einloggen und sofort mit dem Anlegen von Sets und Kisten beginnen.
+
+**Empfohlene Reihenfolge:**
+1. Admin-Account erstellen (Setup)
+2. Kisten anlegen (Lagerung) mit Standort und erlaubten Steinarten
+3. Sets anlegen mit Bildern, Tüten- und Plattenanzahl
+4. Sets den Kisten zuweisen
+5. Einlagerungsschilder drucken
 
 ---
 

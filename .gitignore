@@ -43,3 +43,6 @@ u2net/
 
 # Claude Code memory (persönlich)
 .claude/
+
+# Temporäre Skripte
+take-screenshots.mjs

@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
 
+from app.config import _is_production
 from app.database import create_tables, run_migrations
 from app.routers import auth, users, sets, boxes, images, labels, settings
 
@@ -15,16 +16,27 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         path = request.url.path
         if path == "/" or path.endswith(".html"):
-            # HTML immer frisch laden (index.html zeigt auf gehashte JS/CSS-Bundles)
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
             response.headers["Pragma"] = "no-cache"
         elif path.startswith("/api/images/file"):
-            # Bilder: cachen erlaubt, aber immer beim Server nachfragen (304 wenn unverändert)
             response.headers["Cache-Control"] = "no-cache, must-revalidate"
         elif path.startswith("/api"):
-            # JSON-API-Responses: nie cachen
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
             response.headers["Pragma"] = "no-cache"
+        return response
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Setzt Standard-Security-Headers auf alle Responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        if _is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
 
@@ -34,16 +46,19 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Security Headers
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Kein Browser-Cache für API und HTML
 app.add_middleware(NoCacheMiddleware)
 
-# Allow React dev server in development
+# CORS: Nur bekannte Dev-Origins erlauben
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"],
+    allow_origins=["http://localhost:5173", "http://localhost:8080"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Register routers

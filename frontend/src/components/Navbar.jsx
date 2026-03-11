@@ -96,39 +96,3 @@ export function Navbar() {
     </nav>
   )
 }
-
-function BrickHubLogo() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* === 3D Klemmstein === */}
-
-      {/* Rechte Seite (dunkelgold) */}
-      <path d="M21 15 L27 9 L27 24 L21 29 Z" fill="#9A7000"/>
-
-      {/* Oberfläche (hellgelb) */}
-      <path d="M3 15 L9 9 L27 9 L21 15 Z" fill="#FFE44D"/>
-
-      {/* Front-Fläche (gelb) */}
-      <rect x="3" y="15" width="18" height="14" fill="#FFD700"/>
-
-      {/* Noppe 1 – linke Seite */}
-      {/* Noppen-Seite (rechts sichtbar) */}
-      <path d="M11.5 5 L13.5 3.5 L13.5 8.5 L11.5 10 Z" fill="#9A7000"/>
-      {/* Noppen-Körper (Front) */}
-      <rect x="5" y="5" width="6.5" height="5" fill="#FFD700"/>
-      {/* Noppen-Oben */}
-      <ellipse cx="8.3" cy="5" rx="3.3" ry="1.5" fill="#FFF07A"/>
-      {/* Noppen-Basis auf Oberfläche */}
-      <ellipse cx="8.3" cy="10" rx="3.3" ry="1.5" fill="#DDB800"/>
-
-      {/* Noppe 2 – rechte Seite */}
-      <path d="M20.5 5 L22.5 3.5 L22.5 8.5 L20.5 10 Z" fill="#9A7000"/>
-      <rect x="14" y="5" width="6.5" height="5" fill="#FFD700"/>
-      <ellipse cx="17.3" cy="5" rx="3.3" ry="1.5" fill="#FFF07A"/>
-      <ellipse cx="17.3" cy="10" rx="3.3" ry="1.5" fill="#DDB800"/>
-
-      {/* Highlight-Linie (Vorderkante oben) */}
-      <line x1="3" y1="15" x2="21" y2="15" stroke="#FFE88A" strokeWidth="0.7" opacity="0.6"/>
-    </svg>
-  )
-}

@@ -82,21 +82,3 @@ export function LoginPage() {
     </div>
   )
 }
-
-function BrickHubBigLogo() {
-  return (
-    <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="6" y="32" width="60" height="34" rx="5" fill="#1E3A5F" />
-      <rect x="12" y="20" width="20" height="16" rx="5" fill="#1E3A5F" />
-      <rect x="40" y="20" width="20" height="16" rx="5" fill="#1E3A5F" />
-      <ellipse cx="22" cy="20" rx="10" ry="5" fill="#FFD700" />
-      <ellipse cx="50" cy="20" rx="10" ry="5" fill="#FFD700" />
-      <rect x="6" y="32" width="60" height="34" rx="5" fill="#FFD700" />
-      <line x1="6" y1="48" x2="66" y2="48" stroke="#1E3A5F" strokeWidth="3" strokeOpacity="0.2" />
-      <rect x="12" y="20" width="20" height="16" rx="5" fill="#FFD700" />
-      <rect x="40" y="20" width="20" height="16" rx="5" fill="#FFD700" />
-      <ellipse cx="22" cy="20" rx="10" ry="5" fill="#FFC200" />
-      <ellipse cx="50" cy="20" rx="10" ry="5" fill="#FFC200" />
-    </svg>
-  )
-}

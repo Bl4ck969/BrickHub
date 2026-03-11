@@ -16,6 +16,7 @@ class SetBase(BaseModel):
     plate_count: Optional[int] = None
     price: Optional[float] = None
     notes: Optional[str] = None
+    onedrive_url: Optional[str] = None
     box_id: Optional[int] = None
     frontcover_original: Optional[str] = None
     frontcover_edited: Optional[str] = None
@@ -42,6 +43,7 @@ class SetUpdate(BaseModel):
     plate_count: Optional[int] = None
     price: Optional[float] = None
     notes: Optional[str] = None
+    onedrive_url: Optional[str] = None
     box_id: Optional[int] = None
     frontcover_original: Optional[str] = None
     frontcover_edited: Optional[str] = None

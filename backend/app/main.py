@@ -4,8 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
 
-from app.database import create_tables
-from app.routers import auth, users, sets, boxes, images, labels
+from app.database import create_tables, run_migrations
+from app.routers import auth, users, sets, boxes, images, labels, settings
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -53,6 +53,7 @@ app.include_router(sets.router)
 app.include_router(boxes.router)
 app.include_router(images.router)
 app.include_router(labels.router)
+app.include_router(settings.router)
 
 # Serve frontend build in production
 # In Docker: /app/app/main.py → /app/ → /app/frontend/dist
@@ -65,6 +66,7 @@ if frontend_dist.exists():
 @app.on_event("startup")
 def on_startup():
     create_tables()
+    run_migrations()
 
 
 @app.get("/api/health")

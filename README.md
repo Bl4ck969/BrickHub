@@ -123,6 +123,16 @@ Bereits verarbeitete Bilder können jederzeit erneut bearbeitet werden, ohne das
 - **Erster Start**: Setup-Seite zur Erstellung des ersten Admin-Accounts
 - **Passwort ändern/zurücksetzen**: Eigenes Passwort ändern, Admins können Passwörter anderer User zurücksetzen
 
+### OneDrive-Verknüpfung
+
+Sets können mit OneDrive-Ordnern verknüpft werden, um z.B. Bauanleitungen, Fotos oder weitere Dokumente abzulegen.
+
+- **Globaler Basis-Link**: Admin konfiguriert einmalig den Link zum Klemmbausteine-Oberordner in OneDrive (über die Settings-Tabelle)
+- **Automatischer Ordnername**: Beim Bearbeiten eines Sets wird der Ordnername `Hersteller - Herstellernummer - Name` automatisch generiert und kann per Klick kopiert werden
+- **Unterordner-Link**: Pro Set wird ein individueller OneDrive-Link hinterlegt, der direkt zum Set-Ordner führt
+- **Set-Tabelle**: Ein OneDrive-Icon in der Aktionsspalte öffnet den verknüpften Ordner mit einem Klick
+- **PDF-Export**: Sets mit OneDrive-Verknüpfung werden mit einem klickbaren Cloud-Icon in der Setliste markiert
+
 ### Optionale KI-Integration
 
 - **Ollama-Anbindung** (optional): Automatische Set-Erkennung aus Bildern via LLaVA-Modell
@@ -153,9 +163,9 @@ BrickHub/
 │   │   ├── main.py              # FastAPI-Einstiegspunkt
 │   │   ├── config.py            # Pydantic Settings (.env)
 │   │   ├── database.py          # SQLAlchemy Engine + Session
-│   │   ├── models/              # SQLAlchemy-Modelle (User, BrickSet, Box)
+│   │   ├── models/              # SQLAlchemy-Modelle (User, BrickSet, Box, AppSetting)
 │   │   ├── schemas/             # Pydantic-Schemas (Request/Response)
-│   │   ├── routers/             # API-Endpoints (auth, users, sets, boxes, images, labels)
+│   │   ├── routers/             # API-Endpoints (auth, users, sets, boxes, images, labels, settings)
 │   │   ├── services/            # Business-Logik (image_service, pdf_service, ollama_service)
 │   │   └── utils/               # Auth-Utilities (JWT, Dependencies)
 │   ├── data/                    # SQLite-DB + Uploads (nicht im Repo)
@@ -166,8 +176,8 @@ BrickHub/
 │   ├── public/                  # Statische Assets (Logo, Icons)
 │   ├── src/
 │   │   ├── App.jsx              # Router-Setup (React Router v6, Lazy Loading)
-│   │   ├── api/client.js        # Axios API-Client (authApi, setsApi, boxesApi, imagesApi, labelsApi)
-│   │   ├── components/          # Wiederverwendbare Komponenten (Navbar, Modal, ImageEditor, ProtectedRoute)
+│   │   ├── api/client.js        # Axios API-Client (authApi, setsApi, boxesApi, imagesApi, labelsApi, settingsApi)
+│   │   ├── components/          # Wiederverwendbare Komponenten (Navbar, Modal, ImageEditor, OneDriveIcon, ProtectedRoute)
 │   │   ├── hooks/useAuth.jsx    # Auth-Context + Hook
 │   │   └── pages/               # Seitenkomponenten (Sets, AddEditSet, Storage, Labels, BoxInventory, Users, ...)
 │   ├── package.json
@@ -329,6 +339,7 @@ Alle API-Endpoints liegen unter `/api/`. Vollständige interaktive Dokumentation
 | **Boxes** | `GET/POST/PUT/DELETE /api/boxes/` | Kistenverwaltung |
 | **Images** | `POST /api/images/upload`, `/transform`, `/finalize`, `/redetect` | Bildverarbeitung-Pipeline |
 | **Labels** | `POST /api/labels/set-list`, `/set-labels` | PDF-Generierung |
+| **Settings** | `GET /api/settings/`, `PUT /api/settings/{key}` | App-Einstellungen (OneDrive-Basis-URL etc.) |
 
 ---
 

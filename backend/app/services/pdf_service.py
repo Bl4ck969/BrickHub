@@ -14,11 +14,41 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
-    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer,
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Flowable,
 )
 from reportlab.platypus import Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
+
+
+class _CloudIcon(Flowable):
+    """Kleines Cloud-Icon (3mm) als klickbares Symbol in der PDF-Tabelle."""
+
+    def __init__(self, size=3*mm, color="#2563EB", url=None):
+        super().__init__()
+        self.width = size
+        self.height = size * 0.65
+        self.icon_color = color
+        self.url = url
+
+    def draw(self):
+        c = self.canv
+        s = self.width  # Referenzgröße
+        col = colors.HexColor(self.icon_color)
+        c.setFillColor(col)
+        c.setStrokeColor(col)
+        c.setLineWidth(0)
+        # Drei Kreise + Rechteck-Basis = saubere Wolke
+        r1 = s * 0.22
+        r2 = s * 0.28
+        r3 = s * 0.20
+        base_y = self.height * 0.30
+        c.circle(s * 0.28, base_y + r1 * 0.6, r1, fill=1, stroke=0)
+        c.circle(s * 0.52, base_y + r2 * 0.8, r2, fill=1, stroke=0)
+        c.circle(s * 0.76, base_y + r3 * 0.5, r3, fill=1, stroke=0)
+        c.rect(s * 0.08, base_y - r1 * 0.3, s * 0.84, r1 * 0.9, fill=1, stroke=0)
+        if self.url:
+            c.linkURL(self.url, (0, 0, self.width, self.height), relative=1)
 
 from PIL import Image as PILImage
 from app.config import settings
@@ -244,18 +274,19 @@ def generate_sets_list_pdf(sets: list, title: str = "BrickHub – Setliste") -> 
     col_widths = [
         16 * mm,   # Front
         16 * mm,   # Back
-        50 * mm,   # Name
-        32 * mm,   # Hersteller
+        48 * mm,   # Name
+        30 * mm,   # Hersteller
         16 * mm,   # Nr.
         14 * mm,   # Teile
-        28 * mm,   # Steinart
-        26 * mm,   # Kategorie
+        26 * mm,   # Steinart
+        24 * mm,   # Kategorie
         20 * mm,   # Status
         22 * mm,   # Kiste
         17 * mm,   # Preis
+        8  * mm,   # OneDrive
     ]
     headers = ["Front", "Back", "Name", "Hersteller", "Nr.", "Teile",
-               "Steinart", "Kategorie", "Status", "Kiste", "Preis (€)"]
+               "Steinart", "Kategorie", "Status", "Kiste", "Preis (€)", "OD"]
 
     hdr_s  = ParagraphStyle("H", fontName="Helvetica-Bold", fontSize=7,
                              leading=9, textColor=colors.white)
@@ -264,6 +295,8 @@ def generate_sets_list_pdf(sets: list, title: str = "BrickHub – Setliste") -> 
     TW, TH = 13 * mm, 17 * mm   # Thumbnail-Maxgröße in der Tabelle
 
     def _row(s):
+        od_url = getattr(s, "onedrive_url", None)
+        od_cell = _CloudIcon(size=3*mm, url=od_url) if od_url else Paragraph("–", cell_s)
         return [
             _thumbnail_cell(s.frontcover_thumbnail, TW, TH),
             _thumbnail_cell(s.backcover_thumbnail,  TW, TH),
@@ -276,6 +309,7 @@ def generate_sets_list_pdf(sets: list, title: str = "BrickHub – Setliste") -> 
             Paragraph(s.status or "–", cell_s),
             Paragraph(s.box.name if s.box else "–", cell_s),
             Paragraph(f"{s.price:.2f} €" if s.price is not None else "–", cell_s),
+            od_cell,
         ]
 
     data = [[Paragraph(h, hdr_s) for h in headers]]
@@ -290,6 +324,7 @@ def generate_sets_list_pdf(sets: list, title: str = "BrickHub – Setliste") -> 
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F5F7FA")]),
         ("VALIGN",         (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN",          (0, 0), (1,  -1), "CENTER"),
+        ("ALIGN",          (11, 0), (11, -1), "CENTER"),
         ("TOPPADDING",     (0, 0), (-1, -1), 2),
         ("BOTTOMPADDING",  (0, 0), (-1, -1), 2),
         ("LEFTPADDING",    (0, 0), (-1, -1), 3),

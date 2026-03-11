@@ -20,6 +20,7 @@ class BrickSet(Base):
     plate_count: Mapped[int] = mapped_column(Integer, nullable=True)
     price: Mapped[float] = mapped_column(Float, nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
+    onedrive_url: Mapped[str] = mapped_column(String(1000), nullable=True)
 
     box_id: Mapped[int] = mapped_column(Integer, ForeignKey("boxes.id"), nullable=True)
     box: Mapped["Box"] = relationship("Box", back_populates="sets")

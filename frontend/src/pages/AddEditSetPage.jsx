@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { setsApi, boxesApi, imagesApi } from '../api/client'
-import { PhotoIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import { setsApi, boxesApi, imagesApi, settingsApi } from '../api/client'
+import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { OneDriveIcon } from '../components/OneDriveIcon'
+import { useAuth } from '../hooks/useAuth'
 import { ImageEditor } from '../components/ImageEditor'
 
 const STONE_SIZES = ['Standard', 'Standard, beleuchtet', 'Standard, Technik', 'Mini', 'Diamond', 'Sonder-Steine']
@@ -11,12 +13,13 @@ const EMPTY_FORM = {
   name: '', manufacturer: '', manufacturer_number: '',
   parts_count: '', stone_size: '', category: '', subcategory: '',
   status: 'Neu', bag_count: '', plate_count: '', price: '', notes: '',
-  box_id: '',
+  box_id: '', onedrive_url: '',
 }
 
 export function AddEditSetPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const isEdit = !!id
 
   const [form, setForm] = useState(EMPTY_FORM)
@@ -28,8 +31,16 @@ export function AddEditSetPage() {
   const [imagePreviews, setImagePreviews] = useState({ frontcover: null, backcover: null })
   const [originalPaths, setOriginalPaths] = useState({ frontcover: null, backcover: null })
   const [editorOpen, setEditorOpen] = useState(null) // 'frontcover' | 'backcover' | null
+  const [oneDriveBaseUrl, setOneDriveBaseUrl] = useState('')
+  const [baseUrlInput, setBaseUrlInput] = useState('')
+  const [editingBaseUrl, setEditingBaseUrl] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
+    settingsApi.getAll().then(res => {
+      setOneDriveBaseUrl(res.data.onedrive_base_url || '')
+      setBaseUrlInput(res.data.onedrive_base_url || '')
+    }).catch(() => {})
     setsApi.distinctValues().then(res => setSuggestions(res.data))
     boxesApi.list().then(res => setBoxes(res.data))
     if (isEdit) {
@@ -42,7 +53,7 @@ export function AddEditSetPage() {
           category: s.category || '', subcategory: s.subcategory || '',
           status: s.status || 'Neu', bag_count: s.bag_count ?? '',
           plate_count: s.plate_count ?? '', price: s.price ?? '', notes: s.notes || '',
-          box_id: s.box_id ?? '',
+          box_id: s.box_id ?? '', onedrive_url: s.onedrive_url || '',
         })
         setSavedSetId(Number(id))
         if (s.frontcover_thumbnail) setImagePreviews(p => ({ ...p, frontcover: imagesApi.fileUrl(s.frontcover_thumbnail) }))
@@ -67,6 +78,7 @@ export function AddEditSetPage() {
         plate_count: form.plate_count !== '' ? Number(form.plate_count) : null,
         price: form.price !== '' ? Number(form.price) : null,
         box_id: form.box_id !== '' ? Number(form.box_id) : null,
+        onedrive_url: form.onedrive_url?.trim() || null,
       }
       let res
       if (isEdit) {
@@ -199,6 +211,126 @@ export function AddEditSetPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Anmerkungen</label>
               <textarea rows={3} className="input-field resize-none" {...field('notes')} />
             </div>
+          </div>
+        </div>
+
+        {/* OneDrive-Verknüpfung */}
+        <div className="card space-y-4">
+          <h2 className="font-semibold text-brand-navy border-b border-gray-100 pb-2 flex items-center gap-2">
+            <OneDriveIcon className="w-5 h-5" />
+            OneDrive-Verknüpfung
+          </h2>
+
+          {/* Basis-Ordner */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Basis-Ordner</label>
+            {oneDriveBaseUrl && !editingBaseUrl ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href={oneDriveBaseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                  Klemmbausteine-Ordner öffnen
+                </a>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="p-1 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded transition"
+                    title="Basis-Link bearbeiten"
+                    onClick={() => setEditingBaseUrl(true)}
+                  >
+                    <PencilSquareIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ) : isAdmin ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="url"
+                  className="input-field flex-1"
+                  placeholder="OneDrive Basis-URL einfügen..."
+                  value={baseUrlInput}
+                  onChange={e => setBaseUrlInput(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-primary text-sm px-3 py-2 whitespace-nowrap"
+                  onClick={async () => {
+                    if (!baseUrlInput.trim()) return
+                    try {
+                      await settingsApi.set('onedrive_base_url', baseUrlInput.trim())
+                      setOneDriveBaseUrl(baseUrlInput.trim())
+                      setEditingBaseUrl(false)
+                    } catch { alert('Fehler beim Speichern') }
+                  }}
+                >
+                  Speichern
+                </button>
+                {oneDriveBaseUrl && (
+                  <button
+                    type="button"
+                    className="btn-secondary text-sm px-3 py-2 whitespace-nowrap"
+                    onClick={() => {
+                      setBaseUrlInput(oneDriveBaseUrl)
+                      setEditingBaseUrl(false)
+                    }}
+                  >
+                    Abbrechen
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Noch nicht konfiguriert (Admin-Einstellung)</p>
+            )}
+          </div>
+
+          {/* Automatisch generierter Ordnername */}
+          {form.manufacturer && form.manufacturer_number && form.name && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ordnername</label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono bg-gray-50 border border-gray-200 rounded px-3 py-2 flex-1 select-all">
+                  {form.manufacturer} - {form.manufacturer_number} - {form.name}
+                </span>
+                <button
+                  type="button"
+                  className="p-2 text-gray-500 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
+                  title="Ordnernamen kopieren"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${form.manufacturer} - ${form.manufacturer_number} - ${form.name}`)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                >
+                  {copied ? <CheckIcon className="w-5 h-5 text-green-600" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* OneDrive Unterordner-Link */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">OneDrive Unterordner-Link</label>
+            <input
+              type="url"
+              className="input-field"
+              placeholder="Link zum Set-Ordner in OneDrive einfügen..."
+              {...field('onedrive_url')}
+            />
+            {form.onedrive_url && (
+              <a
+                href={form.onedrive_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline"
+              >
+                <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+                Ordner öffnen
+              </a>
+            )}
           </div>
         </div>
 

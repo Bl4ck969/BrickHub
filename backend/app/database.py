@@ -22,5 +22,25 @@ def get_db():
 
 
 def create_tables():
-    from app.models import user, set_model, box  # noqa: F401
+    from app.models import user, set_model, box, setting  # noqa: F401
     Base.metadata.create_all(bind=engine)
+
+
+def run_migrations():
+    """Prüft ob neue Spalten existieren und fügt sie per ALTER TABLE hinzu."""
+    _migrate_add_column("sets", "onedrive_url", "VARCHAR(1000)")
+
+
+def _migrate_add_column(table: str, column: str, col_type: str):
+    """Fügt eine Spalte hinzu, falls sie noch nicht existiert."""
+    import sqlite3
+    from app.config import settings as app_settings
+    db_path = app_settings.database_url.replace("sqlite:///", "")
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"PRAGMA table_info({table})")
+    existing = [row[1] for row in cursor.fetchall()]
+    if column not in existing:
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+        conn.commit()
+    conn.close()

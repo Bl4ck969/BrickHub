@@ -19,6 +19,7 @@ import {
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline'
 import { setsApi, labelsApi, imagesApi, boxesApi } from '../api/client'
+import { OneDriveIcon } from '../components/OneDriveIcon'
 import { useAuth } from '../hooks/useAuth'
 import { Modal, ConfirmModal } from '../components/Modal'
 
@@ -257,32 +258,46 @@ export function SetsPage() {
     }),
     columnHelper.accessor('price', { header: 'Preis (€)', cell: info => info.getValue() != null ? `${info.getValue().toFixed(2)} €` : '-' }),
     columnHelper.accessor('notes', { header: 'Anmerkungen', cell: info => <span className="max-w-sm block whitespace-normal break-words" title={info.getValue()}>{info.getValue() || ''}</span> }),
-    ...(isAdmin ? [
-      columnHelper.display({
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => navigate(`/sets/${row.original.id}/edit`)}
-              className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
-              title="Bearbeiten"
+    columnHelper.display({
+      id: 'actions',
+      header: '',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-1">
+          {row.original.onedrive_url && (
+            <a
+              href={row.original.onedrive_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition"
+              title="OneDrive-Ordner öffnen"
             >
-              <PencilSquareIcon className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setDeleteId(row.original.id)}
-              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-              title="Löschen"
-            >
-              <div className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
-                <span className="text-white text-xs font-bold leading-none">×</span>
-              </div>
-            </button>
-          </div>
-        ),
-      }),
-    ] : []),
+              <OneDriveIcon className="w-4 h-4" />
+            </a>
+          )}
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => navigate(`/sets/${row.original.id}/edit`)}
+                className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
+                title="Bearbeiten"
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setDeleteId(row.original.id)}
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                title="Löschen"
+              >
+                <div className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold leading-none">×</span>
+                </div>
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    }),
   ]
 
   const table = useReactTable({

@@ -93,6 +93,12 @@ export const imagesApi = {
   ollamaStatus: () => client.get('/api/images/ollama/status'),
 }
 
+// Settings API
+export const settingsApi = {
+  getAll: () => client.get('/api/settings/'),
+  set: (key, value) => client.put(`/api/settings/${encodeURIComponent(key)}`, { value }),
+}
+
 // Labels API
 export const labelsApi = {
   generate: (setIds) => client.post('/api/labels/generate', { set_ids: setIds }, { responseType: 'blob' }),

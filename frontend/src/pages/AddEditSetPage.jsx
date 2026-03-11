@@ -326,7 +326,7 @@ export function AddEditSetPage() {
               placeholder="Link zum Set-Ordner in OneDrive einfügen..."
               {...field('onedrive_url')}
             />
-            {form.onedrive_url && (
+            {form.onedrive_url && /^https?:\/\//i.test(form.onedrive_url) && (
               <a
                 href={form.onedrive_url}
                 target="_blank"

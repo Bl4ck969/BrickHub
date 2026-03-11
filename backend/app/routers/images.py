@@ -18,6 +18,25 @@ router = APIRouter(prefix="/api/images", tags=["images"])
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 30 * 1024 * 1024  # 30 MB
+_CHUNK_SIZE = 1024 * 1024  # 1 MB Chunks
+
+
+async def _read_file_with_limit(file: UploadFile) -> bytes:
+    """Liest Datei chunk-weise und bricht bei Überschreitung frühzeitig ab."""
+    chunks = []
+    total = 0
+    while True:
+        chunk = await file.read(_CHUNK_SIZE)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Datei zu groß (max. 30 MB)",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 class PreviewRequest(BaseModel):
@@ -49,9 +68,7 @@ async def upload_image(
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nur JPG, PNG und WebP erlaubt")
 
-    file_bytes = await file.read()
-    if len(file_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Datei zu groß (max. 30 MB)")
+    file_bytes = await _read_file_with_limit(file)
 
     side_label = "Frontcover" if side == "frontcover" else "Backcover"
     manufacturer = brick_set.manufacturer or "Unbekannt"
@@ -96,9 +113,7 @@ async def upload_raw_image(
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nur JPG, PNG und WebP erlaubt")
 
-    file_bytes = await file.read()
-    if len(file_bytes) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Datei zu groß (max. 30 MB)")
+    file_bytes = await _read_file_with_limit(file)
 
     side_label = "Frontcover" if side == "frontcover" else "Backcover"
     manufacturer = brick_set.manufacturer or "Unbekannt"

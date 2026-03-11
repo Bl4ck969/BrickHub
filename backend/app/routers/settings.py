@@ -9,6 +9,8 @@ from app.utils.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
+_ALLOWED_KEYS = {"onedrive_base_url"}
+
 
 class SettingValue(BaseModel):
     value: Optional[str] = None
@@ -23,7 +25,9 @@ def get_all_settings(db: Session = Depends(get_db), _user=Depends(get_current_us
 
 @router.put("/{key}")
 def set_setting(key: str, body: SettingValue, db: Session = Depends(get_db), _admin=Depends(require_admin)):
-    """Einzelnen Setting-Wert setzen (nur Admin)."""
+    """Einzelnen Setting-Wert setzen (nur Admin, nur erlaubte Keys)."""
+    if key not in _ALLOWED_KEYS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unbekannter Setting-Key: {key}")
     setting = db.query(AppSetting).filter(AppSetting.key == key).first()
     if setting:
         setting.value = body.value

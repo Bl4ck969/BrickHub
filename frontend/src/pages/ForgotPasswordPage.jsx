@@ -25,7 +25,7 @@ export function ForgotPasswordPage() {
       setAnswers(initialAnswers)
       setStep(2)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Benutzername nicht gefunden')
+      setError(err.response?.data?.detail || 'Anfrage fehlgeschlagen')
     } finally {
       setLoading(false)
     }

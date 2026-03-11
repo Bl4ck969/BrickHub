@@ -1,5 +1,7 @@
+import time
+from collections import defaultdict
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User, SecurityQuestion
@@ -24,6 +26,32 @@ from app.config import settings, _is_production
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+# Dummy-Hash für konstante Antwortzeit bei nicht-existenten Usern
+_DUMMY_HASH = hash_password("dummy-timing-constant")
+
+# In-Memory Rate-Limiting (max Versuche pro Minute pro IP)
+_RATE_LIMIT_MAX = 5
+_RATE_LIMIT_WINDOW = 60  # Sekunden
+_login_attempts: dict[str, list[float]] = defaultdict(list)
+
+
+def _check_rate_limit(request: Request):
+    """Prüft ob die IP zu viele Versuche in der letzten Minute hatte."""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    # Alte Einträge bereinigen
+    _login_attempts[client_ip] = [
+        t for t in _login_attempts[client_ip] if now - t < _RATE_LIMIT_WINDOW
+    ]
+    if not _login_attempts[client_ip]:
+        del _login_attempts[client_ip]
+    if len(_login_attempts.get(client_ip, [])) >= _RATE_LIMIT_MAX:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Zu viele Versuche. Bitte eine Minute warten.",
+        )
+    _login_attempts[client_ip].append(now)
+
 
 @router.get("/status")
 def auth_status(db: Session = Depends(get_db)):
@@ -33,9 +61,12 @@ def auth_status(db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(data: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    _check_rate_limit(request)
     user = db.query(User).filter(User.username == data.username).first()
-    if not user or not verify_password(data.password, user.password_hash):
+    # Immer verify_password aufrufen (konstante Antwortzeit, verhindert Timing-Attacks)
+    password_valid = verify_password(data.password, user.password_hash if user else _DUMMY_HASH)
+    if not user or not password_valid:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ungültiger Benutzername oder Passwort")
 
     token = create_access_token(
@@ -144,16 +175,20 @@ def change_password(
 
 
 @router.post("/forgot-password/get-questions")
-def forgot_password_get_questions(data: ForgotPasswordStep1, db: Session = Depends(get_db)):
+def forgot_password_get_questions(data: ForgotPasswordStep1, request: Request, db: Session = Depends(get_db)):
+    _check_rate_limit(request)
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Benutzername nicht gefunden")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Benutzername oder Sicherheitsfragen nicht verfügbar",
+        )
 
     questions = db.query(SecurityQuestion).filter(SecurityQuestion.user_id == user.id).all()
     if not questions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Keine Sicherheitsfragen hinterlegt. Bitte Administrator kontaktieren.",
+            detail="Benutzername oder Sicherheitsfragen nicht verfügbar",
         )
 
     return {
@@ -163,10 +198,14 @@ def forgot_password_get_questions(data: ForgotPasswordStep1, db: Session = Depen
 
 
 @router.post("/forgot-password/reset")
-def forgot_password_reset(data: ForgotPasswordStep2, db: Session = Depends(get_db)):
+def forgot_password_reset(data: ForgotPasswordStep2, request: Request, db: Session = Depends(get_db)):
+    _check_rate_limit(request)
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Benutzername nicht gefunden")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Benutzername oder Sicherheitsfragen nicht verfügbar",
+        )
 
     if data.new_password != data.new_password_confirm:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwörter stimmen nicht überein")

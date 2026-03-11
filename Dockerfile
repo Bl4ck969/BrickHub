@@ -33,6 +33,7 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 RUN mkdir -p data/uploads export
 
 # Environment defaults (override via docker-compose or .env)
+ENV DOCKER_CONTAINER=1
 ENV DATABASE_URL=sqlite:///./data/database.db
 ENV UPLOAD_DIR=./data/uploads
 ENV EXPORT_DIR=./export

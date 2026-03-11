@@ -20,7 +20,7 @@ from app.utils.auth import (
     create_access_token,
     get_current_user,
 )
-from app.config import settings
+from app.config import settings, _is_production
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -46,6 +46,7 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
         key="access_token",
         value=token,
         httponly=True,
+        secure=_is_production,
         samesite="lax",
         max_age=settings.access_token_expire_minutes * 60,
     )

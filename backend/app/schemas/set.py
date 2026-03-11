@@ -89,3 +89,29 @@ class SetListResponse(BaseModel):
     total_price: float
     total_parts: int
     parts_by_stone_size: dict[str, int]
+
+
+class SetImportItem(BaseModel):
+    """Ein einzelnes Set im Import-Payload (gleiche Felder wie SetBase)."""
+    name: str
+    manufacturer: Optional[str] = None
+    manufacturer_number: Optional[str] = None
+    parts_count: Optional[int] = None
+    stone_size: Optional[str] = None
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    status: str = "Neu"
+    bag_count: Optional[int] = None
+    plate_count: Optional[int] = None
+    price: Optional[float] = None
+    notes: Optional[str] = None
+    onedrive_url: Optional[str] = None
+    box_id: Optional[int] = None
+
+    class Config:
+        extra = "ignore"
+
+
+class SetImportPayload(BaseModel):
+    """Payload für den Import-Endpoint."""
+    sets: list[SetImportItem]

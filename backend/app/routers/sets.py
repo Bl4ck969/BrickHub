@@ -12,6 +12,7 @@ from app.schemas.set import (
     SetListResponse,
     StatusUpdate,
     InlineUpdate,
+    SetImportPayload,
 )
 from app.utils.auth import get_current_user, require_admin
 
@@ -230,20 +231,25 @@ def export_sets_json(
     return JSONResponse(content={"exported_at": datetime.utcnow().isoformat(), "sets": data})
 
 
+_MAX_IMPORT_SETS = 1000
+
+
 @router.post("/import/json")
 def import_sets_json(
-    payload: dict,
+    payload: SetImportPayload,
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    """Import sets from JSON export."""
-    sets_data = payload.get("sets", [])
+    """Import sets from JSON export (max 1000 Sets pro Import)."""
+    if len(payload.sets) > _MAX_IMPORT_SETS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Maximal {_MAX_IMPORT_SETS} Sets pro Import erlaubt",
+        )
+
     imported = 0
-    for s_data in sets_data:
-        s_data.pop("id", None)
-        s_data.pop("created_at", None)
-        s_data.pop("updated_at", None)
-        brick_set = BrickSet(**{k: v for k, v in s_data.items() if hasattr(BrickSet, k)})
+    for item in payload.sets:
+        brick_set = BrickSet(**item.model_dump())
         db.add(brick_set)
         imported += 1
     db.commit()

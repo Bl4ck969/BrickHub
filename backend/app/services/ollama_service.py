@@ -1,7 +1,11 @@
 """Optional Ollama API integration for image analysis."""
+import logging
+
 import httpx
 import base64
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 async def analyze_image(image_bytes: bytes) -> str | None:
@@ -30,7 +34,7 @@ async def analyze_image(image_bytes: bytes) -> str | None:
             if response.status_code == 200:
                 return response.json().get("response", "")
     except Exception:
-        pass
+        logger.warning("Ollama-Bildanalyse fehlgeschlagen", exc_info=True)
     return None
 
 
@@ -54,5 +58,5 @@ async def check_ollama_connection() -> dict:
                     "available_models": model_names,
                 }
     except Exception as e:
+        logger.warning("Ollama-Verbindungsprüfung fehlgeschlagen: %s", e)
         return {"enabled": True, "reachable": False, "error": str(e), "model": settings.ollama_model}
-    return {"enabled": True, "reachable": False, "model": settings.ollama_model}

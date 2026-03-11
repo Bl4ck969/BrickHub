@@ -10,6 +10,7 @@ Phase 1: Upload → Auto-Corner-Detection → Manuelle Ecken-Korrektur → Persp
 Phase 2: rembg + Farbnormalisierung + Skalierung + Thumbnail → Finales Bild
 """
 import io
+import logging
 import re
 from pathlib import Path
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
@@ -17,6 +18,8 @@ import numpy as np
 import cv2
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 THUMB_MAX_SIZE        = (400, 400)
 EDITED_LANDSCAPE_SIZE = (1920, 1080)
@@ -66,6 +69,7 @@ def _remove_background_and_crop(image: Image.Image, padding: int = 15) -> Image.
                 alpha_matting_erode_size=10,
             )
         except Exception:
+            logger.warning("rembg alpha_matting fehlgeschlagen, Fallback auf Standard-Modus")
             result_bytes = remove(raw)
         result = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
 
@@ -109,7 +113,7 @@ def _remove_background_and_crop(image: Image.Image, padding: int = 15) -> Image.
         return white.convert("RGB")
 
     except Exception:
-        # Fallback: Bild unverändert (nur RGB)
+        logger.error("Hintergrundentfernung fehlgeschlagen, Bild wird unverändert zurückgegeben", exc_info=True)
         return image.convert("RGB")
 
 

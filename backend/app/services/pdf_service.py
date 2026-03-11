@@ -4,9 +4,12 @@ PDF generation service:
 - Set list PDF export: A4 landscape with logo, cover images, white headers
 """
 import io
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -68,6 +71,7 @@ def _logo_reader() -> ImageReader | None:
         buf.seek(0)
         return ImageReader(buf)
     except Exception:
+        logger.warning("Logo konnte nicht geladen werden: %s", _LOGO_PATH, exc_info=True)
         return None
 
 # ─── Label-Dimensionen ────────────────────────────────────────────────────────
@@ -106,7 +110,7 @@ def _draw_label(c: canvas.Canvas, x: float, y: float, label_data: dict):
             c.drawImage(img, img_x, img_top - dh,
                         width=dw, height=dh, preserveAspectRatio=True, mask='auto')
         except Exception:
-            pass
+            logger.warning("Label-Thumbnail konnte nicht gerendert werden: %s", thumb_path, exc_info=True)
 
     # Trennlinie
     sep_y = y + LABEL_HEIGHT * 0.30
@@ -165,7 +169,7 @@ def generate_label_pdf(labels_data: list[dict]) -> bytes:
                 c.drawImage(logo_img, PAGE_MARGIN, page_h - HEADER_H + 1 * mm,
                             width=logo_h, height=logo_h, preserveAspectRatio=True, mask='auto')
             except Exception:
-                pass
+                logger.warning("Label-Logo konnte nicht gerendert werden", exc_info=True)
 
         c.setFont("Helvetica-Bold", 9)
         c.setFillColor(colors.HexColor("#FFD700"))
@@ -209,6 +213,7 @@ def _thumbnail_cell(thumb_path: str, max_w: float, max_h: float):
         ratio = min(max_w / iw, max_h / ih)
         return RLImage(thumb_path, width=iw * ratio, height=ih * ratio)
     except Exception:
+        logger.warning("Setlisten-Thumbnail konnte nicht geladen werden: %s", thumb_path, exc_info=True)
         return Paragraph("–", dash)
 
 
@@ -249,7 +254,7 @@ def generate_sets_list_pdf(sets: list, title: str = "BrickHub – Setliste") -> 
                              preserveAspectRatio=True, mask='auto')
                 logo_drawn = True
             except Exception:
-                pass
+                logger.warning("Setlisten-Logo konnte nicht gerendert werden", exc_info=True)
 
         x_text = MLR + (17 * mm if logo_drawn else 0)
 

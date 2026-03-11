@@ -48,8 +48,8 @@ export function SetsPage() {
   const [distinctValues, setDistinctValues] = useState({ manufacturers: [], categories: [], subcategories: [] })
 
   useEffect(() => {
-    boxesApi.list().then(res => setBoxes(res.data)).catch(() => {})
-    setsApi.distinctValues().then(res => setDistinctValues(res.data)).catch(() => {})
+    boxesApi.list().then(res => setBoxes(res.data)).catch(err => { if (import.meta.env.DEV) console.warn('Boxes laden fehlgeschlagen', err) })
+    setsApi.distinctValues().then(res => setDistinctValues(res.data)).catch(err => { if (import.meta.env.DEV) console.warn('DistinctValues laden fehlgeschlagen', err) })
   }, [])
 
   const fetchSets = useCallback(async () => {
@@ -61,7 +61,7 @@ export function SetsPage() {
       setSummary(res.data)
       setImgCacheBuster(Date.now())
     } catch (err) {
-      console.error(err)
+      if (import.meta.env.DEV) console.warn('Sets laden fehlgeschlagen', err)
     } finally {
       setLoading(false)
     }
@@ -92,7 +92,7 @@ export function SetsPage() {
       await setsApi.inlineUpdate(id, { [field]: value })
       setSets(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s))
     } catch (err) {
-      console.error(err)
+      if (import.meta.env.DEV) console.warn('Inline-Update fehlgeschlagen', err)
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { setsApi, boxesApi, imagesApi, settingsApi } from '../api/client'
 import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
@@ -35,14 +35,19 @@ export function AddEditSetPage() {
   const [baseUrlInput, setBaseUrlInput] = useState('')
   const [editingBaseUrl, setEditingBaseUrl] = useState(false)
   const [copied, setCopied] = useState(false)
+  const copyTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current) }
+  }, [])
 
   useEffect(() => {
     settingsApi.getAll().then(res => {
       setOneDriveBaseUrl(res.data.onedrive_base_url || '')
       setBaseUrlInput(res.data.onedrive_base_url || '')
-    }).catch(() => {})
-    setsApi.distinctValues().then(res => setSuggestions(res.data))
-    boxesApi.list().then(res => setBoxes(res.data))
+    }).catch(err => { if (import.meta.env.DEV) console.warn('Settings laden fehlgeschlagen', err) })
+    setsApi.distinctValues().then(res => setSuggestions(res.data)).catch(err => { if (import.meta.env.DEV) console.warn('DistinctValues laden fehlgeschlagen', err) })
+    boxesApi.list().then(res => setBoxes(res.data)).catch(err => { if (import.meta.env.DEV) console.warn('Boxes laden fehlgeschlagen', err) })
     if (isEdit) {
       setsApi.get(id).then(res => {
         const s = res.data
@@ -62,7 +67,7 @@ export function AddEditSetPage() {
           frontcover: s.frontcover_original || null,
           backcover: s.backcover_original || null,
         })
-      })
+      }).catch(err => { if (import.meta.env.DEV) console.warn('Set laden fehlgeschlagen', err) })
     }
   }, [id])
 
@@ -302,7 +307,8 @@ export function AddEditSetPage() {
                   onClick={() => {
                     navigator.clipboard.writeText(`${form.manufacturer} - ${form.manufacturer_number} - ${form.name}`)
                     setCopied(true)
-                    setTimeout(() => setCopied(false), 2000)
+                    if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+                    copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
                   }}
                 >
                   {copied ? <CheckIcon className="w-5 h-5 text-green-600" /> : <ClipboardDocumentIcon className="w-5 h-5" />}

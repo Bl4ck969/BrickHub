@@ -19,6 +19,8 @@ export function NewSetsPage() {
     try {
       const res = await setsApi.list({ status: 'Neu', search })
       setSets(res.data.sets)
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('Neue Sets laden fehlgeschlagen', err)
     } finally {
       setLoading(false)
     }

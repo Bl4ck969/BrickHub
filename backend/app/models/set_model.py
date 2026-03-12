@@ -28,9 +28,11 @@ class BrickSet(Base):
     frontcover_original: Mapped[str] = mapped_column(String(500), nullable=True)
     frontcover_edited: Mapped[str] = mapped_column(String(500), nullable=True)
     frontcover_thumbnail: Mapped[str] = mapped_column(String(500), nullable=True)
+    frontcover_corners: Mapped[str] = mapped_column(Text, nullable=True)  # JSON: {"corners":[[x,y],...], "rotation":0}
     backcover_original: Mapped[str] = mapped_column(String(500), nullable=True)
     backcover_edited: Mapped[str] = mapped_column(String(500), nullable=True)
     backcover_thumbnail: Mapped[str] = mapped_column(String(500), nullable=True)
+    backcover_corners: Mapped[str] = mapped_column(Text, nullable=True)   # JSON: {"corners":[[x,y],...], "rotation":0}
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrickHub – ImageEditor Redesign Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-navy': '#1E3A5F',
+            'brand-navy-light': '#2A5080',
+            'brand-yellow': '#FFD700',
+            'brand-bg': '#F5F7FA',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    /* Custom range slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: #e5e7eb;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1E3A5F;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      border-radius: 2px;
+    }
+
+    /* Scrollbar styling */
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
+
+    /* Canvas container */
+    #canvas-container {
+      overflow: auto;
+      cursor: grab;
+      user-select: none;
+    }
+    #canvas-container:active { cursor: grabbing; }
+
+    /* Step indicator */
+    .step-done { background: #1E3A5F; color: #FFD700; border-color: #1E3A5F; }
+    .step-active { background: #FFD700; color: #1E3A5F; border-color: #FFD700; font-weight: 700; }
+    .step-pending { background: white; color: #9ca3af; border-color: #e5e7eb; }
+    .step-connector-done { background: #1E3A5F; }
+    .step-connector-pending { background: #e5e7eb; }
+
+    /* Control section */
+    .ctrl-section {
+      border-bottom: 1px solid #f3f4f6;
+      padding: 14px 16px;
+    }
+    .ctrl-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    /* Corner badge */
+    .corner-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    /* Upload zone animation */
+    @keyframes borderPulse {
+      0%, 100% { border-color: rgba(30,58,95,0.4); }
+      50% { border-color: rgba(30,58,95,0.9); }
+    }
+    .upload-zone { animation: borderPulse 2.5s ease-in-out infinite; }
+    .upload-zone:hover { animation: none; border-color: #1E3A5F !important; background: #eff6ff; }
+
+    /* Rotation dial */
+    .quick-rot-btn {
+      padding: 3px 7px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .quick-rot-btn:hover { background: #1E3A5F; color: white; border-color: #1E3A5F; }
+
+    /* Canvas overlay badge */
+    .canvas-badge {
+      position: absolute;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      color: white;
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+
+    /* Hint box */
+    .hint-box {
+      background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.7rem;
+      color: #374151;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+
+  <!-- Demo note -->
+  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-amber-400 text-amber-900 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+    ⚠ Interaktive Vorschau – Kein echtes Bild, Demo-Canvas
+  </div>
+
+  <!-- Modal -->
+  <div class="bg-white rounded-2xl shadow-2xl w-full overflow-hidden flex flex-col" style="max-width: 1200px; max-height: 92vh; height: 92vh;">
+
+    <!-- ── Modal Header ── -->
+    <div class="flex-shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-gray-100" style="background: linear-gradient(to right, #1E3A5F, #2A5080);">
+      <div class="flex items-center gap-5">
+        <!-- Title -->
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: rgba(255,215,0,0.15);">
+            <svg class="w-4 h-4" fill="none" stroke="#FFD700" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h2 class="text-base font-semibold text-white">Frontcover bearbeiten</h2>
+        </div>
+
+        <!-- Step Progress -->
+        <div class="flex items-center gap-1.5">
+          <div id="step1" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border step-done transition-all">
+            <span class="w-4 h-4 rounded-full flex items-center justify-center text-xs" style="background: rgba(255,215,0,0.2);">✓</span>
+            Upload
+          </div>
+          <div class="w-6 h-0.5 step-connector-done rounded transition-all"></div>
+          <div id="step2" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border step-active transition-all">
+            <span class="w-4 h-4 rounded-full bg-brand-navy text-yellow-400 flex items-center justify-center text-xs font-bold">2</span>
+            Bearbeiten
+          </div>
+          <div class="w-6 h-0.5 step-connector-pending rounded transition-all"></div>
+          <div id="step3" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border step-pending transition-all">
+            <span class="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-xs text-gray-400">3</span>
+            Vorschau
+          </div>
+          <div class="w-6 h-0.5 step-connector-pending rounded transition-all"></div>
+          <div id="step4" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border step-pending transition-all">
+            <span class="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-xs text-gray-400">4</span>
+            Fertig
+          </div>
+        </div>
+      </div>
+
+      <!-- Close -->
+      <button class="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── Body: Two-column ── -->
+    <div class="flex flex-1 overflow-hidden">
+
+      <!-- ── Left: Control Panel ── -->
+      <div class="flex-shrink-0 flex flex-col bg-gray-50 border-r border-gray-100 custom-scroll overflow-y-auto" style="width: 256px;">
+
+        <!-- Corner Legend -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Eckpunkte</div>
+          <p class="text-xs text-gray-500 mb-3">Ziehe die farbigen Punkte auf die 4 Verpackungsecken:</p>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div class="corner-badge" style="background: #EF4444;">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Oben Links
+            </div>
+            <div class="corner-badge" style="background: #3B82F6;">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Oben Rechts
+            </div>
+            <div class="corner-badge" style="background: #10B981;">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Unten Rechts
+            </div>
+            <div class="corner-badge" style="background: #F59E0B;">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Unten Links
+            </div>
+          </div>
+          <button id="resetCornersBtn" class="mt-3 w-full text-xs py-2 rounded-lg border font-medium transition-all flex items-center justify-center gap-1.5"
+            style="border-color: #F59E0B; color: #92400e; background: #fffbeb;">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Ecken zurücksetzen
+          </button>
+        </div>
+
+        <!-- Rotation -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Rotation</div>
+          <div class="flex items-center gap-2 mb-2">
+            <input type="range" id="rotSlider" min="-180" max="180" value="0" class="flex-1">
+            <span id="rotValue" class="text-xs font-mono font-semibold text-brand-navy w-10 text-right">0°</span>
+          </div>
+          <div class="flex gap-1 flex-wrap">
+            <button class="quick-rot-btn" onclick="setRotation(-90)">−90°</button>
+            <button class="quick-rot-btn" onclick="setRotation(-45)">−45°</button>
+            <button class="quick-rot-btn" onclick="setRotation(0)" style="background: #1E3A5F; color: #FFD700; border-color: #1E3A5F;">0°</button>
+            <button class="quick-rot-btn" onclick="setRotation(45)">+45°</button>
+            <button class="quick-rot-btn" onclick="setRotation(90)">+90°</button>
+          </div>
+        </div>
+
+        <!-- Adjustments -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Bildanpassung</div>
+          <!-- Brightness -->
+          <div class="mb-3">
+            <div class="flex justify-between items-center mb-1.5">
+              <div class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <span class="text-xs text-gray-600">Helligkeit</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span id="brightValue" class="text-xs font-mono font-semibold text-brand-navy">105%</span>
+                <button onclick="document.getElementById('brightSlider').value=1.05; updateBright()" class="text-xs text-gray-400 hover:text-gray-600 px-1 py-0.5 rounded hover:bg-gray-200 transition-all">Std</button>
+              </div>
+            </div>
+            <input type="range" id="brightSlider" min="0.5" max="2.0" step="0.05" value="1.05" class="w-full" oninput="updateBright()">
+          </div>
+          <!-- Saturation -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <div class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                </svg>
+                <span class="text-xs text-gray-600">Farbintensität</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span id="satValue" class="text-xs font-mono font-semibold text-brand-navy">105%</span>
+                <button onclick="document.getElementById('satSlider').value=1.05; updateSat()" class="text-xs text-gray-400 hover:text-gray-600 px-1 py-0.5 rounded hover:bg-gray-200 transition-all">Std</button>
+              </div>
+            </div>
+            <input type="range" id="satSlider" min="0.0" max="2.0" step="0.05" value="1.05" class="w-full" oninput="updateSat()">
+          </div>
+        </div>
+
+        <!-- Zoom Info -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Ansicht</div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+              </svg>
+              <span class="text-xs text-gray-600">Zoom</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="zoomValue" class="text-xs font-mono font-semibold text-brand-navy">100%</span>
+              <button onclick="setZoom(1)" class="text-xs text-gray-400 hover:text-gray-600 px-1 py-0.5 rounded hover:bg-gray-200 transition-all">Reset</button>
+            </div>
+          </div>
+          <div class="mt-2 flex gap-1">
+            <button onclick="zoomStep(-1)" class="flex-1 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium text-gray-600 transition-all">−</button>
+            <div class="flex-1 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div id="zoomBar" class="h-1.5 rounded-full transition-all" style="background: #1E3A5F; width: 50%;"></div>
+            </div>
+            <button onclick="zoomStep(1)" class="flex-1 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-medium text-gray-600 transition-all">+</button>
+          </div>
+        </div>
+
+        <!-- Keyboard Hints -->
+        <div class="ctrl-section">
+          <div class="ctrl-label">Tastaturkürzel</div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-gray-500">Zoom rein/raus</span>
+              <span class="text-xs font-mono bg-gray-200 rounded px-1.5 py-0.5 text-gray-600">Mausrad</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-gray-500">Verschieben</span>
+              <span class="text-xs font-mono bg-gray-200 rounded px-1.5 py-0.5 text-gray-600">Drag</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-gray-500">Ecken ziehen</span>
+              <span class="text-xs font-mono bg-gray-200 rounded px-1.5 py-0.5 text-gray-600">Handle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+      </div>
+
+      <!-- ── Right: Canvas Area ── -->
+      <div class="flex-1 relative overflow-hidden" style="background: #111827;">
+        <!-- Canvas container -->
+        <div id="canvas-container" class="w-full h-full overflow-auto flex items-center justify-center" style="touch-action: none;">
+          <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <!-- Zoom badge (bottom right) -->
+        <div class="canvas-badge" style="bottom: 12px; right: 12px;" id="zoomBadge">100%</div>
+
+        <!-- Rotation badge (bottom left, visible when rotated) -->
+        <div class="canvas-badge hidden" id="rotBadge" style="bottom: 12px; left: 12px; background: rgba(245,158,11,0.85);">
+          ⟳ 0°
+        </div>
+
+        <!-- Help hint (top center) -->
+        <div class="canvas-badge" style="top: 12px; left: 50%; transform: translateX(-50%);">
+          Ziehe die farbigen Eckpunkte · Scrollen = Zoom · Drag = Verschieben
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Footer: Action Buttons ── -->
+    <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
+      <div class="flex items-center gap-3">
+        <button class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border text-brand-navy border-brand-navy hover:bg-gray-50 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Abbrechen
+        </button>
+        <button id="uploadNewBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          Anderes Bild
+        </button>
+      </div>
+
+      <button id="previewBtn" class="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-md hover:shadow-lg"
+        style="background: linear-gradient(135deg, #1E3A5F 0%, #2A5080 100%);">
+        Vorschau generieren
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- JavaScript: Interactive Canvas Demo                     -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <script>
+    // ── State ────────────────────────────────────────────────
+    const HANDLE_R = 13
+    const COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B']
+    const LABELS = ['OL', 'OR', 'UR', 'UL']
+    const IMG_W = 700
+    const IMG_H = 520
+
+    let corners = null
+    let scale = 1
+    let zoom = 1
+    let rotation = 0
+    let brightness = 1.05
+    let saturation = 1.05
+    let dragging = -1
+    let panning = false
+    let panStart = {x:0, y:0, sx:0, sy:0}
+
+    const canvas = document.getElementById('mainCanvas')
+    const ctx = canvas.getContext('2d')
+    const container = document.getElementById('canvas-container')
+
+    // ── Draw sample "image" (gradient pattern) ───────────────
+    const offscreen = document.createElement('canvas')
+    offscreen.width = IMG_W
+    offscreen.height = IMG_H
+    const octx = offscreen.getContext('2d')
+    // Gradient background
+    const g1 = octx.createLinearGradient(0, 0, IMG_W, IMG_H)
+    g1.addColorStop(0, '#1e3a5f')
+    g1.addColorStop(0.4, '#2d6a9f')
+    g1.addColorStop(1, '#1e3a5f')
+    octx.fillStyle = g1
+    octx.fillRect(0, 0, IMG_W, IMG_H)
+    // Yellow accent band
+    const g2 = octx.createLinearGradient(0, 0, IMG_W, 0)
+    g2.addColorStop(0, 'rgba(255,215,0,0)')
+    g2.addColorStop(0.3, 'rgba(255,215,0,0.25)')
+    g2.addColorStop(0.7, 'rgba(255,215,0,0.25)')
+    g2.addColorStop(1, 'rgba(255,215,0,0)')
+    octx.fillStyle = g2
+    octx.fillRect(0, 100, IMG_W, 50)
+    // Simulated text blocks
+    octx.fillStyle = 'rgba(255,255,255,0.15)'
+    octx.fillRect(40, 40, 300, 28)
+    octx.fillRect(40, 80, 200, 18)
+    octx.fillRect(40, 180, 400, 20)
+    octx.fillRect(40, 210, 350, 14)
+    octx.fillRect(40, 234, 380, 14)
+    // Simulated image area
+    const g3 = octx.createRadialGradient(500, 280, 10, 500, 280, 180)
+    g3.addColorStop(0, 'rgba(255,215,0,0.3)')
+    g3.addColorStop(1, 'rgba(255,215,0,0)')
+    octx.fillStyle = g3
+    octx.beginPath(); octx.arc(500, 280, 180, 0, Math.PI*2); octx.fill()
+    // Bottom bar
+    octx.fillStyle = '#FFD700'
+    octx.fillRect(0, IMG_H - 40, IMG_W, 40)
+    octx.fillStyle = '#1E3A5F'
+    octx.font = 'bold 14px Inter, sans-serif'
+    octx.fillText('MOULD KING  ·  Botanischer Garten  ·  2512 Teile', 20, IMG_H - 16)
+    // Border/noise
+    octx.strokeStyle = 'rgba(255,255,255,0.08)'
+    octx.lineWidth = 1
+    for(let y=0; y<IMG_H; y+=30) {
+      octx.beginPath(); octx.moveTo(0,y); octx.lineTo(IMG_W,y); octx.stroke()
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    function initCorners() {
+      const m = 0.04
+      corners = [
+        [IMG_W * m, IMG_H * m],
+        [IMG_W * (1-m), IMG_H * m],
+        [IMG_W * (1-m), IMG_H * (1-m)],
+        [IMG_W * m, IMG_H * (1-m)],
+      ]
+    }
+
+    function updateCanvasSize() {
+      const PAD = HANDLE_R + 8
+      const w = Math.round(IMG_W * scale) + 2*PAD
+      const h = Math.round(IMG_H * scale) + 2*PAD
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w; canvas.height = h
+      }
+    }
+
+    function draw() {
+      if (!corners) return
+      const PAD = HANDLE_R + 8
+      updateCanvasSize()
+      const w = canvas.width; const h = canvas.height
+      const imgW = Math.round(IMG_W * scale); const imgH = Math.round(IMG_H * scale)
+
+      // Background
+      ctx.fillStyle = '#111827'
+      ctx.fillRect(0, 0, w, h)
+
+      // Subtle grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)'
+      ctx.lineWidth = 1
+      for(let x=0; x<w; x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke() }
+      for(let y=0; y<h; y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke() }
+
+      // Image
+      ctx.save()
+      ctx.filter = `brightness(${brightness}) saturate(${saturation})`
+      ctx.drawImage(offscreen, PAD, PAD, imgW, imgH)
+      ctx.filter = 'none'
+      ctx.restore()
+
+      // Scaled corner positions
+      const sp = corners.map(([x,y]) => [x*scale+PAD, y*scale+PAD])
+
+      // Dark overlay outside selection
+      ctx.save()
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'
+      ctx.beginPath()
+      ctx.rect(0, 0, w, h)
+      ctx.moveTo(sp[0][0], sp[0][1])
+      for(let i=3; i>=0; i--) ctx.lineTo(sp[i][0], sp[i][1])
+      ctx.closePath()
+      ctx.fill('evenodd')
+      ctx.restore()
+
+      // Selection border (dashed gold)
+      ctx.beginPath()
+      ctx.moveTo(sp[0][0], sp[0][1])
+      for(let i=1; i<4; i++) ctx.lineTo(sp[i][0], sp[i][1])
+      ctx.closePath()
+      ctx.strokeStyle = '#FFD700'
+      ctx.lineWidth = 2
+      ctx.setLineDash([8, 4])
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // Midpoint handles (smaller, white)
+      for(let i=0; i<4; i++) {
+        const j = (i+1)%4
+        const mx = (sp[i][0]+sp[j][0])/2; const my = (sp[i][1]+sp[j][1])/2
+        ctx.beginPath(); ctx.arc(mx, my, 5, 0, Math.PI*2)
+        ctx.fillStyle = 'rgba(255,255,255,0.5)'
+        ctx.fill()
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+        ctx.lineWidth = 1.5; ctx.stroke()
+      }
+
+      // Corner handles
+      sp.forEach(([x,y], i) => {
+        // Glow
+        ctx.beginPath(); ctx.arc(x, y, HANDLE_R+6, 0, Math.PI*2)
+        const glow = ctx.createRadialGradient(x,y,HANDLE_R-2,x,y,HANDLE_R+6)
+        glow.addColorStop(0, COLORS[i]+'60')
+        glow.addColorStop(1, 'transparent')
+        ctx.fillStyle = glow; ctx.fill()
+
+        // Shadow
+        ctx.beginPath(); ctx.arc(x, y, HANDLE_R+2, 0, Math.PI*2)
+        ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill()
+
+        // Main circle
+        ctx.beginPath(); ctx.arc(x, y, HANDLE_R, 0, Math.PI*2)
+        ctx.fillStyle = COLORS[i]; ctx.fill()
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke()
+
+        // Label
+        ctx.fillStyle = '#fff'
+        ctx.font = 'bold 9px Inter, sans-serif'
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+        ctx.fillText(LABELS[i], x, y)
+      })
+    }
+
+    // ── Slider syncs ─────────────────────────────────────────
+    function updateBright() {
+      brightness = parseFloat(document.getElementById('brightSlider').value)
+      document.getElementById('brightValue').textContent = Math.round(brightness*100)+'%'
+      draw()
+    }
+    function updateSat() {
+      saturation = parseFloat(document.getElementById('satSlider').value)
+      document.getElementById('satValue').textContent = Math.round(saturation*100)+'%'
+      draw()
+    }
+    function setZoom(z) {
+      zoom = Math.max(0.1, Math.min(10, z))
+      scale = zoom
+      document.getElementById('zoomValue').textContent = Math.round(zoom*100)+'%'
+      document.getElementById('zoomBadge').textContent = Math.round(zoom*100)+'%'
+      document.getElementById('zoomBar').style.width = Math.min(100, Math.max(5, ((zoom-0.1)/(3-0.1))*100))+'%'
+      draw()
+    }
+    function zoomStep(dir) {
+      setZoom(zoom * (dir > 0 ? 1.2 : 0.85))
+    }
+    function setRotation(deg) {
+      rotation = deg
+      document.getElementById('rotSlider').value = deg
+      document.getElementById('rotValue').textContent = deg+'°'
+      canvas.style.transform = `rotate(${deg}deg)`
+      canvas.style.transition = 'transform 0.25s ease'
+      const badge = document.getElementById('rotBadge')
+      if(deg !== 0) {
+        badge.classList.remove('hidden')
+        badge.textContent = '⟳ '+deg+'°'
+      } else { badge.classList.add('hidden') }
+    }
+    document.getElementById('rotSlider').addEventListener('input', function() {
+      setRotation(parseInt(this.value))
+    })
+
+    // ── Reset corners ─────────────────────────────────────────
+    document.getElementById('resetCornersBtn').addEventListener('click', function() {
+      initCorners(); draw()
+      // Brief flash feedback
+      this.style.background = '#fef3c7'
+      setTimeout(() => this.style.background = '#fffbeb', 300)
+    })
+
+    // ── Canvas mouse interaction ──────────────────────────────
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect()
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY
+      return [
+        (clientX - rect.left) * (canvas.width / rect.width),
+        (clientY - rect.top) * (canvas.height / rect.height),
+      ]
+    }
+
+    canvas.addEventListener('mousedown', function(e) {
+      if (!corners) return
+      const PAD = HANDLE_R + 8
+      const [cx, cy] = getCanvasCoords(e)
+      const hitR = HANDLE_R * 3.5
+      for(let i=0; i<4; i++) {
+        const hx = corners[i][0]*scale+PAD
+        const hy = corners[i][1]*scale+PAD
+        if(Math.hypot(cx-hx, cy-hy) < hitR) {
+          dragging = i; e.preventDefault(); return
+        }
+      }
+      // Pan
+      panning = true
+      panStart = {x: e.clientX, y: e.clientY, sx: container.scrollLeft, sy: container.scrollTop}
+      e.preventDefault()
+    })
+
+    window.addEventListener('mousemove', function(e) {
+      if(dragging >= 0 && corners) {
+        const PAD = HANDLE_R + 8
+        const [cx, cy] = getCanvasCoords(e)
+        const newX = (cx - PAD) / scale
+        const newY = (cy - PAD) / scale
+        corners[dragging] = [newX, newY]
+        draw()
+        e.preventDefault()
+      }
+      if(panning) {
+        container.scrollLeft = panStart.sx - (e.clientX - panStart.x)
+        container.scrollTop = panStart.sy - (e.clientY - panStart.y)
+        e.preventDefault()
+      }
+    })
+
+    window.addEventListener('mouseup', function() {
+      dragging = -1; panning = false
+    })
+
+    // Mousewheel zoom
+    container.addEventListener('wheel', function(e) {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? 0.9 : 1.1
+      setZoom(zoom * delta)
+    }, { passive: false })
+
+    // ── Preview button demo ───────────────────────────────────
+    document.getElementById('previewBtn').addEventListener('click', function() {
+      // Animate step progress
+      document.getElementById('step2').className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border step-done transition-all'
+      document.getElementById('step2').querySelector('span').textContent = '✓'
+      document.getElementById('step3').className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border step-active transition-all'
+      document.getElementById('step3').querySelector('span').className = 'w-4 h-4 rounded-full bg-brand-navy text-yellow-400 flex items-center justify-center text-xs font-bold'
+      document.getElementById('step3').querySelector('span').textContent = '3'
+      // Connector
+      document.querySelectorAll('.step-connector-pending')[0]?.classList.replace('step-connector-pending','step-connector-done')
+      // Button loading
+      this.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generiere Vorschau...'
+      setTimeout(() => {
+        this.innerHTML = 'Vorschau generieren <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>'
+        alert('✅ Demo: In der echten App würde hier die Perspektivkorrektur-Vorschau erscheinen.\n\nDie Schrittanzeige oben zeigt den Fortschritt.')
+      }, 1500)
+    })
+
+    // ── Init ─────────────────────────────────────────────────
+    initCorners()
+    setZoom(1)
+    draw()
+  </script>
+</body>
+</html>

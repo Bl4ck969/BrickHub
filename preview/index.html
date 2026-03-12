@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrickHub – UI/UX Redesign Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-navy': '#1E3A5F',
+            'brand-navy-light': '#2A5080',
+            'brand-yellow': '#FFD700',
+            'brand-bg': '#F5F7FA',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .preview-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .preview-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(30,58,95,0.15);
+    }
+    .change-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .change-new { background: #d1fae5; color: #065f46; }
+    .change-improved { background: #dbeafe; color: #1e40af; }
+    .change-fixed { background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body class="min-h-screen" style="background: linear-gradient(135deg, #0f172a 0%, #1e2d45 50%, #0f172a 100%);">
+
+  <div class="max-w-5xl mx-auto px-4 py-12">
+
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background: #FFD700;">
+          <svg class="w-7 h-7 text-brand-navy" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-9 7H9v2H7v-2H5v-2h2V10h2v2h2v2zm7-1h-2v2h-2v-2h-2v-2h2V9h2v2h2v2z"/>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">BrickHub</h1>
+      </div>
+      <h2 class="text-xl font-semibold text-white/80 mb-2">UI/UX Redesign – Vorschau</h2>
+      <p class="text-sm text-white/50 max-w-lg mx-auto">
+        Interaktive Preview-Dateien des geplanten Redesigns. Der bestehende Code bleibt unverändert.
+      </p>
+      <div class="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full text-xs font-medium" style="background: rgba(255,215,0,0.15); color: #FFD700; border: 1px solid rgba(255,215,0,0.3);">
+        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        Nur Vorschau – kein produktiver Code geändert
+      </div>
+    </div>
+
+    <!-- Preview Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+
+      <!-- ImageEditor Preview -->
+      <a href="image-editor.html" class="preview-card block bg-white rounded-2xl overflow-hidden shadow-xl" style="text-decoration: none;">
+        <!-- Thumbnail Preview -->
+        <div class="h-48 relative overflow-hidden" style="background: linear-gradient(135deg, #111827 0%, #1f2937 100%);">
+          <!-- Mini-sketch of the new layout -->
+          <div class="absolute inset-0 flex">
+            <!-- Left sidebar sketch -->
+            <div class="w-16 h-full border-r border-white/10" style="background: rgba(249,250,251,0.06);">
+              <div class="p-2 space-y-1.5 mt-2">
+                <div class="h-1.5 rounded bg-white/20 w-10"></div>
+                <div class="flex gap-1">
+                  <div class="w-4 h-4 rounded-full" style="background: #EF4444; opacity: 0.8;"></div>
+                  <div class="w-4 h-4 rounded-full" style="background: #3B82F6; opacity: 0.8;"></div>
+                </div>
+                <div class="flex gap-1">
+                  <div class="w-4 h-4 rounded-full" style="background: #10B981; opacity: 0.8;"></div>
+                  <div class="w-4 h-4 rounded-full" style="background: #F59E0B; opacity: 0.8;"></div>
+                </div>
+                <div class="h-px bg-white/10 my-1"></div>
+                <div class="h-1 rounded bg-white/15 w-full"></div>
+                <div class="h-2 rounded" style="background: #1E3A5F; opacity: 0.6; width: 60%;"></div>
+                <div class="h-px bg-white/10 my-1"></div>
+                <div class="h-1 rounded bg-white/15 w-full"></div>
+                <div class="h-2 rounded" style="background: #1E3A5F; opacity: 0.6; width: 80%;"></div>
+              </div>
+            </div>
+            <!-- Canvas sketch -->
+            <div class="flex-1 flex items-center justify-center relative">
+              <!-- Simulated image with perspective handles -->
+              <div class="relative" style="width: 140px; height: 100px;">
+                <div class="absolute inset-0 rounded" style="background: linear-gradient(135deg, #1E3A5F60, #2d6a9f60); border: 1.5px dashed #FFD700;"></div>
+                <!-- Corner handles -->
+                <div class="absolute w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold" style="background: #EF4444; top: -8px; left: -8px; font-size: 8px;">OL</div>
+                <div class="absolute w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold" style="background: #3B82F6; top: -8px; right: -8px; font-size: 8px;">OR</div>
+                <div class="absolute w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold" style="background: #10B981; bottom: -8px; right: -8px; font-size: 8px;">UR</div>
+                <div class="absolute w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold" style="background: #F59E0B; bottom: -8px; left: -8px; font-size: 8px;">UL</div>
+                <!-- Dark overlay outside -->
+                <div class="absolute inset-0 rounded" style="background: rgba(0,0,0,0.35);"></div>
+                <!-- Content inside selection (slightly brighter) -->
+                <div class="absolute" style="top: 8px; left: 8px; right: 8px; bottom: 8px; background: linear-gradient(135deg, #1E3A5F80, #2d6a9f80); border-radius: 2px;"></div>
+              </div>
+              <!-- Zoom badge -->
+              <div class="absolute bottom-2 right-2 text-xs rounded px-1.5 py-0.5" style="background: rgba(0,0,0,0.5); color: white; font-size: 0.6rem;">100%</div>
+            </div>
+          </div>
+          <!-- Step bar at top -->
+          <div class="absolute top-0 left-0 right-0 h-8 flex items-center px-3 gap-2" style="background: linear-gradient(to right, #1E3A5F, #2A5080);">
+            <div class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: rgba(255,215,0,0.2); color: #FFD700; font-size: 0.6rem;">✓ Upload</div>
+            <div class="w-4 h-px bg-white/30"></div>
+            <div class="text-xs font-medium px-2 py-0.5 rounded-full" style="background: #FFD700; color: #1E3A5F; font-size: 0.6rem; font-weight: 700;">2 Bearbeiten</div>
+            <div class="w-4 h-px bg-white/20"></div>
+            <div class="text-xs text-white/40" style="font-size: 0.6rem;">3 Vorschau</div>
+            <div class="w-4 h-px bg-white/20"></div>
+            <div class="text-xs text-white/40" style="font-size: 0.6rem;">4 Fertig</div>
+          </div>
+        </div>
+        <!-- Card Info -->
+        <div class="p-5">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="font-bold text-gray-900 text-base">Image Editor</h3>
+              <p class="text-sm text-gray-400 mt-0.5">Bild-Zuschnitt & Perspektivkorrektur</p>
+            </div>
+            <span class="change-pill change-improved">Hauptfokus</span>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Neue 2-Spalten-Layout: Seitenleiste für Steuerung, mehr Platz für Canvas</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Schritt-Anzeige im Header (Upload → Bearbeiten → Vorschau → Fertig)</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Verbesserte Handles mit Glow-Effekt, gestrichelte Auswahllinie</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Midpoint-Handles auf jeder Seite der Auswahl (visueller Hinweis)</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Zoom-Leiste in der Seitenleiste, Zoom-Buttons (+/−), Tastaturkürzel-Anzeige</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <div class="flex gap-1.5">
+              <span class="change-pill change-new">Interaktiv</span>
+              <span class="change-pill change-improved">Canvas Demo</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-brand-navy font-medium text-sm">
+              Öffnen
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </div>
+          </div>
+        </div>
+      </a>
+
+      <!-- Sets Page Preview -->
+      <a href="sets-page.html" class="preview-card block bg-white rounded-2xl overflow-hidden shadow-xl" style="text-decoration: none;">
+        <!-- Thumbnail Preview -->
+        <div class="h-48 relative overflow-hidden" style="background: #F5F7FA;">
+          <!-- Mini navbar -->
+          <div class="h-8 flex items-center px-3 gap-2" style="background: linear-gradient(to right, #1E3A5F, #2A5080);">
+            <div class="w-4 h-4 rounded flex items-center justify-center" style="background: #FFD700;">
+              <div class="w-2 h-2 bg-brand-navy rounded-sm"></div>
+            </div>
+            <span class="text-white text-xs font-bold">BrickHub</span>
+            <div class="flex gap-1 ml-2">
+              <div class="px-1.5 py-0.5 rounded text-xs" style="background: #FFD700; color: #1E3A5F; font-size: 0.55rem; font-weight: 700;">Sets</div>
+              <div class="px-1.5 py-0.5 rounded text-xs text-white/60" style="font-size: 0.55rem;">+Neu</div>
+              <div class="px-1.5 py-0.5 rounded text-xs text-white/60" style="font-size: 0.55rem;">Lagerung</div>
+              <div class="px-1.5 py-0.5 rounded text-xs text-white/60" style="font-size: 0.55rem;">Schilder</div>
+            </div>
+          </div>
+          <!-- Mini summary cards -->
+          <div class="flex gap-1.5 px-3 py-2">
+            <div class="flex-1 bg-white rounded-lg p-1.5 shadow-sm border border-gray-100">
+              <p class="text-gray-400" style="font-size: 0.5rem;">Gesamt Sets</p>
+              <p class="font-bold text-brand-navy text-sm">42</p>
+              <p class="text-gray-400" style="font-size: 0.5rem;">↑ 3 diese Woche</p>
+            </div>
+            <div class="flex-1 bg-white rounded-lg p-1.5 shadow-sm border border-gray-100">
+              <p class="text-gray-400" style="font-size: 0.5rem;">Gesamt Teile</p>
+              <p class="font-bold text-brand-navy text-sm">84.217</p>
+              <p class="text-gray-400" style="font-size: 0.5rem;">⌀ 2.005/Set</p>
+            </div>
+            <div class="flex-1 bg-white rounded-lg p-1.5 shadow-sm border border-gray-100">
+              <p class="text-gray-400" style="font-size: 0.5rem;">Gesamtwert</p>
+              <p class="font-bold text-brand-navy text-sm">3.847 €</p>
+              <p class="text-gray-400" style="font-size: 0.5rem;">⌀ 91,60 €/Set</p>
+            </div>
+            <div class="flex-1 bg-white rounded-lg p-1.5 shadow-sm border border-gray-100">
+              <p class="text-gray-400 mb-1" style="font-size: 0.5rem;">Nach Steinart</p>
+              <div class="flex items-center gap-1">
+                <div class="h-1 flex-1 rounded" style="background: #1E3A5F; opacity: 0.7;"></div>
+                <span style="font-size: 0.55rem; color: #1E3A5F; font-weight: 700;">30</span>
+              </div>
+              <div class="flex items-center gap-1 mt-0.5">
+                <div class="h-1 rounded" style="background: #3B82F6; opacity: 0.7; width: 30%;"></div>
+                <span style="font-size: 0.55rem; color: #1E3A5F; font-weight: 700;">8</span>
+              </div>
+            </div>
+          </div>
+          <!-- Mini filter bar -->
+          <div class="mx-3 bg-white rounded-lg p-1.5 shadow-sm border border-gray-100 flex gap-1 items-center">
+            <div class="flex-1 h-4 rounded" style="background: #f9fafb; border: 1px solid #e5e7eb;"></div>
+            <div class="h-4 w-12 rounded" style="background: #f9fafb; border: 1px solid #e5e7eb;"></div>
+            <div class="h-4 w-12 rounded" style="background: #f9fafb; border: 1px solid #e5e7eb;"></div>
+          </div>
+          <!-- Mini table header -->
+          <div class="mx-3 mt-1.5 rounded-t-lg overflow-hidden">
+            <div class="flex h-5 items-center px-2 gap-2" style="background: linear-gradient(to right, #1E3A5F, #243f6a);">
+              <div class="w-8 h-2 rounded bg-white/20"></div>
+              <div class="w-8 h-2 rounded bg-white/20"></div>
+              <div class="w-12 h-2 rounded bg-white/30"></div>
+              <div class="w-10 h-2 rounded bg-white/20"></div>
+              <div class="w-8 h-2 rounded bg-white/30"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Card Info -->
+        <div class="p-5">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="font-bold text-gray-900 text-base">Sets Übersicht</h3>
+              <p class="text-sm text-gray-400 mt-0.5">Hauptliste aller Klemmbausteinsets</p>
+            </div>
+            <span class="change-pill change-improved">Verbessert</span>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Summary-Cards mit Icons, Mini-Fortschrittsbalken und Kontextzahlen (Δ)</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Navbar mit Logo-Icon (gelber Hintergrund), Aktiv-State deutlicher, Avatar</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Tabellen-Aktionen nur sichtbar bei Hover (group-hover), cleaner</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <p class="text-xs text-gray-600">Gradient-Tabellenheader, Steinart-Badges mit Farbe, verbesserter Hover</p>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <div class="flex gap-1.5">
+              <span class="change-pill change-improved">Statisch</span>
+              <span class="change-pill change-fixed">Demo-Daten</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-brand-navy font-medium text-sm">
+              Öffnen
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </div>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Design Changes Summary -->
+    <div class="bg-white/5 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+      <h3 class="text-white font-semibold mb-4">Zusammenfassung aller Design-Änderungen</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <p class="text-xs font-semibold text-green-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Neu im ImageEditor
+          </p>
+          <ul class="space-y-1.5 text-xs text-white/60">
+            <li>• 2-Spalten-Layout (Sidebar + Canvas)</li>
+            <li>• Schritt-Indikatoren im Modal-Header</li>
+            <li>• Handles mit Glow & Midpoints</li>
+            <li>• Gestrichelte Perspektiv-Auswahl</li>
+            <li>• Zoom-Steuerung in Seitenleiste</li>
+            <li>• Tastaturkürzel-Referenz</li>
+            <li>• Schnellrotation: ±45°, ±90°</li>
+            <li>• Dark Canvas mit Grid-Overlay</li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Verbessert global
+          </p>
+          <ul class="space-y-1.5 text-xs text-white/60">
+            <li>• Navbar: Gradient-Hintergrund, Avatar</li>
+            <li>• Logo: Gelb-Navy Icon statt nur PNG</li>
+            <li>• Aktiver NavLink: deutlicher</li>
+            <li>• Summary-Cards: Icons, Subtext, Balken</li>
+            <li>• Filter-Selects: angepasstes Chevron</li>
+            <li>• Tabellenheader: subtiler Gradient</li>
+            <li>• Action-Buttons: nur bei Hover sichtbar</li>
+            <li>• Delete-Button: Trash-Icon statt ×</li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            Unverändert (bewusst)
+          </p>
+          <ul class="space-y-1.5 text-xs text-white/60">
+            <li>• Farbpalette: Navy + Yellow</li>
+            <li>• Alle CSS-Klassen (.btn-primary etc.)</li>
+            <li>• Tabellenstruktur &amp; Daten</li>
+            <li>• Modal-Grundstruktur</li>
+            <li>• Schriftart: Inter</li>
+            <li>• Funktionalität (kein JS geändert)</li>
+            <li>• Bestehende Tailwind-Klassen</li>
+            <li>• CLAUDE.md-Konventionen</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-8 text-xs text-white/30">
+      Preview-Dateien in <code class="bg-white/10 px-1.5 py-0.5 rounded text-white/50">/preview/</code> · Kein Einfluss auf den Produktivcode
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
-export function Modal({ open, onClose, title, children, size = 'md' }) {
+export function Modal({ open, onClose, title, children, size = 'md', titleExtra = null, noBodyPadding = false }) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden'
@@ -27,17 +27,20 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizeClass} max-h-[95vh] overflow-y-auto`}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-brand-navy">{title}</h2>
+      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizeClass} max-h-[95vh] flex flex-col overflow-hidden`}>
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <h2 className="text-lg font-semibold text-brand-navy flex-shrink-0">{title}</h2>
+            {titleExtra}
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className={noBodyPadding ? 'flex-1 overflow-hidden flex flex-col' : 'p-6 overflow-y-auto flex-1'}>{children}</div>
       </div>
     </div>
   )

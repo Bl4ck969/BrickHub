@@ -355,14 +355,19 @@ export function SetsPage() {
           {(() => {
             const counts = {}
             sets.forEach(s => { const k = s.stone_size || 'Unbekannt'; counts[k] = (counts[k] || 0) + 1 })
-            return Object.keys(counts).length === 0 ? (
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
+            const max = sorted[0]?.[1] || 1
+            return sorted.length === 0 ? (
               <p className="text-sm text-gray-400">–</p>
             ) : (
-              <div className="space-y-1">
-                {Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
-                  <div key={k} className="flex justify-between items-baseline gap-1">
-                    <span className="text-xs text-gray-500 truncate">{k}</span>
-                    <span className="text-sm font-bold text-brand-navy whitespace-nowrap">{v}</span>
+              <div className="space-y-1.5">
+                {sorted.map(([k, v]) => (
+                  <div key={k} className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-full rounded-full bg-brand-navy transition-all" style={{ width: `${(v / max) * 100}%` }} />
+                    </div>
+                    <span className="text-xs text-gray-500 truncate w-14">{k}</span>
+                    <span className="text-sm font-bold text-brand-navy whitespace-nowrap w-6 text-right">{v}</span>
                   </div>
                 ))}
               </div>
@@ -372,18 +377,25 @@ export function SetsPage() {
         {/* Teile nach Steinart */}
         <div className="card py-3">
           <p className="text-xs text-gray-500 mb-2">Teile nach Steinart</p>
-          {Object.entries(summary.parts_by_stone_size || {}).length === 0 ? (
-            <p className="text-sm text-gray-400">–</p>
-          ) : (
-            <div className="space-y-1">
-              {Object.entries(summary.parts_by_stone_size || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
-                <div key={k} className="flex justify-between items-baseline gap-1">
-                  <span className="text-xs text-gray-500 truncate">{k}</span>
-                  <span className="text-sm font-bold text-brand-navy whitespace-nowrap">{v.toLocaleString('de-DE')}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {(() => {
+            const sorted = Object.entries(summary.parts_by_stone_size || {}).sort((a, b) => b[1] - a[1])
+            const max = sorted[0]?.[1] || 1
+            return sorted.length === 0 ? (
+              <p className="text-sm text-gray-400">–</p>
+            ) : (
+              <div className="space-y-1.5">
+                {sorted.map(([k, v]) => (
+                  <div key={k} className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-full rounded-full bg-brand-navy transition-all" style={{ width: `${(v / max) * 100}%` }} />
+                    </div>
+                    <span className="text-xs text-gray-500 truncate w-14">{k}</span>
+                    <span className="text-sm font-bold text-brand-navy whitespace-nowrap">{v.toLocaleString('de-DE')}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
         </div>
       </div>
 

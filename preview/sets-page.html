@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrickHub – Sets Seite Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-navy': '#1E3A5F',
+            'brand-navy-light': '#2A5080',
+            'brand-yellow': '#FFD700',
+            'brand-bg': '#F5F7FA',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); border: 1px solid #f3f4f6; }
+    .stat-card { position: relative; overflow: hidden; }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 80px; height: 80px;
+      border-radius: 0 12px 0 80px;
+      opacity: 0.06;
+    }
+    .stat-navy::before { background: #1E3A5F; }
+    .stat-blue::before { background: #3B82F6; }
+    .stat-green::before { background: #10B981; }
+    .stat-amber::before { background: #F59E0B; }
+    .stat-purple::before { background: #8B5CF6; }
+
+    input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: #e5e7eb; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #1E3A5F; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+
+    .filter-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 14px;
+      padding-right: 28px;
+    }
+
+    th { position: sticky; top: 0; }
+    tr:hover td { background: #eff6ff; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
+  </style>
+</head>
+<body class="bg-brand-bg min-h-screen">
+
+  <!-- ── Navbar ── -->
+  <nav style="background: linear-gradient(to right, #1E3A5F, #2A5080);" class="sticky top-0 z-40 shadow-lg">
+    <div class="px-4 max-w-full">
+      <div class="flex items-center h-14 gap-1">
+        <!-- Logo -->
+        <div class="flex items-center gap-2.5 mr-5 pr-5 border-r border-white/20 flex-shrink-0">
+          <div class="w-7 h-7 rounded-lg bg-brand-yellow flex items-center justify-center">
+            <svg class="w-4 h-4 text-brand-navy" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-9 7H9v2H7v-2H5v-2h2V10h2v2h2v2zm7-1h-2v2h-2v-2h-2v-2h2V9h2v2h2v2z"/>
+            </svg>
+          </div>
+          <span class="font-bold text-lg text-white tracking-tight">BrickHub</span>
+        </div>
+
+        <!-- Nav Links -->
+        <div class="flex items-center gap-0.5 flex-1">
+          <a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
+            style="background: #FFD700; color: #1E3A5F;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+            Sets
+          </a>
+          <a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 whitespace-nowrap transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Set anlegen
+          </a>
+          <a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 whitespace-nowrap transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Lagerung
+          </a>
+          <a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 whitespace-nowrap transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            Schilder
+          </a>
+          <a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 whitespace-nowrap transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Neue Sets
+          </a>
+          <a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white/75 hover:text-white hover:bg-white/10 whitespace-nowrap transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Kisteninventur
+          </a>
+        </div>
+
+        <!-- User -->
+        <div class="flex items-center gap-2 pl-4 border-l border-white/20 flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-brand-yellow flex items-center justify-center">
+            <span class="text-brand-navy text-xs font-bold">A</span>
+          </div>
+          <div class="hidden sm:block">
+            <p class="text-sm font-medium text-white">admin</p>
+            <p class="text-xs text-white/50">Administrator</p>
+          </div>
+          <button class="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all" title="Abmelden">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page Content ── -->
+  <div class="max-w-full px-4 py-5 space-y-4">
+
+    <!-- ── Demo Banner ── -->
+    <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium" style="background: #fef3c7; border: 1px solid #fde68a; color: #92400e;">
+      <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      Statische Vorschau – Daten und Bilder sind Beispieldaten
+    </div>
+
+    <!-- ── Header ── -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-brand-navy">Sets</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Deine Klemmbausteinsammlung</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border text-brand-navy border-gray-200 bg-white hover:bg-gray-50 transition-all shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          JSON Export
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border text-brand-navy border-gray-200 bg-white hover:bg-gray-50 transition-all shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          JSON Import
+        </button>
+        <button class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border text-brand-navy border-gray-200 bg-white hover:bg-gray-50 transition-all shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          PDF Export
+        </button>
+        <button class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-brand-navy transition-all shadow-md hover:shadow-lg"
+          style="background: linear-gradient(135deg, #FFD700, #f5c800);">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Neues Set
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Summary Cards ── -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <!-- Gesamt Sets -->
+      <div class="card stat-card stat-navy p-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Gesamt Sets</p>
+            <p class="text-3xl font-bold text-brand-navy mt-1">42</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #eff6ff;">
+            <svg class="w-5 h-5 text-brand-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">↑ 3 diese Woche</p>
+      </div>
+
+      <!-- Gesamt Teile -->
+      <div class="card stat-card stat-blue p-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Gesamt Teile</p>
+            <p class="text-3xl font-bold text-brand-navy mt-1">84.217</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #dbeafe;">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">⌀ 2.005 pro Set</p>
+      </div>
+
+      <!-- Gesamtwert -->
+      <div class="card stat-card stat-green p-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Gesamtwert</p>
+            <p class="text-3xl font-bold text-brand-navy mt-1">3.847 €</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: #d1fae5;">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">⌀ 91,60 € pro Set</p>
+      </div>
+
+      <!-- Sets nach Steinart -->
+      <div class="card p-4">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2.5">Sets nach Steinart</p>
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full bg-brand-navy" style="width: 71%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-16 truncate">Standard</span>
+            <span class="text-sm font-bold text-brand-navy">30</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full" style="background: #3B82F6; width: 19%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-16 truncate">Mini</span>
+            <span class="text-sm font-bold text-brand-navy">8</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full" style="background: #10B981; width: 10%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-16 truncate">Technik</span>
+            <span class="text-sm font-bold text-brand-navy">4</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teile nach Steinart -->
+      <div class="card p-4">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2.5">Teile nach Steinart</p>
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full bg-brand-navy" style="width: 75%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-16 truncate">Standard</span>
+            <span class="text-sm font-bold text-brand-navy">63.182</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full" style="background: #3B82F6; width: 16%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-16 truncate">Mini</span>
+            <span class="text-sm font-bold text-brand-navy">13.470</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div class="h-full rounded-full" style="background: #10B981; width: 9%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-16 truncate">Technik</span>
+            <span class="text-sm font-bold text-brand-navy">7.565</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Search & Filters ── -->
+    <div class="card px-4 py-3">
+      <div class="flex flex-wrap gap-2.5 items-center">
+        <!-- Search -->
+        <div class="relative flex-1 min-w-48">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" placeholder="Suche nach Name, Hersteller, Kategorie..."
+            class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus:border-brand-navy transition-all bg-gray-50 focus:bg-white">
+        </div>
+        <!-- Filter selects -->
+        <select class="filter-select py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus:border-brand-navy transition-all bg-gray-50 text-gray-600 cursor-pointer">
+          <option>Alle Status</option>
+          <option>Neu</option>
+          <option>Aufgebaut</option>
+          <option>Im Bau</option>
+          <option>Eingelagert</option>
+        </select>
+        <select class="filter-select py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus:border-brand-navy transition-all bg-gray-50 text-gray-600 cursor-pointer">
+          <option>Alle Steinarten</option>
+          <option>Standard</option>
+          <option>Mini</option>
+          <option>Technik</option>
+        </select>
+        <select class="filter-select py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus:border-brand-navy transition-all bg-gray-50 text-gray-600 cursor-pointer">
+          <option>Alle Hersteller</option>
+          <option>LEGO</option>
+          <option>Mould King</option>
+          <option>CADA</option>
+        </select>
+        <select class="filter-select py-2 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus:border-brand-navy transition-all bg-gray-50 text-gray-600 cursor-pointer">
+          <option>Alle Kategorien</option>
+          <option>Gebäude</option>
+          <option>Fahrzeuge</option>
+          <option>Natur</option>
+        </select>
+        <!-- Filter count badge -->
+        <div class="flex items-center gap-1.5 text-xs text-gray-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          42 Sets
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Table ── -->
+    <div class="card p-0 overflow-hidden">
+      <div class="overflow-x-auto" style="max-height: calc(100vh - 420px);">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr style="background: linear-gradient(to right, #1E3A5F, #243f6a);">
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">Front</th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">Back</th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-brand-yellow transition-colors">
+                <span class="flex items-center gap-1">Name <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg></span>
+              </th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-brand-yellow transition-colors">Hersteller</th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-brand-yellow transition-colors">
+                <span class="flex items-center gap-1">Teile <svg class="w-3 h-3 text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></span>
+              </th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">Steinart</th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">Status</th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-brand-yellow transition-colors">Preis</th>
+              <th class="px-2 py-2.5 text-left text-xs font-semibold text-white/80 uppercase tracking-wide whitespace-nowrap">Kiste</th>
+              <th class="px-2 py-2.5"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+
+            <!-- Row 1 -->
+            <tr class="group transition-colors hover:bg-blue-50/60">
+              <!-- Front thumbnail placeholder (colored gradient) -->
+              <td class="px-2 py-1.5">
+                <div class="w-16 h-20 rounded-lg overflow-hidden flex-shrink-0 shadow-sm" style="background: linear-gradient(135deg, #1E3A5F, #2d6a9f);">
+                  <div class="w-full h-full flex items-end p-1">
+                    <div class="w-full h-2 rounded" style="background: #FFD700;"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-1.5">
+                <div class="w-16 h-20 rounded-lg overflow-hidden flex-shrink-0 shadow-sm" style="background: linear-gradient(135deg, #374151, #4b5563);">
+                  <div class="w-full h-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-1.5">
+                <div>
+                  <p class="font-semibold text-gray-800 text-sm">Botanischer Garten</p>
+                  <p class="text-xs text-gray-400">Nr. MK-13146</p>
+                </div>
+              </td>
+              <td class="px-2 py-1.5 text-sm text-gray-600">Mould King</td>
+              <td class="px-2 py-1.5 text-sm font-medium text-gray-700">2.512</td>
+              <td class="px-2 py-1.5">
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: #dbeafe; color: #1e40af;">Standard</span>
+              </td>
+              <td class="px-2 py-1.5">
+                <select class="text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer" style="background: #d1fae5; color: #065f46;">
+                  <option>Aufgebaut</option>
+                  <option>Neu</option>
+                  <option>Im Bau</option>
+                  <option>Eingelagert</option>
+                </select>
+              </td>
+              <td class="px-2 py-1.5 text-sm font-medium text-gray-700">129,90 €</td>
+              <td class="px-2 py-1.5">
+                <select class="text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white min-w-[90px]">
+                  <option>Kiste A1 (68%)</option>
+                </select>
+              </td>
+              <td class="px-2 py-1.5">
+                <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="OneDrive">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.5 8.999a5.003 5.003 0 00-9.401-2.393 3.501 3.501 0 00-4.065 3.87A3.5 3.5 0 005 18h12.5a3.5 3.5 0 000-7 3.501 3.501 0 00-.001-.001z"/></svg>
+                  </button>
+                  <button class="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition-all" title="Bearbeiten">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  </button>
+                  <button class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Löschen">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="group transition-colors hover:bg-blue-50/60">
+              <td class="px-2 py-1.5">
+                <div class="w-16 h-20 rounded-lg overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #7c3aed, #5b21b6);">
+                  <div class="w-full h-full flex items-end p-1">
+                    <div class="w-full h-2 rounded bg-white opacity-40"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-1.5">
+                <div class="w-16 h-20 rounded-lg overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #5b21b6, #4c1d95);">
+                  <div class="w-full h-full flex items-end p-1">
+                    <div class="w-full h-2 rounded bg-white opacity-40"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-1.5">
+                <div>
+                  <p class="font-semibold text-gray-800 text-sm">Eiffelturm Paris</p>
+                  <p class="text-xs text-gray-400">Nr. CADA-A0117</p>
+                </div>
+              </td>
+              <td class="px-2 py-1.5 text-sm text-gray-600">CADA</td>
+              <td class="px-2 py-1.5 text-sm font-medium text-gray-700">1.893</td>
+              <td class="px-2 py-1.5">
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: #dbeafe; color: #1e40af;">Standard</span>
+              </td>
+              <td class="px-2 py-1.5">
+                <select class="text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer" style="background: #dbeafe; color: #1e40af;">
+                  <option>Neu</option>
+                  <option>Aufgebaut</option>
+                  <option>Im Bau</option>
+                  <option>Eingelagert</option>
+                </select>
+              </td>
+              <td class="px-2 py-1.5 text-sm font-medium text-gray-700">87,50 €</td>
+              <td class="px-2 py-1.5">
+                <select class="text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white min-w-[90px]">
+                  <option>– Keine –</option>
+                </select>
+              </td>
+              <td class="px-2 py-1.5">
+                <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  </button>
+                  <button class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 3 – Im Bau -->
+            <tr class="group transition-colors hover:bg-blue-50/60">
+              <td class="px-2 py-1.5">
+                <div class="w-16 h-20 rounded-lg overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #065f46, #047857);">
+                  <div class="w-full h-full flex items-end p-1">
+                    <div class="w-full h-2 rounded" style="background: #d1fae5;"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-1.5">
+                <div class="w-16 h-20 rounded-lg overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #047857, #065f46);">
+                  <div class="w-full h-full flex items-end p-1">
+                    <div class="w-full h-2 rounded" style="background: #d1fae5;"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-1.5">
+                <div>
+                  <p class="font-semibold text-gray-800 text-sm">Technik Bagger</p>
+                  <p class="text-xs text-gray-400">Nr. MK-17060</p>
+                </div>
+              </td>
+              <td class="px-2 py-1.5 text-sm text-gray-600">Mould King</td>
+              <td class="px-2 py-1.5 text-sm font-medium text-gray-700">3.017</td>
+              <td class="px-2 py-1.5">
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: #f3f4f6; color: #374151;">Technik</span>
+              </td>
+              <td class="px-2 py-1.5">
+                <select class="text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer" style="background: #fef3c7; color: #92400e;">
+                  <option>Im Bau</option>
+                  <option>Neu</option>
+                  <option>Aufgebaut</option>
+                  <option>Eingelagert</option>
+                </select>
+              </td>
+              <td class="px-2 py-1.5 text-sm font-medium text-gray-700">154,99 €</td>
+              <td class="px-2 py-1.5">
+                <select class="text-xs border border-gray-200 rounded-lg px-1.5 py-1 bg-white min-w-[90px]">
+                  <option>Kiste B2 (45%)</option>
+                </select>
+              </td>
+              <td class="px-2 py-1.5">
+                <div class="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button class="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  </button>
+                  <button class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- More rows (greyed out) -->
+            <tr class="hover:bg-blue-50/60 transition-colors">
+              <td colspan="10" class="px-4 py-3 text-center text-xs text-gray-400">
+                + 39 weitere Sets (in der echten App mit Daten gefüllt)
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Footer -->
+      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-50 bg-gray-50/50">
+        <p class="text-xs text-gray-400">42 Sets angezeigt</p>
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-gray-400">Sortiert nach: Teile ↓</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

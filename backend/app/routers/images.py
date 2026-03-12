@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -168,6 +169,14 @@ async def preview_image(
     if body.rotation and body.rotation != 0:
         current_path = apply_rotation(current_path, body.rotation)
 
+    # Eckpunkte + Rotation in DB speichern, damit sie beim erneuten Bearbeiten wiederhergestellt werden
+    edit_state = json.dumps({"corners": body.corners, "rotation": body.rotation or 0})
+    if side == "frontcover":
+        brick_set.frontcover_corners = edit_state
+    else:
+        brick_set.backcover_corners = edit_state
+    db.commit()
+
     from PIL import Image as PILImage
     img = PILImage.open(current_path)
     w, h = img.size
@@ -254,13 +263,28 @@ async def redetect_corners(
     img = PILImage.open(original_path)
     w, h = img.size
 
-    suggested_corners = detect_corners(original_path)
+    # Gespeicherte Eckpunkte + Rotation bevorzugen, sonst neu erkennen
+    saved_state_json = brick_set.frontcover_corners if side == "frontcover" else brick_set.backcover_corners
+    if saved_state_json:
+        try:
+            saved = json.loads(saved_state_json)
+            return {
+                "original_path": original_path,
+                "width": w,
+                "height": h,
+                "suggested_corners": saved.get("corners"),
+                "saved_rotation": saved.get("rotation", 0),
+            }
+        except (json.JSONDecodeError, AttributeError):
+            pass
 
+    suggested_corners = detect_corners(original_path)
     return {
         "original_path": original_path,
         "width": w,
         "height": h,
         "suggested_corners": suggested_corners,
+        "saved_rotation": 0,
     }
 
 

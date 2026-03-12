@@ -29,6 +29,8 @@ def create_tables():
 def run_migrations():
     """Prüft ob neue Spalten existieren und fügt sie per ALTER TABLE hinzu."""
     _migrate_add_column("sets", "onedrive_url", "VARCHAR(1000)")
+    _migrate_add_column("sets", "frontcover_corners", "TEXT")
+    _migrate_add_column("sets", "backcover_corners", "TEXT")
 
 
 def _migrate_add_column(table: str, column: str, col_type: str):

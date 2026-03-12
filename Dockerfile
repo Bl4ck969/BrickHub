@@ -10,6 +10,14 @@ RUN npm run build
 # Stage 2: Python backend + serve frontend
 FROM python:3.12-slim
 
+LABEL maintainer="Bl4ck969"
+LABEL org.opencontainers.image.title="BrickHub"
+LABEL org.opencontainers.image.description="Klemmbausteinset-Inventar-Webapp"
+LABEL org.opencontainers.image.source="https://github.com/Bl4ck969/BrickHub"
+LABEL org.opencontainers.image.url="https://github.com/Bl4ck969/BrickHub"
+LABEL net.unraid.docker.webui="http://[IP]:[PORT:8080]/"
+LABEL net.unraid.docker.icon="https://raw.githubusercontent.com/Bl4ck969/BrickHub/main/frontend/public/logo.png"
+
 WORKDIR /app
 
 # Install system dependencies for OpenCV and rembg

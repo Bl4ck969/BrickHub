@@ -29,12 +29,25 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Setzt Standard-Security-Headers auf alle Responses."""
 
+    # CSP für Produktion: alle Ressourcen von 'self', Inline-Styles für Tailwind erlaubt,
+    # Google Fonts als einzige externe Quelle (index.css @import).
+    _CSP = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'"
+    )
+
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Content-Security-Policy"] = self._CSP
         if _is_production:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
@@ -44,6 +57,10 @@ app = FastAPI(
     title="BrickHub API",
     description="Klemmbausteinset-Inventarisierung",
     version="1.0.0",
+    # API-Dokumentation in Produktion deaktivieren (kein Angriffsflächen-Exposé)
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
 )
 
 # Security Headers

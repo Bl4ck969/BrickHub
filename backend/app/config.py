@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llava:7b"
     ollama_enabled: bool = False
-    access_token_expire_minutes: int = 480
+    access_token_expire_minutes: int = 120  # 2 Stunden; in .env mit ACCESS_TOKEN_EXPIRE_MINUTES überschreibbar
 
     class Config:
         env_file = ".env"

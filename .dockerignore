@@ -1,0 +1,35 @@
+# Secrets & Umgebungsvariablen
+.env
+backend/.env
+*.secret
+cookies.txt
+
+# Daten & Uploads (nicht im Image)
+backend/data/
+data/
+export/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+
+# IDE & Tools
+.vscode/
+.idea/
+.git/
+.github/
+.claude/
+
+# Dokumentation
+*.md
+Beispiele/
+PDFs/

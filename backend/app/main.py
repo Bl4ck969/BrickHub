@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
@@ -92,7 +93,16 @@ app.include_router(settings.router)
 # In dev: ../../frontend/dist (not present, skipped)
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
 if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+    # Statische Assets (JS, CSS, Bilder)
+    app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
+
+    # Catch-All: alle anderen Routen → index.html (React Router SPA)
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        static_file = frontend_dist / full_path
+        if static_file.exists() and static_file.is_file():
+            return FileResponse(str(static_file))
+        return FileResponse(str(frontend_dist / "index.html"))
 
 
 @app.on_event("startup")

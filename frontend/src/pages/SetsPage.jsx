@@ -32,6 +32,8 @@ const STATUS_COLORS = {
 
 const STATUSES = ['Neu', 'Aufgebaut', 'Im Bau', 'Eingelagert']
 
+const BAR_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#F97316', '#EF4444', '#6B7280']
+
 export function SetsPage() {
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
@@ -356,21 +358,26 @@ export function SetsPage() {
             const counts = {}
             sets.forEach(s => { const k = s.stone_size || 'Unbekannt'; counts[k] = (counts[k] || 0) + 1 })
             const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
-            const max = sorted[0]?.[1] || 1
+            const total = sorted.reduce((s, [, v]) => s + v, 0)
             return sorted.length === 0 ? (
               <p className="text-sm text-gray-400">–</p>
             ) : (
-              <div className="space-y-1.5">
-                {sorted.map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-brand-navy transition-all" style={{ width: `${(v / max) * 100}%` }} />
+              <>
+                <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5 gap-px">
+                  {sorted.map(([k, v], i) => (
+                    <div key={k} title={`${k}: ${v}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {sorted.map(([k, v], i) => (
+                    <div key={k} className="flex items-start gap-1.5 min-w-0">
+                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                      <span className="text-xs text-gray-600 leading-tight flex-1 break-words">{k}</span>
+                      <span className="text-xs font-bold text-brand-navy shrink-0">{v}</span>
                     </div>
-                    <span className="text-xs text-gray-500 truncate w-14">{k}</span>
-                    <span className="text-sm font-bold text-brand-navy whitespace-nowrap w-6 text-right">{v}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )
           })()}
         </div>
@@ -379,21 +386,26 @@ export function SetsPage() {
           <p className="text-xs text-gray-500 mb-2">Teile nach Steinart</p>
           {(() => {
             const sorted = Object.entries(summary.parts_by_stone_size || {}).sort((a, b) => b[1] - a[1])
-            const max = sorted[0]?.[1] || 1
+            const total = sorted.reduce((s, [, v]) => s + v, 0)
             return sorted.length === 0 ? (
               <p className="text-sm text-gray-400">–</p>
             ) : (
-              <div className="space-y-1.5">
-                {sorted.map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                      <div className="h-full rounded-full bg-brand-navy transition-all" style={{ width: `${(v / max) * 100}%` }} />
+              <>
+                <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5 gap-px">
+                  {sorted.map(([k, v], i) => (
+                    <div key={k} title={`${k}: ${v.toLocaleString('de-DE')}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {sorted.map(([k, v], i) => (
+                    <div key={k} className="flex items-start gap-1.5 min-w-0">
+                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                      <span className="text-xs text-gray-600 leading-tight flex-1 break-words">{k}</span>
+                      <span className="text-xs font-bold text-brand-navy shrink-0">{v.toLocaleString('de-DE')}</span>
                     </div>
-                    <span className="text-xs text-gray-500 truncate w-14">{k}</span>
-                    <span className="text-sm font-bold text-brand-navy whitespace-nowrap">{v.toLocaleString('de-DE')}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )
           })()}
         </div>

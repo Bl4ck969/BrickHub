@@ -20,6 +20,9 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 ### Set-Übersicht mit Summary-Dashboard
 ![Sets](docs/screenshots/sets-overview.png)
 
+### Vollständiges Backup exportieren / importieren
+![Backup](docs/screenshots/backup.png)
+
 ### Set bearbeiten mit Bildverarbeitung
 ![Set bearbeiten](docs/screenshots/set-edit.png)
 
@@ -41,12 +44,12 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ### Set-Verwaltung
 
-Die Hauptansicht zeigt alle Klemmbausteinsets in einer sortierbaren Tabelle mit Front- und Backcover-Thumbnails. Über der Tabelle bieten Summary-Karten einen schnellen Überblick über den Gesamtbestand: Anzahl Sets, Gesamtteile, Gesamtwert sowie eine Aufschlüsselung nach Steinart.
+Die Hauptansicht zeigt alle Klemmbausteinsets in einer sortierbaren Tabelle mit Front- und Backcover-Thumbnails. Über der Tabelle bieten fünf Summary-Karten einen schnellen Überblick: Anzahl Sets, Gesamtteile, Gesamtwert sowie zwei Steinart-Statistiken mit farbigem gestapeltem Balken und 2-spaltiger Legende (Sets nach Steinart / Teile nach Steinart).
 
 - **CRUD-Operationen**: Sets anlegen, bearbeiten, löschen mit allen relevanten Daten (Name, Hersteller, Artikelnummer, Teilezahl, Steingröße, Kategorie, Unterkategorie, Preis, Status, Anmerkungen)
 - **Inline-Bearbeitung**: Status, Tütenanzahl, Plattenanzahl, Kistenzuordnung und Anmerkungen lassen sich direkt in der Tabellenansicht ändern – ohne die Bearbeitungsseite öffnen zu müssen
 - **Sortierung & Filterung**: Alle Spalten sind sortierbar (TanStack Table). Filterbar nach Status, Steinart, Hersteller, Kategorie und Unterkategorie. Volltextsuche über Name, Hersteller und Kategorie
-- **Import/Export**: Sets als JSON exportieren und importieren, PDF-Setliste generieren
+- **Import/Export**: Sets als JSON exportieren und importieren (max. 1.000 Sets pro Import), PDF-Setliste generieren
 
 ### Tüten- und Platten-System
 
@@ -133,6 +136,14 @@ Sets können mit OneDrive-Ordnern verknüpft werden, um z.B. Bauanleitungen, Fot
 - **Set-Tabelle**: Ein OneDrive-Icon in der Aktionsspalte öffnet den verknüpften Ordner mit einem Klick
 - **PDF-Export**: Sets mit OneDrive-Verknüpfung werden mit einem klickbaren Cloud-Icon in der Setliste markiert
 
+### Backup & Restore
+
+Vollständiges Daten-Backup als ZIP-Archiv – schützt vor Datenverlust bei Festplattenausfall oder Container-Neuinstallation.
+
+- **Backup exportieren** (Admin): Ein Klick erstellt ein ZIP-Archiv mit der SQLite-Datenbank (`database.db`) und allen hochgeladenen Bildern (`uploads/`). Download direkt im Browser.
+- **Backup importieren** (Admin): ZIP-Datei hochladen → Datenbank und Bilder werden vollständig wiederhergestellt. Bestehende Daten werden überschrieben.
+- **Endpoint**: `GET /api/backup/export` / `POST /api/backup/import`
+
 ### Optionale KI-Integration
 
 - **Ollama-Anbindung** (optional): Automatische Set-Erkennung aus Bildern via LLaVA-Modell
@@ -165,7 +176,7 @@ BrickHub/
 │   │   ├── database.py          # SQLAlchemy Engine + Session
 │   │   ├── models/              # SQLAlchemy-Modelle (User, BrickSet, Box, AppSetting)
 │   │   ├── schemas/             # Pydantic-Schemas (Request/Response)
-│   │   ├── routers/             # API-Endpoints (auth, users, sets, boxes, images, labels, settings)
+│   │   ├── routers/             # API-Endpoints (auth, users, sets, boxes, images, labels, settings, backup)
 │   │   ├── services/            # Business-Logik (image_service, pdf_service, ollama_service)
 │   │   └── utils/               # Auth-Utilities (JWT, Dependencies)
 │   ├── data/                    # SQLite-DB + Uploads (nicht im Repo)
@@ -340,6 +351,7 @@ Alle API-Endpoints liegen unter `/api/`. Vollständige interaktive Dokumentation
 | **Images** | `POST /api/images/upload`, `/transform`, `/finalize`, `/redetect` | Bildverarbeitung-Pipeline |
 | **Labels** | `POST /api/labels/set-list`, `/set-labels` | PDF-Generierung |
 | **Settings** | `GET /api/settings/`, `PUT /api/settings/{key}` | App-Einstellungen (OneDrive-Basis-URL etc.) |
+| **Backup** | `GET /api/backup/export`, `POST /api/backup/import` | ZIP-Backup exportieren / importieren (nur Admin) |
 
 ---
 

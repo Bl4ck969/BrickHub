@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     ollama_model: str = "llava:7b"
     ollama_enabled: bool = False
     access_token_expire_minutes: int = 120  # 2 Stunden; in .env mit ACCESS_TOKEN_EXPIRE_MINUTES überschreibbar
+    secure_cookies: bool = False  # True nur bei HTTPS (Reverse Proxy). Mit SECURE_COOKIES=true aktivieren.
 
     class Config:
         env_file = ".env"

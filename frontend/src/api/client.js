@@ -99,6 +99,14 @@ export const settingsApi = {
   set: (key, value) => client.put(`/api/settings/${encodeURIComponent(key)}`, { value }),
 }
 
+// Backup API
+export const backupApi = {
+  exportZip: () => client.get('/api/backup/export', { responseType: 'blob' }),
+  importZip: (form, mode) => client.post(`/api/backup/import?mode=${mode}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+}
+
 // Labels API
 export const labelsApi = {
   generate: (setIds) => client.post('/api/labels/generate', { set_ids: setIds }, { responseType: 'blob' }),

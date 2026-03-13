@@ -19,6 +19,7 @@ const LabelsPage = lazy(() => import('./pages/LabelsPage').then(m => ({ default:
 const NewSetsPage = lazy(() => import('./pages/NewSetsPage').then(m => ({ default: m.NewSetsPage })))
 const BoxInventoryPage = lazy(() => import('./pages/BoxInventoryPage').then(m => ({ default: m.BoxInventoryPage })))
 const UsersPage = lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })))
+const BackupPage = lazy(() => import('./pages/BackupPage').then(m => ({ default: m.BackupPage })))
 
 function LoadingSpinner() {
   return (
@@ -113,6 +114,11 @@ export default function App() {
           <Route path="/users" element={
             <ProtectedRoute requireAdmin>
               <Layout><UsersPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/backup" element={
+            <ProtectedRoute requireAdmin>
+              <Layout><BackupPage /></Layout>
             </ProtectedRoute>
           } />
 

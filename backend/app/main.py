@@ -7,7 +7,7 @@ from pathlib import Path
 
 from app.config import _is_production
 from app.database import create_tables, run_migrations
-from app.routers import auth, users, sets, boxes, images, labels, settings
+from app.routers import auth, users, sets, boxes, images, labels, settings, backup
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -87,6 +87,7 @@ app.include_router(boxes.router)
 app.include_router(images.router)
 app.include_router(labels.router)
 app.include_router(settings.router)
+app.include_router(backup.router)
 
 # Serve frontend build in production
 # In Docker: /app/app/main.py → /app/ → /app/frontend/dist

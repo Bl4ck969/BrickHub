@@ -156,10 +156,13 @@ def save_original(
     # EXIF-Rotation anwenden (Browser dreht automatisch, PIL/OpenCV nicht)
     image = Image.open(io.BytesIO(file_bytes))
     image = ImageOps.exif_transpose(image)
+    # PNG mit Alpha-Kanal (RGBA/LA/P) → RGB konvertieren, da JPEG kein Alpha unterstützt
+    if image.mode in ("RGBA", "LA", "P"):
+        image = image.convert("RGB")
     w, h = image.size
 
     # Transponiertes Bild speichern (nicht die Roh-Bytes!)
-    image.save(str(original_path), quality=95)
+    image.save(str(original_path), "JPEG", quality=95)
 
     return {
         "original_path": str(original_path).replace("\\", "/"),

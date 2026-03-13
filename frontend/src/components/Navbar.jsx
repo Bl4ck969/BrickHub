@@ -10,6 +10,7 @@ import {
   UsersIcon,
   ArrowRightOnRectangleIcon,
   KeyIcon,
+  ArchiveBoxArrowDownIcon,
 } from '@heroicons/react/24/outline'
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/new-sets', label: 'Neue Sets', icon: SparklesIcon, adminOnly: false },
   { to: '/box-inventory', label: 'Kisteninventur', icon: ClipboardDocumentListIcon, adminOnly: false },
   { to: '/users', label: 'Benutzer', icon: UsersIcon, adminOnly: true },
+  { to: '/backup', label: 'Backup', icon: ArchiveBoxArrowDownIcon, adminOnly: true },
 ]
 
 export function Navbar() {

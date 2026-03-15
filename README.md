@@ -34,7 +34,7 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 - **Privatprojekt**: BrickHub ist ein Hobbyprojekt, das für den persönlichen Eigenbedarf entwickelt wurde. Es wird ohne Garantie auf Vollständigkeit, Korrektheit, Stabilität oder Sicherheit bereitgestellt.
 - **Nur für den privaten Heimnetz-Einsatz**: Die Anwendung ist **nicht** für den Betrieb im öffentlichen Internet gedacht und ausgelegt. Es fehlen dafür notwendige Härtungen (z.B. Rate-Limiting für alle Endpunkte, professionelles Monitoring, regelmäßige Sicherheitsaudits). Betreibe BrickHub ausschließlich in deinem lokalen Heimnetz oder hinter einem gesicherten privaten VPN.
 - **Keine Haftung**: Der Entwickler übernimmt keinerlei Haftung für Datenverlust, Sicherheitsvorfälle oder sonstige Schäden, die durch die Nutzung dieser Software entstehen. Die Verwendung erfolgt auf eigene Gefahr.
-- **Kein Support, keine Featurewünsche**: BrickHub wird nur um Funktionen erweitert, die der Entwickler selbst für seinen eigenen Anwendungsfall benötigt. Issues für Featurewünsche werden ohne Begründung geschlossen. Bugreports sind willkommen.
+- **Issues willkommen, aber ohne Garantie**: Bugreports und Featurewünsche können gerne als Issue eingereicht werden. Da es sich um ein Privatprojekt handelt, gibt es jedoch keine Garantie auf Umsetzung – neue Funktionen werden nur eingebaut, wenn sie zur eigenen Nutzung und Vorstellung des Projekts passen.
 - **KI-generierter Code**: Der Großteil des Codes wurde mit Hilfe von [Claude Code](https://claude.ai/code) (Anthropic) erstellt.
 
 ---

@@ -4,7 +4,7 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
@@ -17,10 +17,10 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 ### Login
 ![Login](docs/screenshots/login.png)
 
-### Set-Übersicht mit Summary-Dashboard
+### Set-Übersicht mit Summary-Dashboard und Statistik-Icons
 ![Sets](docs/screenshots/sets-overview.png)
 
-### Vollständiges Backup exportieren / importieren
+### Backup exportieren / importieren mit Fortschrittsanzeige
 ![Backup](docs/screenshots/backup.png)
 
 ### Set bearbeiten mit Bildverarbeitung
@@ -44,12 +44,13 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ### Set-Verwaltung
 
-Die Hauptansicht zeigt alle Klemmbausteinsets in einer sortierbaren Tabelle mit Front- und Backcover-Thumbnails. Über der Tabelle bieten fünf Summary-Karten einen schnellen Überblick: Anzahl Sets, Gesamtteile, Gesamtwert sowie zwei Steinart-Statistiken mit farbigem gestapeltem Balken und 2-spaltiger Legende (Sets nach Steinart / Teile nach Steinart).
+Die Hauptansicht zeigt alle Klemmbausteinsets in einer sortierbaren Tabelle mit Front- und Backcover-Thumbnails. Über der Tabelle bieten fünf Summary-Karten mit Icons einen schnellen Überblick: Anzahl Sets, Gesamtteile, Gesamtwert sowie zwei Steinart-Statistiken mit farbigem gestapeltem Balken und 2-spaltiger Legende (Sets nach Steinart / Teile nach Steinart). Gleiche Steinarten haben in beiden Karten immer dieselbe Farbe. Die Statistikansicht lässt sich per Klick ein- und ausblenden.
 
 - **CRUD-Operationen**: Sets anlegen, bearbeiten, löschen mit allen relevanten Daten (Name, Hersteller, Artikelnummer, Teilezahl, Steingröße, Kategorie, Unterkategorie, Preis, Status, Anmerkungen)
 - **Inline-Bearbeitung**: Status, Tütenanzahl, Plattenanzahl, Kistenzuordnung und Anmerkungen lassen sich direkt in der Tabellenansicht ändern – ohne die Bearbeitungsseite öffnen zu müssen
 - **Sortierung & Filterung**: Alle Spalten sind sortierbar (TanStack Table). Filterbar nach Status, Steinart, Hersteller, Kategorie und Unterkategorie. Volltextsuche über Name, Hersteller und Kategorie
 - **Import/Export**: Sets als JSON exportieren und importieren (max. 1.000 Sets pro Import), PDF-Setliste generieren
+- **Toast-Benachrichtigungen**: Alle Aktionen (Speichern, Löschen, Fehler) werden als farbige Toast-Meldungen angezeigt
 
 ### Tüten- und Platten-System
 
@@ -119,6 +120,15 @@ Jedes Set kann ein Front- und Backcover-Bild haben. Der Upload-Prozess beinhalte
 
 Bereits verarbeitete Bilder können jederzeit erneut bearbeitet werden, ohne das Original neu hochladen zu müssen.
 
+### Backup & Restore
+
+Vollständiges Daten-Backup als ZIP-Archiv – schützt vor Datenverlust bei Festplattenausfall oder Container-Neuinstallation.
+
+- **Backup exportieren** (Admin): Ein Klick erstellt ein ZIP-Archiv mit der SQLite-Datenbank (`database.db`) und allen hochgeladenen Bildern (`uploads/`). Download direkt im Browser mit Echtzeit-Fortschrittsanzeige (SSE).
+- **Backup importieren** (Admin): ZIP-Datei hochladen → Upload-Fortschritt + Verarbeitungs-Phasen werden live angezeigt (validating → extracting → importing). Datenbank und Bilder werden vollständig wiederhergestellt. Bestehende Daten werden überschrieben.
+- **Kein Größenlimit**: Auch sehr große Archive (viele hochauflösende Bilder) können problemlos importiert werden.
+- **Sicherheit**: ZIP-Slip-Schutz, JSON-Validierung, nur Admin-Zugriff.
+
 ### Benutzerverwaltung & Authentifizierung
 
 - **Rollenbasiert**: Admin- und Leser-Rollen. Leser können Sets ansehen und durchsuchen. Admins können Sets anlegen/bearbeiten/löschen, Kisten verwalten und Benutzer administrieren.
@@ -136,14 +146,6 @@ Sets können mit OneDrive-Ordnern verknüpft werden, um z.B. Bauanleitungen, Fot
 - **Set-Tabelle**: Ein OneDrive-Icon in der Aktionsspalte öffnet den verknüpften Ordner mit einem Klick
 - **PDF-Export**: Sets mit OneDrive-Verknüpfung werden mit einem klickbaren Cloud-Icon in der Setliste markiert
 
-### Backup & Restore
-
-Vollständiges Daten-Backup als ZIP-Archiv – schützt vor Datenverlust bei Festplattenausfall oder Container-Neuinstallation.
-
-- **Backup exportieren** (Admin): Ein Klick erstellt ein ZIP-Archiv mit der SQLite-Datenbank (`database.db`) und allen hochgeladenen Bildern (`uploads/`). Download direkt im Browser.
-- **Backup importieren** (Admin): ZIP-Datei hochladen → Datenbank und Bilder werden vollständig wiederhergestellt. Bestehende Daten werden überschrieben.
-- **Endpoint**: `GET /api/backup/export` / `POST /api/backup/import`
-
 ### Optionale KI-Integration
 
 - **Ollama-Anbindung** (optional): Automatische Set-Erkennung aus Bildern via LLaVA-Modell
@@ -156,7 +158,7 @@ Vollständiges Daten-Backup als ZIP-Archiv – schützt vor Datenverlust bei Fes
 | Komponente | Technologie |
 |---|---|
 | **Backend** | Python 3.12+ · FastAPI · SQLAlchemy 2.0 · SQLite |
-| **Frontend** | React 19 · Vite 7 · Tailwind CSS 3 · TanStack Table v8 |
+| **Frontend** | React 18 · Vite 7 · Tailwind CSS 3 · TanStack Table v8 |
 | **Auth** | bcrypt · python-jose (JWT/HS256) · HTTP-only Cookies |
 | **Bildverarbeitung** | OpenCV · Pillow · rembg (u2net) |
 | **PDF** | ReportLab (Canvas API + Platypus) |
@@ -189,12 +191,14 @@ BrickHub/
 │   │   ├── App.jsx              # Router-Setup (React Router v6, Lazy Loading)
 │   │   ├── api/client.js        # Axios API-Client (authApi, setsApi, boxesApi, imagesApi, labelsApi, settingsApi)
 │   │   ├── components/          # Wiederverwendbare Komponenten (Navbar, Modal, ImageEditor, OneDriveIcon, ProtectedRoute)
-│   │   ├── hooks/useAuth.jsx    # Auth-Context + Hook
-│   │   └── pages/               # Seitenkomponenten (Sets, AddEditSet, Storage, Labels, BoxInventory, Users, ...)
+│   │   ├── hooks/
+│   │   │   ├── useAuth.jsx      # Auth-Context + Hook
+│   │   │   └── useToast.jsx     # Toast-Benachrichtigungen (success/error/warning/info)
+│   │   └── pages/               # Seitenkomponenten (Sets, AddEditSet, Storage, Labels, BoxInventory, Users, Backup, ...)
 │   ├── package.json
 │   ├── vite.config.js           # Dev-Proxy (/api → localhost:8000)
 │   └── tailwind.config.js
-├── Dockerfile                   # Multi-Stage Build (Node + Python)
+├── Dockerfile                   # Multi-Stage Build (Node + Python), non-root User
 ├── docker-compose.yml           # Produktions-Deployment (Port 8080)
 ├── Logo.png                     # BrickHub-Logo
 ├── start-dev.bat                # Windows-Startskript für Entwicklung
@@ -257,10 +261,11 @@ Die Datei `backend/.env` enthält die Konfiguration:
 | `DATABASE_URL` | SQLite-Datenbankpfad | `sqlite:///./data/database.db` |
 | `UPLOAD_DIR` | Verzeichnis für hochgeladene Bilder | `./data/uploads` |
 | `EXPORT_DIR` | Verzeichnis für PDF-Exporte | `./export` |
+| `SECURE_COOKIES` | Secure-Flag für JWT-Cookie (für HTTPS/Reverse-Proxy) | `false` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT-Token-Gültigkeit in Minuten | `480` |
 | `OLLAMA_URL` | URL zum Ollama-Server (optional) | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Ollama-Modell für Bilderkennung | `llava:7b` |
 | `OLLAMA_ENABLED` | KI-Bilderkennung aktivieren | `false` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT-Token-Gültigkeit in Minuten | `480` |
 
 ---
 
@@ -323,18 +328,22 @@ Die Anwendung ist dann unter **http://localhost:8080** erreichbar.
 ### Docker-Details
 
 - **Multi-Stage Build**: Node.js baut das Frontend, Python bedient alles
+- **Non-root User**: Container läuft als `brickhub` (UID 1000) – kein Root-Zugriff
 - **Persistente Daten**: `backend/data/` (DB + Uploads) und `backend/export/` (PDFs) werden als Volumes gemountet
 - **Health Check**: `GET /api/health` alle 30 Sekunden
 - **Memory Limit**: 4 GB (wegen rembg/onnxruntime)
+- **RAM-Optimierung**: NullPool (SQLite-Verbindungen nach Request schließen), glibc-Malloc-Tuning, gc.collect() nach Bildverarbeitung → Idle ~150–200 MB auf Unraid
 - **Restart Policy**: `unless-stopped`
 
 ### Unraid
 
 Für Unraid kann der Container über die Docker-Oberfläche oder ein Template eingerichtet werden:
-- **Port**: 8080 → 8080
+- **Image**: `ghcr.io/bl4ck969/brickhub:latest`
+- **Port**: Host `8049` → Container `8080` (oder beliebiger freier Port)
 - **Pfad für Daten**: `/app/data` → gewünschter Speicherort auf dem Host
 - **Pfad für Exporte**: `/app/export` → gewünschter Speicherort auf dem Host
 - **Umgebungsvariable**: `SECRET_KEY` setzen
+- **Umgebungsvariable**: `SECURE_COOKIES=true` setzen, wenn hinter einem Reverse-Proxy mit HTTPS
 
 ---
 
@@ -351,7 +360,8 @@ Alle API-Endpoints liegen unter `/api/`. Vollständige interaktive Dokumentation
 | **Images** | `POST /api/images/upload`, `/transform`, `/finalize`, `/redetect` | Bildverarbeitung-Pipeline |
 | **Labels** | `POST /api/labels/set-list`, `/set-labels` | PDF-Generierung |
 | **Settings** | `GET /api/settings/`, `PUT /api/settings/{key}` | App-Einstellungen (OneDrive-Basis-URL etc.) |
-| **Backup** | `GET /api/backup/export`, `POST /api/backup/import` | ZIP-Backup exportieren / importieren (nur Admin) |
+| **Backup** | `POST /api/backup/export/start`, `GET /api/backup/export/progress/{id}`, `GET /api/backup/export/download/{id}` | Backup exportieren (SSE-Fortschritt, nur Admin) |
+| **Restore** | `POST /api/backup/import/start`, `GET /api/backup/import/progress/{id}` | Backup importieren (SSE-Fortschritt, nur Admin) |
 
 ---
 

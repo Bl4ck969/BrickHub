@@ -14,7 +14,7 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ## Worum geht es?
 
-**Klemmbausteine** Wer viele Sets sammelt, kennt das Problem: Welche Sets habe ich? Wo liegen die eingelagerten Sets? Welche Kiste enthält welche Sets? Aus wie viele Tüten und Platten besteht das Set?
+Es geht rund um das Thema **Klemmbausteine** und dessen Inventarisierung. Wer viele Sets sammelt, kennt das Problem: Welche Sets habe ich? Wo liegen die eingelagerten Sets? Welche Kiste enthält welche Sets? Aus wie viele Tüten und Platten besteht das Set?
 
 **BrickHub** löst genau dieses Problem. Es ist eine selbst gehostete Inventar-Webanwendung, mit der du:
 

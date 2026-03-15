@@ -112,9 +112,9 @@ export function BoxInventoryPage() {
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-navy" /></div>
       ) : (
         <div className="card p-0 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
             <table className="w-full text-sm">
-              <thead className="bg-brand-navy">
+              <thead className="bg-brand-navy sticky top-0 z-30">
                 <tr>
                   <th className={thClass} onClick={() => handleSort('name')}>Name <SortIcon col="name"/></th>
                   <th className={thClass} onClick={() => handleSort('manufacturer')}>Hersteller <SortIcon col="manufacturer"/></th>

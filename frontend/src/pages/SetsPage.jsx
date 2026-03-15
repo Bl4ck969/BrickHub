@@ -17,6 +17,7 @@ import {
   DocumentArrowDownIcon,
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline'
 import { setsApi, labelsApi, imagesApi, boxesApi } from '../api/client'
 import { OneDriveIcon } from '../components/OneDriveIcon'
@@ -48,6 +49,7 @@ export function SetsPage() {
   const [importLoading, setImportLoading] = useState(false)
   const [boxes, setBoxes] = useState([])
   const [distinctValues, setDistinctValues] = useState({ manufacturers: [], categories: [], subcategories: [] })
+  const [showStats, setShowStats] = useState(true)
 
   useEffect(() => {
     boxesApi.list().then(res => setBoxes(res.data)).catch(err => { if (import.meta.env.DEV) console.warn('Boxes laden fehlgeschlagen', err) })
@@ -321,24 +323,29 @@ export function SetsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-brand-navy">Sets</h1>
-        {isAdmin && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={handleExportJson} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
-              <ArrowUpTrayIcon className="w-4 h-4" /> JSON Export
-            </button>
-            <label className="btn-secondary flex items-center gap-1.5 text-sm py-1.5 cursor-pointer">
-              <ArrowDownTrayIcon className="w-4 h-4" /> {importLoading ? 'Importiere...' : 'JSON Import'}
-              <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-            </label>
-            <button onClick={handleExportPdf} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
-              <DocumentArrowDownIcon className="w-4 h-4" /> PDF Export
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => setShowStats(s => !s)} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
+            <ChartBarIcon className="w-4 h-4" /> Statistik {showStats ? '▲' : '▼'}
+          </button>
+          {isAdmin && (
+            <>
+              <button onClick={handleExportJson} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
+                <ArrowUpTrayIcon className="w-4 h-4" /> JSON Export
+              </button>
+              <label className="btn-secondary flex items-center gap-1.5 text-sm py-1.5 cursor-pointer">
+                <ArrowDownTrayIcon className="w-4 h-4" /> {importLoading ? 'Importiere...' : 'JSON Import'}
+                <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+              </label>
+              <button onClick={handleExportPdf} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
+                <DocumentArrowDownIcon className="w-4 h-4" /> PDF Export
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {showStats && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="card py-3">
           <p className="text-xs text-gray-500">Gesamt Sets</p>
           <p className="text-2xl font-bold text-brand-navy">{summary.total_count}</p>
@@ -409,7 +416,7 @@ export function SetsPage() {
             )
           })()}
         </div>
-      </div>
+      </div>}
 
       {/* Search & Filters */}
       <div className="card py-4 flex flex-wrap gap-3 items-center">
@@ -447,9 +454,9 @@ export function SetsPage() {
 
       {/* Table */}
       <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: showStats ? 'calc(100vh - 22rem)' : 'calc(100vh - 13rem)' }}>
           <table className="w-full">
-            <thead className="bg-brand-navy">
+            <thead className="bg-brand-navy sticky top-0 z-30">
               {table.getHeaderGroups().map(hg => (
                 <tr key={hg.id}>
                   {hg.headers.map(header => (

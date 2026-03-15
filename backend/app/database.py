@@ -1,11 +1,24 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.pool import NullPool
 from app.config import settings
 
 engine = create_engine(
     settings.database_url,
     connect_args={"check_same_thread": False},
+    poolclass=NullPool,
 )
+
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragmas(dbapi_conn, _):
+    """Reduziert SQLite-Speicherverbrauch durch Cache-Limitierung."""
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode = WAL")     # Bessere Concurrency
+    cursor.execute("PRAGMA cache_size = -8192")     # Max 8 MB Page-Cache (statt unbegrenzt)
+    cursor.execute("PRAGMA temp_store = FILE")      # Temp-Tabellen auf Disk statt RAM
+    cursor.execute("PRAGMA mmap_size = 0")          # Kein Memory-Mapped I/O
+    cursor.close()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

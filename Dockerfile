@@ -40,12 +40,22 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # Create necessary directories
 RUN mkdir -p data/uploads export
 
+# Non-root user für Security
+RUN useradd -m -u 1000 brickhub && chown -R brickhub:brickhub /app
+USER brickhub
+
 # Environment defaults (override via docker-compose or .env)
 ENV DOCKER_CONTAINER=1
 ENV DATABASE_URL=sqlite:///./data/database.db
 ENV UPLOAD_DIR=./data/uploads
 ENV EXPORT_DIR=./export
 ENV ACCESS_TOKEN_EXPIRE_MINUTES=480
+
+# glibc-Malloc-Tuning: gibt freigegebenen Speicher aggressiver ans OS zurück,
+# damit Docker/Unraid einen realistischen RAM-Verbrauch anzeigt.
+ENV MALLOC_MMAP_THRESHOLD_=67108864
+ENV MALLOC_TRIM_THRESHOLD_=67108864
+ENV MALLOC_TOP_PAD_=0
 
 EXPOSE 8080
 

@@ -5,9 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
 
-from app.config import _is_production
+from app.config import _is_production, settings
 from app.database import create_tables, run_migrations
-from app.routers import auth, users, sets, boxes, images, labels, settings, backup
+from app.routers import auth, users, sets, boxes, images, labels, settings as settings_router, backup
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -44,12 +44,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
+        response.headers["server"] = "BrickHub"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Content-Security-Policy"] = self._CSP
-        if _is_production:
+        if settings.secure_cookies:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
@@ -86,7 +87,7 @@ app.include_router(sets.router)
 app.include_router(boxes.router)
 app.include_router(images.router)
 app.include_router(labels.router)
-app.include_router(settings.router)
+app.include_router(settings_router.router)
 app.include_router(backup.router)
 
 # Serve frontend build in production

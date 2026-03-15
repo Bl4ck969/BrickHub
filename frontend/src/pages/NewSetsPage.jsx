@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { setsApi, imagesApi } from '../api/client'
+import { useToast } from '../hooks/useToast'
 import { SparklesIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { Modal } from '../components/Modal'
 import { useReactTable, getCoreRowModel, getSortedRowModel, flexRender, createColumnHelper } from '@tanstack/react-table'
@@ -13,6 +14,7 @@ export function NewSetsPage() {
   const [randomSet, setRandomSet] = useState(null)
   const [randomModal, setRandomModal] = useState(false)
   const [starting, setStarting] = useState(false)
+  const toast = useToast()
 
   const fetchSets = async () => {
     setLoading(true)
@@ -29,7 +31,7 @@ export function NewSetsPage() {
   useEffect(() => { fetchSets() }, [search])
 
   const pickRandom = () => {
-    if (sets.length === 0) { alert('Keine neuen Sets vorhanden'); return }
+    if (sets.length === 0) { toast('Keine neuen Sets vorhanden', 'info'); return }
     const idx = Math.floor(Math.random() * sets.length)
     setRandomSet(sets[idx])
     setRandomModal(true)
@@ -43,7 +45,7 @@ export function NewSetsPage() {
       setRandomModal(false)
       fetchSets()
     } catch {
-      alert('Fehler beim Statusändern')
+      toast('Fehler beim Statusändern', 'error')
     } finally {
       setStarting(false)
     }

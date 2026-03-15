@@ -101,10 +101,12 @@ export const settingsApi = {
 
 // Backup API
 export const backupApi = {
-  exportZip: () => client.get('/api/backup/export', { responseType: 'blob' }),
-  importZip: (form, mode) => client.post(`/api/backup/import?mode=${mode}`, form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  startExport: () => client.post('/api/backup/export/start'),
+  startImport: (form, mode, onUploadProgress) => client.post(
+    `/api/backup/import/start?mode=${mode}`,
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress },
+  ),
 }
 
 // Labels API

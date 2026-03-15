@@ -9,6 +9,7 @@ Semi-automatischer 2-Phasen-Workflow:
 Phase 1: Upload → Auto-Corner-Detection → Manuelle Ecken-Korrektur → Perspektivkorrektur + Rotation → Preview
 Phase 2: rembg + Farbnormalisierung + Skalierung + Thumbnail → Finales Bild
 """
+import gc
 import io
 import logging
 import re
@@ -401,10 +402,13 @@ def finalize_image(
     def rel(p: Path) -> str:
         return str(p).replace("\\", "/")
 
-    return {
+    result = {
         "edited": rel(edited_path),
         "thumbnail": rel(thumb_path),
     }
+    del image, edited, thumb
+    gc.collect()
+    return result
 
 
 def process_image(
@@ -447,8 +451,11 @@ def process_image(
     def rel(p: Path) -> str:
         return str(p).replace("\\", "/")
 
-    return {
+    result = {
         "original":  rel(original_path),
         "edited":    rel(edited_path),
         "thumbnail": rel(thumb_path),
     }
+    del image, edited, thumb
+    gc.collect()
+    return result

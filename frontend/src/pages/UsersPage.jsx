@@ -3,6 +3,7 @@ import { usersApi } from '../api/client'
 import { useAuth } from '../hooks/useAuth'
 import { PlusIcon, TrashIcon, KeyIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
 import { Modal, ConfirmModal } from '../components/Modal'
+import { useToast } from '../hooks/useToast'
 
 const EMPTY_USER = { username: '', initial_password: '', role: 'user' }
 
@@ -17,6 +18,7 @@ export function UsersPage() {
   const [newInitialPw, setNewInitialPw] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const toast = useToast()
 
   const fetch = async () => {
     setLoading(true)
@@ -47,24 +49,24 @@ export function UsersPage() {
       await usersApi.updateRole(user.id, { role: user.role === 'admin' ? 'user' : 'admin' })
       fetch()
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler')
+      toast(err.response?.data?.detail || 'Fehler', 'error')
     }
   }
 
   const handleDelete = async (id) => {
     try { await usersApi.delete(id); fetch() }
-    catch (err) { alert(err.response?.data?.detail || 'Fehler') }
+    catch (err) { toast(err.response?.data?.detail || 'Fehler', 'error') }
   }
 
   const handleResetPassword = async () => {
-    if (!newInitialPw) { alert('Passwort eingeben'); return }
+    if (!newInitialPw) { toast('Passwort eingeben', 'warning'); return }
     try {
       await usersApi.resetPassword(resetId, { new_password: newInitialPw })
       setResetId(null)
       setNewInitialPw('')
-      alert('Initialpasswort gesetzt. Benutzer muss es bei nächster Anmeldung ändern.')
+      toast('Initialpasswort gesetzt. Benutzer muss es bei nächster Anmeldung ändern.', 'success')
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler')
+      toast(err.response?.data?.detail || 'Fehler', 'error')
     }
   }
 

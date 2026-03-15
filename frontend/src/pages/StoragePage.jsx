@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { boxesApi } from '../api/client'
+import { useToast } from '../hooks/useToast'
 import { PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { Modal, ConfirmModal } from '../components/Modal'
 
@@ -16,6 +17,7 @@ export function StoragePage() {
   const [deleteId, setDeleteId] = useState(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const toast = useToast()
 
   const fetch = async () => {
     setLoading(true)
@@ -58,7 +60,7 @@ export function StoragePage() {
 
   const handleDelete = async (id) => {
     try { await boxesApi.delete(id); fetch() }
-    catch (err) { alert(err.response?.data?.detail || 'Fehler') }
+    catch (err) { toast(err.response?.data?.detail || 'Fehler', 'error') }
   }
 
   const toggleStoneType = (type) => {

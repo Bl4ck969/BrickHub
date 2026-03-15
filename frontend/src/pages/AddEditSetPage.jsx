@@ -4,6 +4,7 @@ import { setsApi, boxesApi, imagesApi, settingsApi } from '../api/client'
 import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import { OneDriveIcon } from '../components/OneDriveIcon'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../hooks/useToast'
 import { ImageEditor } from '../components/ImageEditor'
 
 const STONE_SIZES = ['Standard', 'Standard, beleuchtet', 'Standard, Technik', 'Mini', 'Diamond', 'Sonder-Steine']
@@ -21,6 +22,7 @@ export function AddEditSetPage() {
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
   const isEdit = !!id
+  const toast = useToast()
 
   const [form, setForm] = useState(EMPTY_FORM)
   const [suggestions, setSuggestions] = useState({ manufacturers: [], categories: [], subcategories: [] })
@@ -95,7 +97,7 @@ export function AddEditSetPage() {
       if (!isEdit) {
         navigate(`/sets/${res.data.id}/edit`, { replace: true })
       }
-      alert(isEdit ? 'Set gespeichert' : 'Set angelegt – jetzt Bilder hochladen')
+      toast(isEdit ? 'Set gespeichert' : 'Set angelegt – jetzt Bilder hochladen', 'success')
     } catch (err) {
       setError(err.response?.data?.detail || 'Fehler beim Speichern')
     } finally {
@@ -105,14 +107,15 @@ export function AddEditSetPage() {
 
   const handleOpenEditor = (side) => {
     if (!savedSetId) {
-      alert('Bitte erst Set speichern, dann Bilder hochladen')
+      toast('Bitte erst Set speichern, dann Bilder hochladen', 'warning')
       return
     }
     setEditorOpen(side)
   }
 
-  const handleEditorFinalized = (side, thumbnailPath) => {
+  const handleEditorFinalized = (side, thumbnailPath, origPath) => {
     setImagePreviews(p => ({ ...p, [side]: imagesApi.fileUrl(thumbnailPath) + '&t=' + Date.now() }))
+    if (origPath) setOriginalPaths(p => ({ ...p, [side]: origPath }))
   }
 
   const field = (name) => ({
@@ -269,7 +272,7 @@ export function AddEditSetPage() {
                       await settingsApi.set('onedrive_base_url', baseUrlInput.trim())
                       setOneDriveBaseUrl(baseUrlInput.trim())
                       setEditingBaseUrl(false)
-                    } catch { alert('Fehler beim Speichern') }
+                    } catch { toast('Fehler beim Speichern', 'error') }
                   }}
                 >
                   Speichern
@@ -304,11 +307,27 @@ export function AddEditSetPage() {
                   type="button"
                   className="p-2 text-gray-500 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
                   title="Ordnernamen kopieren"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${form.manufacturer} - ${form.manufacturer_number} - ${form.name}`)
-                    setCopied(true)
-                    if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
-                    copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
+                  onClick={async () => {
+                    const text = `${form.manufacturer} - ${form.manufacturer_number} - ${form.name}`
+                    let success = false
+                    if (navigator.clipboard) {
+                      try { await navigator.clipboard.writeText(text); success = true } catch { /* weiter zu Fallback */ }
+                    }
+                    if (!success) {
+                      const ta = document.createElement('textarea')
+                      ta.value = text
+                      ta.style.position = 'fixed'; ta.style.opacity = '0'
+                      document.body.appendChild(ta); ta.select()
+                      success = document.execCommand('copy')
+                      document.body.removeChild(ta)
+                    }
+                    if (success) {
+                      setCopied(true)
+                      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+                      copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
+                    } else {
+                      toast('Kopieren fehlgeschlagen – bitte manuell kopieren', 'warning')
+                    }
                   }}
                 >
                   {copied ? <CheckIcon className="w-5 h-5 text-green-600" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
@@ -402,7 +421,9 @@ export function AddEditSetPage() {
           setId={savedSetId}
           side={editorOpen}
           existingOriginalPath={originalPaths[editorOpen] || null}
-          onFinalized={(thumbPath) => handleEditorFinalized(editorOpen, thumbPath)}
+          onFinalized={(thumbPath, origPath) => handleEditorFinalized(editorOpen, thumbPath, origPath)}
+          manufacturer={form.manufacturer}
+          setName={form.name}
         />
       )}
     </div>

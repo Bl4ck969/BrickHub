@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { setsApi, boxesApi } from '../api/client'
+import { useToast } from '../hooks/useToast'
 import { MagnifyingGlassIcon, PencilSquareIcon, CheckIcon, ArrowUpIcon, ArrowDownIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline'
 
 const SORT_COLS = {
@@ -21,6 +22,7 @@ export function BoxInventoryPage() {
   const [saving, setSaving] = useState(false)
   const [sortCol, setSortCol] = useState('')
   const [sortDir, setSortDir] = useState('asc')
+  const toast = useToast()
 
   const fetchData = async () => {
     setLoading(true)
@@ -67,7 +69,7 @@ export function BoxInventoryPage() {
       setEditingSet(null)
       fetchData()
     } catch {
-      alert('Fehler beim Speichern')
+      toast('Fehler beim Speichern', 'error')
     } finally {
       setSaving(false)
     }

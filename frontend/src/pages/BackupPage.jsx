@@ -2,32 +2,105 @@ import { useState, useRef } from 'react'
 import { CloudArrowDownIcon, CloudArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { backupApi } from '../api/client'
 
+// Phasen-Labels
+// 'building'   → Export: aktueller Set-Ordner-Name
+// 'upload'     → Import: Datei wird hochgeladen
+// 'validating' → Import: ZIP-Prüfung
+// 'extracting' → Import: Bilder extrahieren
+// 'importing'  → Import: DB-Inserts
+function phaseLabel(phase, currentName) {
+  if (phase === 'upload') return 'Datei wird hochgeladen…'
+  if (phase === 'building') return currentName || 'ZIP wird erstellt…'
+  if (phase === 'validating') return currentName || 'Backup wird geprüft…'
+  if (phase === 'extracting') return 'Bilder werden extrahiert…'
+  if (phase === 'importing') return currentName || 'Datenbank wird aktualisiert…'
+  return currentName || ''
+}
+
+function ProgressBar({ progress }) {
+  if (!progress) return null
+  const { phase, current, total, current_name, uploadPercent } = progress
+
+  let percent = null
+  let detail = null
+
+  if (phase === 'upload') {
+    percent = uploadPercent ?? 0
+  } else if ((phase === 'building' || phase === 'extracting' || phase === 'importing') && total > 0) {
+    percent = Math.round((current / total) * 100)
+    if (phase === 'extracting') detail = `${current} / ${total} Dateien`
+    else detail = `${current} / ${total}`
+  }
+
+  return (
+    <div className="mt-4 space-y-1.5">
+      <div className="flex justify-between text-sm text-gray-600">
+        <span className="truncate mr-2">{phaseLabel(phase, current_name)}</span>
+        {detail && <span className="flex-shrink-0 font-medium">{detail}</span>}
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+        {percent !== null ? (
+          <div
+            className="bg-brand-navy h-2 rounded-full transition-all duration-300"
+            style={{ width: `${percent}%` }}
+          />
+        ) : (
+          <div className="bg-brand-navy h-2 rounded-full animate-pulse w-full opacity-60" />
+        )}
+      </div>
+      {percent !== null && (
+        <p className="text-xs text-gray-500 text-right">{percent}%</p>
+      )}
+    </div>
+  )
+}
+
 export function BackupPage() {
   const [exporting, setExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState(null)
+  const [exportError, setExportError] = useState(null)
+
   const [selectedFile, setSelectedFile] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [importMode, setImportMode] = useState('append')
   const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState(null)
   const [importResult, setImportResult] = useState(null)
   const [importError, setImportError] = useState(null)
+
   const fileInputRef = useRef(null)
+
+  // ── Export ──────────────────────────────────────────────────────────────────
 
   const handleExport = async () => {
     setExporting(true)
+    setExportError(null)
+    setExportProgress({ current: 0, total: 0, current_name: 'Wird vorbereitet…' })
+
     try {
-      const res = await backupApi.exportZip()
-      const url = URL.createObjectURL(res.data)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `brickhub-backup-${new Date().toISOString().slice(0, 10)}.zip`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      // Fehler beim Export
+      const { data: { task_id } } = await backupApi.startExport()
+
+      await new Promise((resolve, reject) => {
+        const es = new EventSource(`/api/backup/export/progress/${task_id}`)
+        es.onmessage = (e) => {
+          const data = JSON.parse(e.data)
+          setExportProgress(data)
+          if (data.status === 'done') { es.close(); resolve() }
+          else if (data.status === 'error') { es.close(); reject(new Error(data.error || 'Export fehlgeschlagen')) }
+        }
+        es.onerror = () => { es.close(); reject(new Error('Verbindung unterbrochen')) }
+      })
+
+      window.location.href = `/api/backup/export/download/${task_id}`
+    } catch (err) {
+      setExportError(err.message || 'Export fehlgeschlagen')
     } finally {
       setExporting(false)
+      setExportProgress(null)
     }
   }
+
+  // ── Import ──────────────────────────────────────────────────────────────────
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0] || null)
@@ -46,19 +119,46 @@ export function BackupPage() {
     setImporting(true)
     setImportResult(null)
     setImportError(null)
+    setImportProgress({ phase: 'upload', uploadPercent: 0 })
+
     try {
       const form = new FormData()
       form.append('file', selectedFile)
-      const res = await backupApi.importZip(form, importMode)
-      setImportResult(res.data)
+
+      const { data: { task_id } } = await backupApi.startImport(
+        form,
+        importMode,
+        (e) => {
+          if (e.total) {
+            setImportProgress({ phase: 'upload', uploadPercent: Math.round((e.loaded / e.total) * 100) })
+          }
+        },
+      )
+
+      // Upload fertig → SSE für Verarbeitungs-Fortschritt
+      const result = await new Promise((resolve, reject) => {
+        const es = new EventSource(`/api/backup/import/progress/${task_id}`)
+        es.onmessage = (e) => {
+          const data = JSON.parse(e.data)
+          setImportProgress(data)
+          if (data.status === 'done') { es.close(); resolve(data.result) }
+          else if (data.status === 'error') { es.close(); reject(new Error(data.error || 'Import fehlgeschlagen')) }
+        }
+        es.onerror = () => { es.close(); reject(new Error('Verbindung unterbrochen')) }
+      })
+
+      setImportResult(result)
       setSelectedFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (err) {
-      setImportError(err.response?.data?.detail || 'Fehler beim Import')
+      setImportError(err.message || 'Fehler beim Import')
     } finally {
       setImporting(false)
+      setImportProgress(null)
     }
   }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -80,6 +180,16 @@ export function BackupPage() {
             >
               {exporting ? 'Wird erstellt…' : 'ZIP herunterladen'}
             </button>
+
+            {exporting && exportProgress && (
+              <ProgressBar progress={{ ...exportProgress, phase: 'building' }} />
+            )}
+
+            {exportError && (
+              <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+                {exportError}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -111,12 +221,14 @@ export function BackupPage() {
               </button>
             </div>
 
-            {selectedFile && (
+            {selectedFile && !importing && (
               <p className="text-sm text-gray-500 mb-2">
                 Ausgewählt: <span className="font-medium">{selectedFile.name}</span>
                 {' '}({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
               </p>
             )}
+
+            {importing && <ProgressBar progress={importProgress} />}
 
             {importResult && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">

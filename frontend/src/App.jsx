@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import { ToastProvider } from './hooks/useToast'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Navbar } from './components/Navbar'
 import { LoginPage } from './pages/LoginPage'
@@ -59,6 +60,7 @@ function FirstRunGate({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ToastProvider>
       <AuthProvider>
         <Routes>
           {/* Public routes */}
@@ -127,6 +129,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/sets" replace />} />
         </Routes>
       </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

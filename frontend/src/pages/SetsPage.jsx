@@ -23,6 +23,7 @@ import { setsApi, labelsApi, imagesApi, boxesApi } from '../api/client'
 import { OneDriveIcon } from '../components/OneDriveIcon'
 import { useAuth } from '../hooks/useAuth'
 import { Modal, ConfirmModal } from '../components/Modal'
+import { useToast } from '../hooks/useToast'
 
 const STATUS_COLORS = {
   'Neu': 'bg-blue-100 text-blue-700',
@@ -38,6 +39,7 @@ const BAR_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#F97316', '#EF4
 export function SetsPage() {
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
   const [sets, setSets] = useState([])
   const [summary, setSummary] = useState({ total_count: 0, total_price: 0, total_parts: 0, parts_by_stone_size: {} })
   const [loading, setLoading] = useState(true)
@@ -78,7 +80,7 @@ export function SetsPage() {
       await setsApi.delete(id)
       fetchSets()
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler beim Löschen')
+      toast(err.response?.data?.detail || 'Fehler beim Löschen', 'error')
     }
   }
 
@@ -87,7 +89,7 @@ export function SetsPage() {
       await setsApi.updateStatus(id, { status })
       setSets(prev => prev.map(s => s.id === id ? { ...s, status } : s))
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler')
+      toast(err.response?.data?.detail || 'Fehler', 'error')
     }
   }
 
@@ -111,7 +113,7 @@ export function SetsPage() {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Export fehlgeschlagen')
+      toast('Export fehlgeschlagen', 'error')
     }
   }
 
@@ -125,7 +127,7 @@ export function SetsPage() {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      alert('PDF-Export fehlgeschlagen')
+      toast('PDF-Export fehlgeschlagen', 'error')
     }
   }
 
@@ -133,7 +135,7 @@ export function SetsPage() {
     const file = e.target.files[0]
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
-      alert('Datei zu groß (max. 10 MB)')
+      toast('Datei zu groß (max. 10 MB)', 'warning')
       e.target.value = ''
       return
     }
@@ -143,9 +145,9 @@ export function SetsPage() {
       const data = JSON.parse(text)
       await setsApi.importJson(data)
       fetchSets()
-      alert('Import erfolgreich')
+      toast('Import erfolgreich', 'success')
     } catch (err) {
-      alert(err.response?.data?.detail || 'Import fehlgeschlagen')
+      toast(err.response?.data?.detail || 'Import fehlgeschlagen', 'error')
     } finally {
       setImportLoading(false)
       e.target.value = ''
@@ -345,18 +347,65 @@ export function SetsPage() {
       </div>
 
       {/* Summary cards */}
-      {showStats && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {showStats && (() => {
+        const allStoneTypes = [...new Set([
+          ...sets.map(s => s.stone_size || 'Unbekannt'),
+          ...Object.keys(summary.parts_by_stone_size || {})
+        ])].sort()
+        const stoneColorMap = Object.fromEntries(allStoneTypes.map((k, i) => [k, BAR_COLORS[i % BAR_COLORS.length]]))
+        return <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr 1fr 1.8fr 1.8fr' }}>
         <div className="card py-3">
-          <p className="text-xs text-gray-500">Gesamt Sets</p>
-          <p className="text-2xl font-bold text-brand-navy">{summary.total_count}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Gesamt Sets</p>
+              <p className="text-2xl font-bold text-brand-navy">{summary.total_count}</p>
+            </div>
+            <svg className="w-9 h-9 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Hintere Box – gelber Akzent */}
+              <rect x="7" y="2" width="14" height="9" rx="1.5" fill="#FFD700" stroke="#1E3A5F" strokeWidth="1.25"/>
+              {/* Mittlere Box */}
+              <rect x="4" y="6" width="14" height="9" rx="1.5" fill="#e8eef5" stroke="#1E3A5F" strokeWidth="1.25"/>
+              {/* Vordere Box */}
+              <rect x="1" y="10" width="14" height="11" rx="1.5" fill="white" stroke="#1E3A5F" strokeWidth="1.25"/>
+              {/* Noppen auf vorderer Box */}
+              <circle cx="5" cy="16" r="1.3" fill="#1E3A5F"/>
+              <circle cx="8.5" cy="16" r="1.3" fill="#1E3A5F"/>
+              <circle cx="12" cy="16" r="1.3" fill="#1E3A5F"/>
+            </svg>
+          </div>
         </div>
         <div className="card py-3">
-          <p className="text-xs text-gray-500">Gesamt Teile</p>
-          <p className="text-2xl font-bold text-brand-navy">{summary.total_parts.toLocaleString('de-DE')}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Gesamt Teile</p>
+              <p className="text-2xl font-bold text-brand-navy">{summary.total_parts.toLocaleString('de-DE')}</p>
+            </div>
+            {/* LEGO-Stein Draufsicht */}
+            <svg className="w-9 h-9 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="5" width="20" height="15" rx="2" fill="#FFD700" stroke="#1E3A5F" strokeWidth="1.25"/>
+              <circle cx="7"  cy="10"   r="2" fill="#1E3A5F"/>
+              <circle cx="12" cy="10"   r="2" fill="#1E3A5F"/>
+              <circle cx="17" cy="10"   r="2" fill="#1E3A5F"/>
+              <circle cx="7"  cy="15.5" r="2" fill="#1E3A5F"/>
+              <circle cx="12" cy="15.5" r="2" fill="#1E3A5F"/>
+              <circle cx="17" cy="15.5" r="2" fill="#1E3A5F"/>
+            </svg>
+          </div>
         </div>
         <div className="card py-3">
-          <p className="text-xs text-gray-500">Gesamtwert</p>
-          <p className="text-2xl font-bold text-brand-navy">{summary.total_price.toFixed(2)} €</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Gesamtwert</p>
+              <p className="text-2xl font-bold text-brand-navy">{summary.total_price.toFixed(2)} €</p>
+            </div>
+            {/* Euro-Münze */}
+            <svg className="w-9 h-9 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#1E3A5F" strokeWidth="1.25"/>
+              <path d="M16 7.5 C13.5 5 7.5 6.5 7.5 12 C7.5 17.5 13.5 19 16 16.5" stroke="#1E3A5F" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              <line x1="6" y1="10.5" x2="14.5" y2="10.5" stroke="#1E3A5F" strokeWidth="1.75" strokeLinecap="round"/>
+              <line x1="6" y1="13.5" x2="14.5" y2="13.5" stroke="#1E3A5F" strokeWidth="1.75" strokeLinecap="round"/>
+            </svg>
+          </div>
         </div>
         {/* Sets nach Steinart */}
         <div className="card py-3">
@@ -371,14 +420,14 @@ export function SetsPage() {
             ) : (
               <>
                 <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5 gap-px">
-                  {sorted.map(([k, v], i) => (
-                    <div key={k} title={`${k}: ${v}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                  {sorted.map(([k, v]) => (
+                    <div key={k} title={`${k}: ${v}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: stoneColorMap[k] }} />
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                  {sorted.map(([k, v], i) => (
+                  {sorted.map(([k, v]) => (
                     <div key={k} className="flex items-start gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: stoneColorMap[k] }} />
                       <span className="text-xs text-gray-600 leading-tight flex-1 break-words">{k}</span>
                       <span className="text-xs font-bold text-brand-navy shrink-0">{v}</span>
                     </div>
@@ -399,14 +448,14 @@ export function SetsPage() {
             ) : (
               <>
                 <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5 gap-px">
-                  {sorted.map(([k, v], i) => (
-                    <div key={k} title={`${k}: ${v.toLocaleString('de-DE')}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                  {sorted.map(([k, v]) => (
+                    <div key={k} title={`${k}: ${v.toLocaleString('de-DE')}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: stoneColorMap[k] }} />
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                  {sorted.map(([k, v], i) => (
+                  {sorted.map(([k, v]) => (
                     <div key={k} className="flex items-start gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }} />
+                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: stoneColorMap[k] }} />
                       <span className="text-xs text-gray-600 leading-tight flex-1 break-words">{k}</span>
                       <span className="text-xs font-bold text-brand-navy shrink-0">{v.toLocaleString('de-DE')}</span>
                     </div>
@@ -416,7 +465,8 @@ export function SetsPage() {
             )
           })()}
         </div>
-      </div>}
+        </div>
+      })()}
 
       {/* Search & Filters */}
       <div className="card py-4 flex flex-wrap gap-3 items-center">

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { setsApi, labelsApi } from '../api/client'
 import { TagIcon } from '@heroicons/react/24/outline'
+import { useToast } from '../hooks/useToast'
 
 export function LabelsPage() {
   const [sets, setSets] = useState([])
   const [selected, setSelected] = useState(['', '', '', '', '', ''])
   const [generating, setGenerating] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     setsApi.list({}).then(res => setSets(res.data.sets))
@@ -19,7 +21,7 @@ export function LabelsPage() {
 
   const handleGenerate = async () => {
     const ids = selectedSets.map(s => s.id)
-    if (ids.length === 0) { alert('Bitte mindestens ein Set auswählen'); return }
+    if (ids.length === 0) { toast('Bitte mindestens ein Set auswählen', 'warning'); return }
     setGenerating(true)
     try {
       const res = await labelsApi.generate(ids)
@@ -30,7 +32,7 @@ export function LabelsPage() {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      alert('Fehler beim Generieren der Schilder')
+      toast('Fehler beim Generieren der Schilder', 'error')
     } finally {
       setGenerating(false)
     }

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Modal } from './Modal'
 import { imagesApi } from '../api/client'
+import { useToast } from '../hooks/useToast'
 
 const HANDLE_R = 13
 const PAD = HANDLE_R + 8
@@ -78,7 +79,7 @@ function StepIndicator({ phase }) {
   )
 }
 
-export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, onFinalized }) {
+export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, onFinalized, manufacturer, setName }) {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -96,6 +97,8 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
     canvasW: 0,
     canvasH: 0,
   })
+
+  const toast = useToast()
 
   const [originalPath, setOriginalPath] = useState(null)
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
@@ -363,7 +366,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setZoom(1)
       setPhase('edit')
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler beim Upload')
+      toast(err.response?.data?.detail || 'Fehler beim Upload', 'error')
     } finally {
       setLoading('')
     }
@@ -389,7 +392,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setZoom(1)
       setPhase('edit')
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler beim Laden des Bildes')
+      toast(err.response?.data?.detail || 'Fehler beim Laden des Bildes', 'error')
     } finally {
       setLoading('')
     }
@@ -431,7 +434,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setPreviewPath(res.data.preview_path)
       setPhase('preview')
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler bei Vorschau')
+      toast(err.response?.data?.detail || 'Fehler bei Vorschau', 'error')
     } finally {
       setLoading('')
     }
@@ -445,14 +448,14 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setFinalResult(res.data)
       setPhase('final')
     } catch (err) {
-      alert(err.response?.data?.detail || 'Fehler beim Finalisieren')
+      toast(err.response?.data?.detail || 'Fehler beim Finalisieren', 'error')
     } finally {
       setLoading('')
     }
   }
 
   const handleAccept = () => {
-    if (finalResult?.thumbnail) onFinalized(finalResult.thumbnail)
+    if (finalResult?.thumbnail) onFinalized(finalResult.thumbnail, originalPath)
     onClose()
   }
 
@@ -468,11 +471,22 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
 
   const sideLabel = side === 'frontcover' ? 'Frontcover' : 'Backcover'
 
+  const modalTitle = (
+    <span className="flex flex-col leading-tight">
+      <span>{sideLabel} bearbeiten</span>
+      {(manufacturer || setName) && (
+        <span className="text-sm font-normal text-gray-500 truncate max-w-[40vw]">
+          {[manufacturer, setName].filter(Boolean).join(' – ')}
+        </span>
+      )}
+    </span>
+  )
+
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={`${sideLabel} bearbeiten`}
+      title={modalTitle}
       size="full"
       titleExtra={<StepIndicator phase={phase} />}
       noBodyPadding
@@ -720,9 +734,10 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       {/* ── Vorschau-Phase ── */}
       {phase === 'preview' && !loading && previewPath && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 flex items-center justify-center bg-gray-100 overflow-auto p-4">
+          <div className="flex-1 min-h-0 flex items-center justify-center bg-gray-100 overflow-hidden p-4">
             <img src={imagesApi.fileUrl(previewPath) + '&t=' + Date.now()} alt="Vorschau"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
+              className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+              style={{ filter: `brightness(${brightness}) saturate(${saturation})` }} />
           </div>
           <div className="flex-shrink-0 flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-white">
             <div>

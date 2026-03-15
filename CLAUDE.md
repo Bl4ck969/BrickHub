@@ -9,8 +9,8 @@ Alle Kommunikation und Kommentare auf Deutsch.
 ## Entwicklungsumgebung starten
 
 ```bash
-# Beide Server gleichzeitig (Windows)
-.\start-dev.bat
+# Beide Server gleichzeitig (Windows) – Menü mit Start/Stop/Restart/Status
+.\brickhub.bat
 
 # Oder einzeln:
 # Backend (aus backend/)

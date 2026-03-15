@@ -240,157 +240,58 @@ BrickHub/
 │   ├── package.json
 │   ├── vite.config.js           # Dev-Proxy (/api → localhost:8000)
 │   └── tailwind.config.js
+├── docs/
+│   ├── installation-dev.md      # Einrichtung Entwicklungsumgebung (Windows)
+│   ├── installation-docker.md   # Docker-Installation (Unraid, Heimserver)
+│   └── screenshots/             # Screenshots für README
 ├── Dockerfile                   # Multi-Stage Build (Node + Python), non-root User
 ├── docker-compose.yml           # Produktions-Deployment (Port 8080)
+├── brickhub.bat                 # Windows Server-Manager (Start/Stop/Restart/Status)
 ├── Logo.png                     # BrickHub-Logo
-├── start-dev.bat                # Windows-Startskript für Entwicklung
 └── CLAUDE.md                    # Entwickler-Dokumentation
 ```
 
 ---
 
-## Installation & Setup
+## Installation
 
-### Voraussetzungen
+Es gibt zwei Installationsvarianten – je nachdem, was du vorhast:
 
-- **Python** 3.12 oder höher
-- **Node.js** 20 oder höher
-- **Git**
-
-### 1. Repository klonen
-
-```bash
-git clone https://github.com/Bl4ck969/BrickHub.git
-cd BrickHub
-```
-
-### 2. Backend einrichten
-
-```bash
-cd backend
-
-# Virtuelle Umgebung erstellen und aktivieren
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# Abhängigkeiten installieren
-pip install -r requirements.txt
-
-# Umgebungsvariablen konfigurieren
-cp .env.example .env
-# .env bearbeiten und SECRET_KEY setzen (min. 32 Zeichen, zufällig)
-```
-
-### 3. Frontend einrichten
-
-```bash
-cd frontend
-
-# Abhängigkeiten installieren
-npm install
-```
-
-### 4. Umgebungsvariablen (.env)
-
-Die Datei `backend/.env` enthält die Konfiguration:
-
-| Variable | Beschreibung | Standard |
+| Variante | Für wen | Anleitung |
 |---|---|---|
-| `SECRET_KEY` | JWT-Signaturschlüssel (mind. 32 Zeichen) | **Muss gesetzt werden!** |
-| `DATABASE_URL` | SQLite-Datenbankpfad | `sqlite:///./data/database.db` |
-| `UPLOAD_DIR` | Verzeichnis für hochgeladene Bilder | `./data/uploads` |
-| `EXPORT_DIR` | Verzeichnis für PDF-Exporte | `./export` |
-| `SECURE_COOKIES` | Secure-Flag für JWT-Cookie (für HTTPS/Reverse-Proxy) | `false` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT-Token-Gültigkeit in Minuten | `480` |
-| `OLLAMA_URL` | URL zum Ollama-Server (optional) | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Ollama-Modell für Bilderkennung | `llava:7b` |
-| `OLLAMA_ENABLED` | KI-Bilderkennung aktivieren | `false` |
+| **Entwicklungsumgebung** (lokaler PC, Windows) | Wer den Code ansehen, anpassen oder weiterentwickeln möchte | [docs/installation-dev.md](docs/installation-dev.md) |
+| **Docker-Container** (Heimserver, Unraid, NAS) | Wer BrickHub einfach nutzen möchte, ohne sich um Code zu kümmern | [docs/installation-docker.md](docs/installation-docker.md) |
 
----
-
-## Entwicklung starten
-
-### Windows (empfohlen)
-
-Doppelklick auf `start-dev.bat` – startet Backend und Frontend gleichzeitig.
-
-### Manuell
-
-**Terminal 1 – Backend:**
-```bash
-cd backend
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-**Terminal 2 – Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-### Zugriff
-
-| Dienst | URL |
-|---|---|
-| **Frontend** | http://localhost:5173 |
-| **Backend API** | http://localhost:8000 |
-| **API-Dokumentation** (Swagger) | http://localhost:8000/docs |
-
-### Erster Start
-
-Beim ersten Aufruf wird automatisch die **Setup-Seite** angezeigt, auf der ein Admin-Account erstellt werden muss. Danach kann man sich einloggen und sofort mit dem Anlegen von Sets und Kisten beginnen.
-
-**Empfohlene Reihenfolge:**
-1. Admin-Account erstellen (Setup)
-2. Kisten anlegen (Lagerung) mit Standort und erlaubten Steinarten
-3. Sets anlegen mit Bildern, Tüten- und Plattenanzahl
-4. Sets den Kisten zuweisen
-5. Einlagerungsschilder drucken
-
----
-
-## Docker Deployment (Produktion)
-
-### Mit Docker Compose
+### Kurzfassung Docker (Unraid)
 
 ```bash
-# .env-Datei konfigurieren
-cp backend/.env.example backend/.env
-# SECRET_KEY in backend/.env setzen!
-
-# Container bauen und starten
-docker-compose up -d
+docker run -d \
+  --name Brickhub \
+  --restart unless-stopped \
+  -p 8049:8080 \
+  -v /mnt/user/appdata/brickhub/data:/app/data \
+  -v /mnt/user/appdata/brickhub/export:/app/export \
+  -e SECRET_KEY="dein-geheimer-schluessel-mindestens-32-zeichen" \
+  -e DATABASE_URL="sqlite:///./data/database.db" \
+  -e UPLOAD_DIR="./data/uploads" \
+  -e EXPORT_DIR="./export" \
+  ghcr.io/bl4ck969/brickhub:latest
 ```
 
-Die Anwendung ist dann unter **http://localhost:8080** erreichbar.
+> Beim ersten Start einmalig Berechtigungen setzen:
+> ```bash
+> chown -R 1000:1000 /mnt/user/appdata/brickhub/ && docker restart Brickhub
+> ```
 
 ### Docker-Details
 
 - **Multi-Stage Build**: Node.js baut das Frontend, Python bedient alles
 - **Non-root User**: Container läuft als `brickhub` (UID 1000) – kein Root-Zugriff
-- **Persistente Daten**: `backend/data/` (DB + Uploads) und `backend/export/` (PDFs) werden als Volumes gemountet
+- **Persistente Daten**: `data/` (DB + Uploads) und `export/` (PDFs) werden als Volumes gemountet
 - **Health Check**: `GET /api/health` alle 30 Sekunden
 - **Memory Limit**: 4 GB (wegen rembg/onnxruntime)
-- **RAM-Optimierung**: NullPool (SQLite-Verbindungen nach Request schließen), glibc-Malloc-Tuning, gc.collect() nach Bildverarbeitung → Idle ~150–200 MB auf Unraid
+- **RAM-Optimierung**: NullPool, glibc-Malloc-Tuning, gc.collect() → Idle ~150–200 MB
 - **Restart Policy**: `unless-stopped`
-
-### Unraid
-
-Für Unraid kann der Container über die Docker-Oberfläche oder ein Template eingerichtet werden:
-- **Image**: `ghcr.io/bl4ck969/brickhub:latest`
-- **Port**: Host `8049` → Container `8080` (oder beliebiger freier Port)
-- **Pfad für Daten**: `/app/data` → gewünschter Speicherort auf dem Host
-- **Pfad für Exporte**: `/app/export` → gewünschter Speicherort auf dem Host
-- **Umgebungsvariable**: `SECRET_KEY` setzen
-- **Umgebungsvariable**: `SECURE_COOKIES=true` setzen, wenn hinter einem Reverse-Proxy mit HTTPS
-
-> **Wichtig für Unraid-Erstinstallation**: Das Datenverzeichnis muss dem Container-User (UID 1000) gehören:
-> ```bash
-> chown -R 1000:1000 /mnt/user/appdata/brickhub/
-> ```
 
 ---
 

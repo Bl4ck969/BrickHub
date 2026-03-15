@@ -20,6 +20,9 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 ### Set-Übersicht mit Summary-Dashboard und Statistik-Icons
 ![Sets](docs/screenshots/sets-overview.png)
 
+### PDF-Setliste exportieren
+![PDF Export](docs/screenshots/pdf-export.png)
+
 ### Backup exportieren / importieren mit Fortschrittsanzeige
 ![Backup](docs/screenshots/backup.png)
 
@@ -43,6 +46,9 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ### Einlagerungsschilder generieren
 ![Schilder](docs/screenshots/labels.png)
+
+### Beispiel: Generiertes Schilder-PDF
+![Schilder PDF](docs/screenshots/schilder.png)
 
 ### Benutzerverwaltung
 ![Benutzer](docs/screenshots/users.png)

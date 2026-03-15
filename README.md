@@ -23,8 +23,17 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 ### Backup exportieren / importieren mit Fortschrittsanzeige
 ![Backup](docs/screenshots/backup.png)
 
-### Set bearbeiten mit Bildverarbeitung
+### Set bearbeiten – Grunddaten & OneDrive
 ![Set bearbeiten](docs/screenshots/set-edit.png)
+
+### Set bearbeiten – Bilder-Upload & Verarbeitung
+![Set bearbeiten Bilder](docs/screenshots/set-edit-bilder.png)
+
+### Bildverarbeitung – Bild hochladen oder vorhandenes bearbeiten
+![Upload-Auswahl](docs/screenshots/set-edit-upload.png)
+
+### ImageEditor – Eckpunkte setzen & Perspektivkorrektur
+![ImageEditor](docs/screenshots/image-editor.png)
 
 ### Lagerverwaltung – Kisten
 ![Lagerung](docs/screenshots/storage.png)

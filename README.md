@@ -12,6 +12,33 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 
 ---
 
+## Worum geht es?
+
+**Klemmbausteine** sind Steckbausteine wie LEGO, Mould King, Blue Brixx oder ähnliche Systeme. Wer viele Sets sammelt, kennt das Problem: Welche Sets habe ich? Wo liegen die eingelagerten Tüten und Platten? Welche Kiste enthält welche Sets?
+
+**BrickHub** löst genau dieses Problem. Es ist eine selbst gehostete Inventar-Webanwendung, mit der du:
+
+- alle deine Sets mit Bildern, Teilezahl, Status und Kategorien erfasst
+- Kisten und Lagerorte verwaltest und Sets diesen zuordnest
+- automatisch beschriftete PDF-Einlagerungsschilder für einzelne Tüten und Platten generierst
+- Frontcover- und Backcover-Fotos hochlädst, perspektivkorrigierst und freistellt
+- ein vollständiges Backup deines Inventars erstellen und wiederherstellen kannst
+- Sets optional mit OneDrive-Ordnern (z.B. für Bauanleitungen) verknüpfst
+
+---
+
+## Hinweise & Haftungsausschluss
+
+> **Privatprojekt – bitte vor der Nutzung lesen.**
+
+- **Privatprojekt**: BrickHub ist ein Hobbyprojekt, das für den persönlichen Eigenbedarf entwickelt wurde. Es wird ohne Garantie auf Vollständigkeit, Korrektheit, Stabilität oder Sicherheit bereitgestellt.
+- **Nur für den privaten Heimnetz-Einsatz**: Die Anwendung ist **nicht** für den Betrieb im öffentlichen Internet gedacht und ausgelegt. Es fehlen dafür notwendige Härtungen (z.B. Rate-Limiting für alle Endpunkte, professionelles Monitoring, regelmäßige Sicherheitsaudits). Betreibe BrickHub ausschließlich in deinem lokalen Heimnetz oder hinter einem gesicherten privaten VPN.
+- **Keine Haftung**: Der Entwickler übernimmt keinerlei Haftung für Datenverlust, Sicherheitsvorfälle oder sonstige Schäden, die durch die Nutzung dieser Software entstehen. Die Verwendung erfolgt auf eigene Gefahr.
+- **Kein Support, keine Featurewünsche**: BrickHub wird nur um Funktionen erweitert, die der Entwickler selbst für seinen eigenen Anwendungsfall benötigt. Issues für Featurewünsche werden ohne Begründung geschlossen. Bugreports sind willkommen.
+- **KI-generierter Code**: Der Großteil des Codes wurde mit Hilfe von [Claude Code](https://claude.ai/code) (Anthropic) erstellt.
+
+---
+
 ## Screenshots
 
 ### Login
@@ -360,11 +387,16 @@ Für Unraid kann der Container über die Docker-Oberfläche oder ein Template ei
 - **Umgebungsvariable**: `SECRET_KEY` setzen
 - **Umgebungsvariable**: `SECURE_COOKIES=true` setzen, wenn hinter einem Reverse-Proxy mit HTTPS
 
+> **Wichtig für Unraid-Erstinstallation**: Das Datenverzeichnis muss dem Container-User (UID 1000) gehören:
+> ```bash
+> chown -R 1000:1000 /mnt/user/appdata/brickhub/
+> ```
+
 ---
 
 ## API-Übersicht
 
-Alle API-Endpoints liegen unter `/api/`. Vollständige interaktive Dokumentation unter `/docs` (Swagger UI).
+Alle API-Endpoints liegen unter `/api/`. Vollständige interaktive Dokumentation unter `/docs` (Swagger UI, nur im Dev-Modus verfügbar).
 
 | Bereich | Endpoints | Beschreibung |
 |---|---|---|
@@ -389,6 +421,13 @@ npx eslint src/
 
 ---
 
-## Lizenz
+## Lizenz & Haftungsausschluss
 
-Privates Projekt – nicht zur Weiterverbreitung bestimmt.
+Dieses Projekt wird als **Open Source ohne jegliche Gewährleistung** bereitgestellt. Es handelt sich um ein privates Hobbyprojekt, das ausschließlich für den persönlichen Gebrauch im Heimnetz entwickelt wurde.
+
+- Keine Garantie auf Funktionsfähigkeit, Sicherheit oder Wartung
+- Keine Haftung für Datenverlust oder sonstige Schäden
+- Keine kommerzielle Nutzung vorgesehen
+- Featurewünsche von Dritten werden nicht umgesetzt
+
+Der Code darf gemäß den üblichen Open-Source-Gepflogenheiten eingesehen, kopiert und angepasst werden – auf eigenes Risiko.

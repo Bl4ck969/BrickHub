@@ -1,0 +1,27 @@
+Docker Befehl zum neuen Image laden:
+
+docker stop Brickhub && docker rm Brickhub && docker pull ghcr.io/bl4ck969/brickhub:latest
+
+
+Docker Befehl zum neuen Container bauen:
+
+docker run -d \
+  --name='Brickhub' \
+  --net='bridge' \
+  --pids-limit 2048 \
+  -e TZ="Europe/Berlin" \
+  -e HOST_OS="Unraid" \
+  -e HOST_HOSTNAME="Unraid-Server" \
+  -e HOST_CONTAINERNAME="Brickhub" \
+  --env-file /mnt/user/appdata/brickhub/data/.env \
+  -l net.unraid.docker.managed=dockerman \
+  -l net.unraid.docker.webui='http://[IP]:[PORT:8049]/' \
+  -p 8049:8080/tcp \
+  -v '/mnt/user/appdata/brickhub/data':'/app/data':'rw' \
+  -v '/mnt/user/appdata/brickhub/export':'/app/export':'rw' \
+  ghcr.io/bl4ck969/brickhub:latest
+
+
+Einmalige Einrichtung der .env-Datei (nur beim ersten Mal):
+
+echo "SECRET_KEY=042b39e7d047fd28fce69d5fd807a439274bb9088f99fdaddd3fad23e2f0be4e" > /mnt/user/appdata/brickhub/data/.env

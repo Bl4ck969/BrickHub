@@ -24,4 +24,8 @@ docker run -d \
 
 Einmalige Einrichtung der .env-Datei (nur beim ersten Mal):
 
-echo "SECRET_KEY=042b39e7d047fd28fce69d5fd807a439274bb9088f99fdaddd3fad23e2f0be4e" > /mnt/user/appdata/brickhub/data/.env
+# Neuen sicheren Key generieren:
+openssl rand -hex 32
+
+# Key in .env speichern (generierten Key einsetzen):
+echo "SECRET_KEY=HIER_GENERIERTEN_KEY_EINSETZEN" > /mnt/user/appdata/brickhub/data/.env

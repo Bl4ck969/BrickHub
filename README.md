@@ -152,7 +152,7 @@ Die Schilder werden ausgedruckt und in die Tüten/an die Platten geheftet, damit
 
 Jedes Set kann ein Front- und Backcover-Bild haben. Der Upload-Prozess beinhaltet:
 
-1. **Bild hochladen**: Foto der Verpackung (Vorder- oder Rückseite)
+1. **Bild hochladen**: Foto der Verpackung (Vorder- oder Rückseite) – per Dateiauswahl, Drag & Drop oder Strg+V aus der Zwischenablage
 2. **Automatische Eckenerkennung**: OpenCV erkennt die Kanten der Verpackung (6 verschiedene Canny-Edge-Strategien)
 3. **Manuelles Feintuning**: Im interaktiven ImageEditor können die 4 Eckpunkte per Drag & Drop korrigiert werden. Unterstützt Mausrad-Zoom und Pan.
 4. **Perspektivkorrektur**: Das Bild wird entzerrt (Perspektivtransformation)
@@ -168,6 +168,7 @@ Vollständiges Daten-Backup als ZIP-Archiv – schützt vor Datenverlust bei Fes
 
 - **Backup exportieren** (Admin): Ein Klick erstellt ein ZIP-Archiv mit der SQLite-Datenbank (`database.db`) und allen hochgeladenen Bildern (`uploads/`). Download direkt im Browser mit Echtzeit-Fortschrittsanzeige (SSE).
 - **Backup importieren** (Admin): ZIP-Datei hochladen → Upload-Fortschritt + Verarbeitungs-Phasen werden live angezeigt (validating → extracting → importing). Datenbank und Bilder werden vollständig wiederhergestellt. Bestehende Daten werden überschrieben.
+- **Automatisches Backup**: Konfigurierbarer Zeitplan (täglich/wöchentlich/monatlich), Uhrzeit und Wochentage wählbar. Retention-Regeln: maximale Anzahl Backups und/oder maximales Alter in Tagen. Sofort-Backup per Klick. Backup-Dateien werden in einem separaten Volume abgelegt (`/app/backup`), unabhängig vom Container.
 - **Kein Größenlimit**: Auch sehr große Archive (viele hochauflösende Bilder) können problemlos importiert werden.
 - **Sicherheit**: ZIP-Slip-Schutz, JSON-Validierung, nur Admin-Zugriff.
 
@@ -221,7 +222,7 @@ BrickHub/
 │   │   ├── models/              # SQLAlchemy-Modelle (User, BrickSet, Box, AppSetting)
 │   │   ├── schemas/             # Pydantic-Schemas (Request/Response)
 │   │   ├── routers/             # API-Endpoints (auth, users, sets, boxes, images, labels, settings, backup)
-│   │   ├── services/            # Business-Logik (image_service, pdf_service, ollama_service)
+│   │   ├── services/            # Business-Logik (image_service, pdf_service, ollama_service, backup_scheduler)
 │   │   └── utils/               # Auth-Utilities (JWT, Dependencies)
 │   ├── data/                    # SQLite-DB + Uploads (nicht im Repo)
 │   ├── .env                     # Umgebungsvariablen (nicht im Repo)
@@ -269,17 +270,18 @@ docker run -d \
   --name Brickhub \
   --restart unless-stopped \
   -p 8049:8080 \
+  -e TZ="Europe/Berlin" \
   -v /mnt/user/appdata/brickhub/data:/app/data \
   -v /mnt/user/appdata/brickhub/export:/app/export \
-  -e SECRET_KEY="dein-geheimer-schluessel-mindestens-32-zeichen" \
-  -e DATABASE_URL="sqlite:///./data/database.db" \
-  -e UPLOAD_DIR="./data/uploads" \
-  -e EXPORT_DIR="./export" \
+  -v /pfad/zu/backup-freigabe:/app/backup \
   ghcr.io/bl4ck969/brickhub:latest
 ```
 
-> Beim ersten Start einmalig Berechtigungen setzen:
+> **SECRET_KEY**: Wird automatisch aus `/app/data/.env` gelesen (persistentes Volume).
+> Beim ersten Start einmalig generieren:
 > ```bash
+> openssl rand -hex 32 > /mnt/user/appdata/brickhub/data/.env
+> sed -i 's/^/SECRET_KEY=/' /mnt/user/appdata/brickhub/data/.env
 > chown -R 1000:1000 /mnt/user/appdata/brickhub/ && docker restart Brickhub
 > ```
 
@@ -287,7 +289,7 @@ docker run -d \
 
 - **Multi-Stage Build**: Node.js baut das Frontend, Python bedient alles
 - **Non-root User**: Container läuft als `brickhub` (UID 1000) – kein Root-Zugriff
-- **Persistente Daten**: `data/` (DB + Uploads) und `export/` (PDFs) werden als Volumes gemountet
+- **Persistente Daten**: `data/` (DB + Uploads + .env), `export/` (PDFs) und `backup/` (automatische Backups) werden als Volumes gemountet
 - **Health Check**: `GET /api/health` alle 30 Sekunden
 - **Memory Limit**: 4 GB (wegen rembg/onnxruntime)
 - **RAM-Optimierung**: NullPool, glibc-Malloc-Tuning, gc.collect() → Idle ~150–200 MB
@@ -308,8 +310,9 @@ Alle API-Endpoints liegen unter `/api/`. Vollständige interaktive Dokumentation
 | **Images** | `POST /api/images/upload`, `/transform`, `/finalize`, `/redetect` | Bildverarbeitung-Pipeline |
 | **Labels** | `POST /api/labels/set-list`, `/set-labels` | PDF-Generierung |
 | **Settings** | `GET /api/settings/`, `PUT /api/settings/{key}` | App-Einstellungen (OneDrive-Basis-URL etc.) |
-| **Backup** | `POST /api/backup/export/start`, `GET /api/backup/export/progress/{id}`, `GET /api/backup/export/download/{id}` | Backup exportieren (SSE-Fortschritt, nur Admin) |
-| **Restore** | `POST /api/backup/import/start`, `GET /api/backup/import/progress/{id}` | Backup importieren (SSE-Fortschritt, nur Admin) |
+| **Backup** | `POST /api/backup/export/start`, `GET .../progress/{id}`, `GET .../download/{id}` | Backup exportieren (SSE-Fortschritt, nur Admin) |
+| **Restore** | `POST /api/backup/import/start`, `GET .../progress/{id}` | Backup importieren (SSE-Fortschritt, nur Admin) |
+| **Auto-Backup** | `GET/PUT /api/backup/schedule`, `GET/POST/DELETE /api/backup/auto-backups/...` | Zeitplan konfigurieren, Backups auflisten/erstellen/löschen (nur Admin) |
 
 ---
 

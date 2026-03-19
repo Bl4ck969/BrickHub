@@ -113,6 +113,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
   const [baseScale, setBaseScale] = useState(1)
   const [phase, setPhase] = useState('upload')
   const [uploadTs, setUploadTs] = useState(Date.now())
+  const [isDragging, setIsDragging] = useState(false)
 
   const scale = baseScale * zoom
 
@@ -346,6 +347,42 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
     setZoom(z => Math.max(0.1, Math.min(10, z * delta)))
   }, [])
 
+  // ── Clipboard-Paste & Drag-Drop ────────────────────────────────────────
+  useEffect(() => {
+    if (!open || phase !== 'upload') return
+    const onPaste = (e) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault()
+          const blob = item.getAsFile()
+          if (blob) handleFileSelect(blob)
+          return
+        }
+      }
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [open, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer?.files?.[0]
+    if (file && file.type.startsWith('image/')) handleFileSelect(file)
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    // Nur wenn wir den Drop-Bereich wirklich verlassen
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false)
+  }
+
   // ── Upload ──────────────────────────────────────────────────────────────
   const handleFileSelect = async (file) => {
     if (!file) return
@@ -503,35 +540,54 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
 
       {/* ── Upload-Phase ── */}
       {phase === 'upload' && !loading && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="flex items-center justify-center gap-6 w-full max-w-2xl">
-            {existingOriginalPath && (
-              <button
-                type="button"
-                onClick={handleLoadExisting}
-                className="flex flex-col items-center justify-center w-full max-w-xs h-56 border-2 border-dashed border-green-500 rounded-2xl cursor-pointer hover:bg-green-50 transition-all group"
-              >
-                <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </div>
-                <span className="text-base font-semibold text-green-700">Vorhandenes Bild bearbeiten</span>
-                <span className="text-xs text-gray-400 mt-1.5">Gespeicherte Ecken werden geladen</span>
-              </button>
-            )}
-            <label className={`flex flex-col items-center justify-center w-full ${existingOriginalPath ? 'max-w-xs' : 'max-w-md'} h-56 border-2 border-dashed border-brand-navy rounded-2xl cursor-pointer hover:bg-blue-50 transition-all group`}>
-              <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <svg className="w-7 h-7 text-brand-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+        <div
+          className={`flex-1 flex items-center justify-center p-8 transition-colors ${isDragging ? 'bg-blue-50' : ''}`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          {isDragging ? (
+            <div className="flex flex-col items-center justify-center w-full max-w-md h-56 border-2 border-dashed border-brand-navy rounded-2xl bg-blue-100/50">
+              <svg className="w-14 h-14 text-brand-navy mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span className="text-lg font-semibold text-brand-navy">Bild hier ablegen</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center w-full max-w-2xl">
+              <div className="flex items-center justify-center gap-6 w-full">
+                {existingOriginalPath && (
+                  <button
+                    type="button"
+                    onClick={handleLoadExisting}
+                    className="flex flex-col items-center justify-center w-full max-w-xs h-56 border-2 border-dashed border-green-500 rounded-2xl cursor-pointer hover:bg-green-50 transition-all group"
+                  >
+                    <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <span className="text-base font-semibold text-green-700">Vorhandenes Bild bearbeiten</span>
+                    <span className="text-xs text-gray-400 mt-1.5">Gespeicherte Ecken werden geladen</span>
+                  </button>
+                )}
+                <label className={`flex flex-col items-center justify-center w-full ${existingOriginalPath ? 'max-w-xs' : 'max-w-md'} h-56 border-2 border-dashed border-brand-navy rounded-2xl cursor-pointer hover:bg-blue-50 transition-all group`}>
+                  <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg className="w-7 h-7 text-brand-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-base font-semibold text-brand-navy">Neues Bild hochladen</span>
+                  <span className="text-xs text-gray-400 mt-1.5">JPG, PNG, WebP bis 30 MB</span>
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { if (e.target.files[0]) handleFileSelect(e.target.files[0]) }} />
+                </label>
               </div>
-              <span className="text-base font-semibold text-brand-navy">Neues Bild hochladen</span>
-              <span className="text-xs text-gray-400 mt-1.5">JPG, PNG, WebP bis 30 MB</span>
-              <input type="file" accept="image/*" className="hidden"
-                onChange={e => { if (e.target.files[0]) handleFileSelect(e.target.files[0]) }} />
-            </label>
-          </div>
+              <p className="text-xs text-gray-400 mt-4">
+                Oder: Bild per <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">Strg+V</span> aus der Zwischenablage einfügen · Drag &amp; Drop
+              </p>
+            </div>
+          )}
         </div>
       )}
 

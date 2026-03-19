@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/database.db"
     upload_dir: str = "./data/uploads"
     export_dir: str = "./export"
+    backup_dir: str = "./backup"
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llava:7b"
     ollama_enabled: bool = False
@@ -58,3 +59,4 @@ elif len(settings.secret_key) < 32:
 # Ensure directories exist
 Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 Path(settings.export_dir).mkdir(parents=True, exist_ok=True)
+Path(settings.backup_dir).mkdir(parents=True, exist_ok=True)

@@ -20,11 +20,12 @@ LABEL net.unraid.docker.icon="https://raw.githubusercontent.com/Bl4ck969/BrickHu
 
 WORKDIR /app
 
-# Install system dependencies for OpenCV and rembg
+# Install system dependencies for OpenCV, rembg and timezone support
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libgl1 \
     libgomp1 \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -38,7 +39,7 @@ COPY backend/ ./
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Create necessary directories
-RUN mkdir -p data/uploads export
+RUN mkdir -p data/uploads export backup
 
 # Non-root user für Security
 RUN useradd -m -u 1000 brickhub && chown -R brickhub:brickhub /app
@@ -49,6 +50,7 @@ ENV DOCKER_CONTAINER=1
 ENV DATABASE_URL=sqlite:///./data/database.db
 ENV UPLOAD_DIR=./data/uploads
 ENV EXPORT_DIR=./export
+ENV BACKUP_DIR=./backup
 ENV ACCESS_TOKEN_EXPIRE_MINUTES=480
 
 # glibc-Malloc-Tuning: gibt freigegebenen Speicher aggressiver ans OS zurück,

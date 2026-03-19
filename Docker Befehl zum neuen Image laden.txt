@@ -18,6 +18,7 @@ docker run -d \
   -p 8049:8080/tcp \
   -v '/mnt/user/appdata/brickhub/data':'/app/data':'rw' \
   -v '/mnt/user/appdata/brickhub/export':'/app/export':'rw' \
+  -v '/mnt/disk2/Backups/BrickHub':'/app/backup':'rw' \
   --restart unless-stopped \
   ghcr.io/bl4ck969/brickhub:latest
 

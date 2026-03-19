@@ -21,6 +21,10 @@ from app.models.box import Box
 from app.models.set_model import BrickSet
 from app.models.setting import AppSetting
 from app.models.user import User, SecurityQuestion
+from app.services.backup_scheduler import (
+    SCHEDULE_KEYS, _get_schedule_settings, _set_setting,
+    list_auto_backups, _apply_retention, _create_backup,
+)
 from app.utils.auth import require_admin
 
 router = APIRouter(prefix="/api/backup", tags=["backup"])
@@ -448,3 +452,61 @@ async def import_progress(task_id: str):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ─── AUTOMATISCHE BACKUPS ────────────────────────────────────────────────────
+
+
+@router.get("/schedule", dependencies=[Depends(require_admin)])
+def get_schedule(db: Session = Depends(get_db)):
+    """Gibt die aktuellen Backup-Schedule-Einstellungen zurück."""
+    return _get_schedule_settings(db)
+
+
+@router.put("/schedule", dependencies=[Depends(require_admin)])
+def update_schedule(body: dict, db: Session = Depends(get_db)):
+    """Aktualisiert die Backup-Schedule-Einstellungen."""
+    allowed = set(SCHEDULE_KEYS.keys()) - {"backup_last_run"}
+    for key, value in body.items():
+        if key in allowed:
+            _set_setting(db, key, str(value))
+    db.commit()
+    return _get_schedule_settings(db)
+
+
+@router.get("/auto-backups", dependencies=[Depends(require_admin)])
+def get_auto_backups():
+    """Listet alle automatisch erstellten Backups."""
+    return list_auto_backups()
+
+
+@router.post("/auto-backups/run-now", dependencies=[Depends(require_admin)])
+def run_backup_now():
+    """Erstellt sofort ein automatisches Backup."""
+    filename = _create_backup()
+    if not filename:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Backup fehlgeschlagen")
+    return {"filename": filename}
+
+
+@router.get("/auto-backups/download/{filename}", dependencies=[Depends(require_admin)])
+def download_auto_backup(filename: str):
+    """Lädt ein automatisches Backup herunter."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ungültiger Dateiname")
+    filepath = Path(settings.backup_dir) / filename
+    if not filepath.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Backup nicht gefunden")
+    return FileResponse(str(filepath), media_type="application/zip", filename=filename)
+
+
+@router.delete("/auto-backups/{filename}", dependencies=[Depends(require_admin)])
+def delete_auto_backup(filename: str):
+    """Löscht ein einzelnes automatisches Backup."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ungültiger Dateiname")
+    filepath = Path(settings.backup_dir) / filename
+    if not filepath.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Backup nicht gefunden")
+    filepath.unlink()
+    return {"deleted": filename}

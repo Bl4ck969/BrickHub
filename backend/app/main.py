@@ -8,6 +8,7 @@ from pathlib import Path
 from app.config import _is_production, settings
 from app.database import create_tables, run_migrations
 from app.routers import auth, users, sets, boxes, images, labels, settings as settings_router, backup
+from app.services.backup_scheduler import start_scheduler
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -111,6 +112,7 @@ if frontend_dist.exists():
 def on_startup():
     create_tables()
     run_migrations()
+    start_scheduler()
 
 
 @app.get("/api/health")

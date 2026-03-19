@@ -1,13 +1,11 @@
-import { useState, useRef } from 'react'
-import { CloudArrowDownIcon, CloudArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useState, useRef, useEffect } from 'react'
+import { CloudArrowDownIcon, CloudArrowUpIcon, ClockIcon, XMarkIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { backupApi } from '../api/client'
+import { useToast } from '../hooks/useToast'
+
+const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
 // Phasen-Labels
-// 'building'   → Export: aktueller Set-Ordner-Name
-// 'upload'     → Import: Datei wird hochgeladen
-// 'validating' → Import: ZIP-Prüfung
-// 'extracting' → Import: Bilder extrahieren
-// 'importing'  → Import: DB-Inserts
 function phaseLabel(phase, currentName) {
   if (phase === 'upload') return 'Datei wird hochgeladen…'
   if (phase === 'building') return currentName || 'ZIP wird erstellt…'
@@ -56,6 +54,8 @@ function ProgressBar({ progress }) {
 }
 
 export function BackupPage() {
+  const toast = useToast()
+
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState(null)
   const [exportError, setExportError] = useState(null)
@@ -68,7 +68,19 @@ export function BackupPage() {
   const [importResult, setImportResult] = useState(null)
   const [importError, setImportError] = useState(null)
 
+  // Automatische Backups
+  const [schedule, setSchedule] = useState(null)
+  const [autoBackups, setAutoBackups] = useState([])
+  const [savingSchedule, setSavingSchedule] = useState(false)
+  const [runningNow, setRunningNow] = useState(false)
+
   const fileInputRef = useRef(null)
+
+  // Schedule + Auto-Backups laden
+  useEffect(() => {
+    backupApi.getSchedule().then(r => setSchedule(r.data)).catch(() => {})
+    backupApi.getAutoBackups().then(r => setAutoBackups(r.data)).catch(() => {})
+  }, [])
 
   // ── Export ──────────────────────────────────────────────────────────────────
 
@@ -135,7 +147,6 @@ export function BackupPage() {
         },
       )
 
-      // Upload fertig → SSE für Verarbeitungs-Fortschritt
       const result = await new Promise((resolve, reject) => {
         const es = new EventSource(`/api/backup/import/progress/${task_id}`)
         es.onmessage = (e) => {
@@ -155,6 +166,49 @@ export function BackupPage() {
     } finally {
       setImporting(false)
       setImportProgress(null)
+    }
+  }
+
+  // ── Automatisches Backup ──────────────────────────────────────────────────
+
+  const updateScheduleField = (key, value) => {
+    setSchedule(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleSaveSchedule = async () => {
+    setSavingSchedule(true)
+    try {
+      const { data } = await backupApi.updateSchedule(schedule)
+      setSchedule(data)
+      toast('Backup-Zeitplan gespeichert', 'success')
+    } catch {
+      toast('Fehler beim Speichern', 'error')
+    } finally {
+      setSavingSchedule(false)
+    }
+  }
+
+  const handleRunNow = async () => {
+    setRunningNow(true)
+    try {
+      await backupApi.runNow()
+      toast('Backup erstellt', 'success')
+      const { data } = await backupApi.getAutoBackups()
+      setAutoBackups(data)
+    } catch {
+      toast('Backup fehlgeschlagen', 'error')
+    } finally {
+      setRunningNow(false)
+    }
+  }
+
+  const handleDeleteBackup = async (filename) => {
+    try {
+      await backupApi.deleteAutoBackup(filename)
+      setAutoBackups(prev => prev.filter(b => b.filename !== filename))
+      toast('Backup gelöscht', 'success')
+    } catch {
+      toast('Fehler beim Löschen', 'error')
     }
   }
 
@@ -253,6 +307,212 @@ export function BackupPage() {
           </div>
         </div>
       </div>
+
+      {/* Automatisches Backup */}
+      {schedule && (
+        <div className="card p-6">
+          <div className="flex items-start gap-4">
+            <ClockIcon className="w-8 h-8 text-brand-navy flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold text-brand-navy mb-1">Automatisches Backup</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Erstellt automatisch Backups nach Zeitplan in einem separaten Verzeichnis.
+              </p>
+
+              {/* Aktivieren */}
+              <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={schedule.backup_enabled === 'true'}
+                  onChange={e => updateScheduleField('backup_enabled', e.target.checked ? 'true' : 'false')}
+                  className="w-5 h-5 rounded border-gray-300 text-brand-navy focus:ring-brand-navy"
+                />
+                <span className="text-sm font-medium text-gray-700">Automatisches Backup aktivieren</span>
+              </label>
+
+              {schedule.backup_enabled === 'true' && (
+                <div className="space-y-4 pl-8">
+                  {/* Frequenz */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Häufigkeit</label>
+                    <div className="flex gap-2">
+                      {[
+                        { value: 'daily', label: 'Täglich' },
+                        { value: 'weekly', label: 'Wöchentlich' },
+                        { value: 'monthly', label: 'Monatlich' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => updateScheduleField('backup_frequency', opt.value)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                            schedule.backup_frequency === opt.value
+                              ? 'bg-brand-navy text-white border-brand-navy'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-brand-navy'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tag (bei wöchentlich/monatlich) */}
+                  {schedule.backup_frequency === 'weekly' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Wochentage</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {WEEKDAYS.map((day, i) => {
+                          const selected = (schedule.backup_day || '').split(',').filter(Boolean)
+                          const isActive = selected.includes(String(i))
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                const next = isActive
+                                  ? selected.filter(d => d !== String(i))
+                                  : [...selected, String(i)]
+                                updateScheduleField('backup_day', next.sort().join(',') || '0')
+                              }}
+                              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                isActive
+                                  ? 'bg-brand-navy text-white border-brand-navy'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-navy'
+                              }`}
+                            >
+                              {day.slice(0, 2)}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {(schedule.backup_day || '0').split(',').filter(Boolean).map(d => WEEKDAYS[Number(d)]).join(', ') || 'Kein Tag ausgewählt'}
+                      </p>
+                    </div>
+                  )}
+
+                  {schedule.backup_frequency === 'monthly' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tag des Monats</label>
+                      <select
+                        value={schedule.backup_day}
+                        onChange={e => updateScheduleField('backup_day', e.target.value)}
+                        className="input-field w-auto"
+                      >
+                        {Array.from({ length: 28 }, (_, i) => (
+                          <option key={i + 1} value={i + 1}>{i + 1}.</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Uhrzeit */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Uhrzeit</label>
+                    <input
+                      type="time"
+                      value={schedule.backup_time}
+                      onChange={e => updateScheduleField('backup_time', e.target.value)}
+                      className="input-field w-auto"
+                    />
+                  </div>
+
+                  {/* Retention */}
+                  <div className="border-t border-gray-100 pt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-3">Aufbewahrung</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Max. Anzahl Backups</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={schedule.backup_retention_count}
+                          onChange={e => updateScheduleField('backup_retention_count', e.target.value)}
+                          className="input-field"
+                          placeholder="0 = unbegrenzt"
+                        />
+                        <p className="text-xs text-gray-400 mt-0.5">0 = unbegrenzt</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Max. Alter (Tage)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={schedule.backup_retention_days}
+                          onChange={e => updateScheduleField('backup_retention_days', e.target.value)}
+                          className="input-field"
+                          placeholder="0 = unbegrenzt"
+                        />
+                        <p className="text-xs text-gray-400 mt-0.5">0 = unbegrenzt</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Speichern + Jetzt ausführen */}
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={handleSaveSchedule}
+                  disabled={savingSchedule}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  {savingSchedule ? 'Wird gespeichert…' : 'Zeitplan speichern'}
+                </button>
+                <button
+                  onClick={handleRunNow}
+                  disabled={runningNow}
+                  className="btn-secondary disabled:opacity-50"
+                >
+                  {runningNow ? 'Wird erstellt…' : 'Jetzt Backup erstellen'}
+                </button>
+              </div>
+
+              {schedule.backup_last_run && (
+                <p className="text-xs text-gray-400 mt-2">
+                  Letztes automatisches Backup: {new Date(schedule.backup_last_run).toLocaleString('de-DE')}
+                </p>
+              )}
+
+              {/* Liste der automatischen Backups */}
+              {autoBackups.length > 0 && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Vorhandene Backups ({autoBackups.length})</p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {autoBackups.map(b => (
+                      <div key={b.filename} className="flex items-center justify-between py-1.5 px-3 bg-gray-50 rounded-lg text-sm">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-gray-700 truncate block">{b.filename}</span>
+                          <span className="text-xs text-gray-400">
+                            {b.size_mb} MB · {new Date(b.created_at).toLocaleString('de-DE')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          <a
+                            href={backupApi.downloadAutoBackup(b.filename)}
+                            className="p-1.5 text-gray-400 hover:text-brand-navy transition-colors"
+                            title="Herunterladen"
+                          >
+                            <ArrowDownTrayIcon className="w-4 h-4" />
+                          </a>
+                          <button
+                            onClick={() => handleDeleteBackup(b.filename)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                            title="Löschen"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (

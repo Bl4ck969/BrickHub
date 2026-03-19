@@ -107,6 +107,13 @@ export const backupApi = {
     form,
     { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress },
   ),
+  // Automatische Backups
+  getSchedule: () => client.get('/api/backup/schedule'),
+  updateSchedule: (settings) => client.put('/api/backup/schedule', settings),
+  getAutoBackups: () => client.get('/api/backup/auto-backups'),
+  runNow: () => client.post('/api/backup/auto-backups/run-now'),
+  downloadAutoBackup: (filename) => `/api/backup/auto-backups/download/${encodeURIComponent(filename)}`,
+  deleteAutoBackup: (filename) => client.delete(`/api/backup/auto-backups/${encodeURIComponent(filename)}`),
 }
 
 // Labels API

@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     secure_cookies: bool = False  # True nur bei HTTPS (Reverse Proxy). Mit SECURE_COOKIES=true aktivieren.
 
     class Config:
-        env_file = ".env"
+        # Erst data/.env (persistentes Docker-Volume), dann .env (lokal/dev)
+        env_file = ("data/.env", ".env")
         env_file_encoding = "utf-8"
 
 

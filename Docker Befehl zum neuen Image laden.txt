@@ -13,13 +13,16 @@ docker run -d \
   -e HOST_OS="Unraid" \
   -e HOST_HOSTNAME="Unraid-Server" \
   -e HOST_CONTAINERNAME="Brickhub" \
-  --env-file /mnt/user/appdata/brickhub/data/.env \
   -l net.unraid.docker.managed=dockerman \
   -l net.unraid.docker.webui='http://[IP]:[PORT:8049]/' \
   -p 8049:8080/tcp \
   -v '/mnt/user/appdata/brickhub/data':'/app/data':'rw' \
   -v '/mnt/user/appdata/brickhub/export':'/app/export':'rw' \
+  --restart unless-stopped \
   ghcr.io/bl4ck969/brickhub:latest
+
+Hinweis: SECRET_KEY wird automatisch aus /mnt/user/appdata/brickhub/data/.env
+gelesen (persistentes Volume). Kein --env-file oder -e SECRET_KEY nötig.
 
 
 Einmalige Einrichtung der .env-Datei (nur beim ersten Mal):

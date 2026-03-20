@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { setsApi, boxesApi, imagesApi, settingsApi } from '../api/client'
 import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import { OneDriveIcon } from '../components/OneDriveIcon'

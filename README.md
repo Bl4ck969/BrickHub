@@ -3,9 +3,9 @@
 Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbausteinsets. Entwickelt für den Einsatz auf einem Unraid-Server via Docker.
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688?logo=fastapi)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)
@@ -201,7 +201,7 @@ Sets können mit OneDrive-Ordnern verknüpft werden, um z.B. Bauanleitungen, Fot
 | Komponente | Technologie |
 |---|---|
 | **Backend** | Python 3.12+ · FastAPI · SQLAlchemy 2.0 · SQLite |
-| **Frontend** | React 18 · Vite 7 · Tailwind CSS 3 · TanStack Table v8 |
+| **Frontend** | React 19 · Vite 8 · Tailwind CSS 3 · TanStack Table v8 |
 | **Auth** | bcrypt · python-jose (JWT/HS256) · HTTP-only Cookies |
 | **Bildverarbeitung** | OpenCV · Pillow · rembg (u2net) |
 | **PDF** | ReportLab (Canvas API + Platypus) |
@@ -231,7 +231,7 @@ BrickHub/
 ├── frontend/
 │   ├── public/                  # Statische Assets (Logo, Icons)
 │   ├── src/
-│   │   ├── App.jsx              # Router-Setup (React Router v6, Lazy Loading)
+│   │   ├── App.jsx              # Router-Setup (React Router v7, Lazy Loading)
 │   │   ├── api/client.js        # Axios API-Client (authApi, setsApi, boxesApi, imagesApi, labelsApi, settingsApi)
 │   │   ├── components/          # Wiederverwendbare Komponenten (Navbar, Modal, ImageEditor, OneDriveIcon, ProtectedRoute)
 │   │   ├── hooks/
@@ -247,6 +247,7 @@ BrickHub/
 │   └── screenshots/             # Screenshots für README
 ├── Dockerfile                   # Multi-Stage Build (Node + Python), non-root User
 ├── docker-compose.yml           # Produktions-Deployment (Port 8080)
+├── BrickHub-unraid-template.xml # Unraid Docker-Template (Import-fertig)
 ├── brickhub.bat                 # Windows Server-Manager (Start/Stop/Restart/Status)
 ├── Logo.png                     # BrickHub-Logo
 └── CLAUDE.md                    # Entwickler-Dokumentation
@@ -284,6 +285,19 @@ docker run -d \
 > sed -i 's/^/SECRET_KEY=/' /mnt/user/appdata/brickhub/data/.env
 > chown -R 1000:1000 /mnt/user/appdata/brickhub/ && docker restart Brickhub
 > ```
+
+### Unraid-Template (empfohlen)
+
+Für Unraid-Nutzer liegt ein fertiges Docker-Template bei: [`BrickHub-unraid-template.xml`](BrickHub-unraid-template.xml)
+
+**Vorteile**: Der Unraid Auto-Updater kennt alle Ports, Volumes und Variablen und baut den Container bei Updates korrekt neu – kein manuelles `docker run` mehr nötig.
+
+**Installation**:
+1. Datei `BrickHub-unraid-template.xml` herunterladen
+2. Per SCP/SMB nach `/boot/config/plugins/dockerMan/templates-user/` auf dem Unraid-Server kopieren
+3. In der Unraid-Weboberfläche: Docker → Add Container → Template oben auswählen → ggf. Pfade anpassen → Apply
+
+> Das Template enthält **keine Secrets**. Der SECRET_KEY wird aus der `.env`-Datei im persistenten Data-Volume gelesen (siehe oben).
 
 ### Docker-Details
 

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Brickhub</Name>
+  <Repository>ghcr.io/bl4ck969/brickhub:latest</Repository>
+  <Registry>https://github.com/Bl4ck969/BrickHub/pkgs/container/brickhub</Registry>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/Bl4ck969/BrickHub/issues</Support>
+  <Project>https://github.com/Bl4ck969/BrickHub</Project>
+  <Overview>Klemmbausteinset-Inventar-Webapp zum Verwalten von Klemmbausteinsets mit Bildern, PDF-Export und automatischen Backups.</Overview>
+  <Category>Tools: Productivity:</Category>
+  <WebUI>http://[IP]:[PORT:8049]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/Bl4ck969/BrickHub/main/frontend/public/logo.png</Icon>
+  <ExtraParams>--pids-limit 2048 --restart unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI Port" Target="8080" Default="8049" Mode="tcp" Description="Port fuer die Weboberflaeche" Type="Port" Display="always" Required="true" Mask="false">8049</Config>
+  <Config Name="Zeitzone" Target="TZ" Default="Europe/Berlin" Mode="" Description="Zeitzone fuer korrekte Backup-Zeiten (z.B. Europe/Berlin)" Type="Variable" Display="always" Required="false" Mask="false">Europe/Berlin</Config>
+  <Config Name="Daten" Target="/app/data" Default="/mnt/user/appdata/brickhub/data" Mode="rw" Description="Datenbank, Uploads und .env mit SECRET_KEY" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/brickhub/data</Config>
+  <Config Name="Export" Target="/app/export" Default="/mnt/user/appdata/brickhub/export" Mode="rw" Description="Manuelle Exports (ZIP-Dateien)" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/brickhub/export</Config>
+  <Config Name="Backup" Target="/app/backup" Default="/mnt/disk2/Backups/BrickHub" Mode="rw" Description="Automatische Backups (idealerweise separate Freigabe)" Type="Path" Display="always" Required="true" Mask="false">/mnt/disk2/Backups/BrickHub</Config>
+</Container>

@@ -1,32 +1,17 @@
+# Von Claude Code eingerichtet: beobachtet NUR das Docker-Base-Image (FROM ...)
+# und schlaegt bei einer neueren Version einen Pull Request vor (max. 2, monatlich).
+# Aendert nichts automatisch - jeder PR muss manuell gemergt werden.
+# npm/pip-Schwachstellen laufen ueber Dependabot-Alerts + das 2-Wochen-Audit-Issue.
 version: 2
 updates:
-  # Python-Pakete (requirements.txt)
-  - package-ecosystem: "pip"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "python"
-
-  # npm-Pakete (package.json)
-  - package-ecosystem: "npm"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "javascript"
-
-  # GitHub Actions selbst aktuell halten
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "monthly"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "docker"
+      include: "scope"
     labels:
       - "dependencies"
-      - "github-actions"
+      - "docker-base-image"

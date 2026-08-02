@@ -91,9 +91,16 @@ app.include_router(labels.router)
 app.include_router(settings_router.router)
 app.include_router(backup.router)
 
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "app": "BrickHub"}
+
+
 # Serve frontend build in production
 # In Docker: /app/app/main.py → /app/ → /app/frontend/dist
 # In dev: ../../frontend/dist (not present, skipped)
+# ACHTUNG: Alle echten Routen müssen VOR diesem Block stehen. Die Catch-All
+# unten greift jeden Pfad ab – eine danach definierte Route wird nie erreicht.
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
 if frontend_dist.exists():
     # Statische Assets (JS, CSS, Bilder)
@@ -113,8 +120,3 @@ def on_startup():
     create_tables()
     run_migrations()
     start_scheduler()
-
-
-@app.get("/api/health")
-def health():
-    return {"status": "ok", "app": "BrickHub"}

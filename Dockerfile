@@ -61,4 +61,14 @@ ENV MALLOC_TOP_PAD_=0
 
 EXPOSE 8080
 
+# Healthcheck im Image, nicht im Unraid-Template: Ein Template-Healthcheck
+# (--health-cmd in ExtraParams) geht bei jedem GUI-Update verloren, das ihn
+# nicht mitträgt. Im Image ist er Teil des Containers und bleibt erhalten.
+# Kein curl — das ist in python:3.12-slim nicht enthalten. Exec-Form vermeidet
+# Shell-Quoting. Geprüft wird der JSON-Inhalt, nicht nur HTTP 200: Die SPA-
+# Catch-All in main.py liefert für jeden unbekannten Pfad index.html mit
+# Status 200 — ein reiner Statuscode-Check wäre dadurch immer "gesund".
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python", "-c", "import urllib.request,json,sys; sys.exit(0 if json.load(urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)).get('status') == 'ok' else 1)"]
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -12,7 +12,7 @@
   <Category>Tools: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:8049]/</WebUI>
   <Icon>https://raw.githubusercontent.com/Bl4ck969/BrickHub/main/frontend/public/logo.png</Icon>
-  <ExtraParams>--pids-limit 2048 --restart unless-stopped</ExtraParams>
+  <ExtraParams>--pids-limit 2048 --restart unless-stopped --memory=4g</ExtraParams>
   <PostArgs/>
   <CPUset/>
   <DonateText/>

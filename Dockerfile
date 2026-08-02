@@ -1,5 +1,7 @@
 # Stage 1: Build React frontend
-FROM node:20-alpine AS frontend-builder
+# node:22 ist Pflicht, nicht Geschmack: react-router 8 verlangt >=22.22.0,
+# Vite 8 mindestens ^20.19 || >=22.12. Node 20 ist seit April 2026 ausserdem EOL.
+FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package*.json ./

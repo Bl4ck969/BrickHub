@@ -45,6 +45,13 @@ auf „Update" klicken. Maßgeblich ist dort das **Template**, nicht `docker-com
 - Beide bei jeder Änderung an Env, Mount, Port oder ExtraParams **gemeinsam** pflegen —
   was nur in `docker-compose.yml` steht, geht beim GUI-Update still verloren
 - Vor Releases den Skill `unraid-container-deployment` verwenden
+- **`<Icon>` zeigt seit 08.08.2026 auf `http://192.168.178.95:8049/logo.png`** — der Container
+  liefert sein Logo selbst aus. Die frühere `raw.githubusercontent`-URL funktionierte nur, weil
+  BrickHub als einziges eigenes Repo **öffentlich** ist; bei den privaten Repos (AllMyBooks,
+  AllMyMovies) antwortet GitHub 404 und die Kachel bekommt ein Fragezeichen. Damit hängt das Icon
+  hier nicht mehr am Repo-Zustand, und alle eigenen Container folgen demselben Muster.
+  ⚠ `[IP]`/`[PORT:…]` werden im Icon-Feld **nicht** ersetzt (nur in `<WebUI>`), Host-Pfade kann
+  Unraid gar nicht — es holt das Icon per curl. Details: Skill `unraid-container-deployment`, Pflicht 5
 
 ## Lint
 

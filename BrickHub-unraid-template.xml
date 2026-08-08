@@ -11,7 +11,12 @@
   <Overview>Klemmbausteinset-Inventar-Webapp zum Verwalten von Klemmbausteinsets mit Bildern, PDF-Export und automatischen Backups.</Overview>
   <Category>Tools: Productivity:</Category>
   <WebUI>http://[IP]:[PORT:8049]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/Bl4ck969/BrickHub/main/frontend/public/logo.png</Icon>
+  <!-- Einheitlich mit den uebrigen eigenen Containern: der Container liefert sein Icon selbst aus.
+       Die raw.githubusercontent-URL funktioniert hier zwar (BrickHub ist oeffentlich), haengt aber
+       am Repo-Zustand - wird es je privat gestellt, antwortet GitHub 404 und die Kachel bekommt ein
+       Fragezeichen. Feste IP + Host-Port, KEINE [IP]/[PORT:]-Platzhalter (die gelten nur in <WebUI>).
+       Siehe Skill unraid-container-deployment, Pflicht 5. -->
+  <Icon>http://192.168.178.95:8049/logo.png</Icon>
   <ExtraParams>--pids-limit 2048 --restart unless-stopped --memory=4g</ExtraParams>
   <PostArgs/>
   <CPUset/>

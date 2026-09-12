@@ -137,6 +137,21 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 4. Finalize → `finalize_image()`: rembg Hintergrundentfernung → Skalierung → Thumbnail
 5. DB speichert 6 Pfade pro Set: `{front,back}cover_{original,edited,thumbnail}`
 
+> ⚠ **Der Editor zeichnet beim Öffnen nichts, wenn das Bild kleiner ist als der
+> verfügbare Platz** (gemessen 12.09.2026, besteht schon vor dem Design-Umbau).
+> `baseScale` startet auf `1`; im `img.onload` wird
+> `s = Math.min(verfügbar/Breite, verfügbar/Höhe, 1)` berechnet. Passt das Bild
+> vollständig hinein, ist `s` **exakt 1** — `setBaseScale(1)` auf den bereits
+> gesetzten Wert löst **kein Rerender** aus, und
+> `useEffect(() => drawCanvas(), [corners, scale, drawCanvas])` läuft nie.
+> Die Leinwand bleibt leer, bis man Zoom oder Rotation anfasst.
+>
+> Gerechnet: ein 600×450-Original ergibt `s = 1` (kaputt), ein Handyfoto
+> 3024×4032 ergibt `s = 0,127` (läuft). Deshalb fällt es im Alltag kaum auf —
+> abfotografierte Verpackungen sind groß. **Fix wäre, `drawCanvas()` im `onload`
+> direkt anzustoßen**, statt sich auf das Rerender durch `setBaseScale` zu verlassen.
+> Noch offen.
+
 ### PDF-Generierung
 
 - `pdf_service.py` nutzt ReportLab Canvas API + Platypus Flowables
@@ -169,7 +184,24 @@ alles steht in `frontend/src/index.css`:
   gemerkter Wahl oder Systemeinstellung
 - Icons: `@heroicons/react` v2 (outline); die drei isometrischen Kennzahl-Icons in
   `components/BrickIcons.jsx`
-- Entwurf mit Begründungen: `docs/design-2.0-mockup.html`
+- Entwürfe mit Begründungen: `docs/design-2.0-mockup.html` (Gesamtbild) und
+  `docs/statistikleiste-varianten.html` (sechs Varianten der Kennzahlenleiste,
+  umgesetzt ist **A — eine Zeile**)
+
+## Screenshots für die README
+
+Liegen in `docs/screenshots/`. Die der **Weboberfläche** wurden am 12.09.2026 auf
+2.0 neu aufgenommen; `pdf-export.png` und `schilder.png` zeigen erzeugte **PDFs**
+und bleiben unverändert, solange `pdf_service.py` sich nicht ändert.
+
+Aufgenommen mit Playwright aus `tests/` (nutzt den installierten Edge). Muster:
+anmelden, navigieren, `page.screenshot()`. Zwei Dinge, die dabei Zeit gekostet haben:
+
+- **Ein Login je Screenshot ist zu fragil** — nach fünf Kontexten lief der
+  nächste in einen Timeout. Eine Sitzung nehmen und darin navigieren; das Theme
+  über `localStorage` plus `reload()` umschalten.
+- **Der Bildeditor braucht einen Anstoß**, sonst bleibt die Leinwand leer (siehe
+  Warnung unter „Datenfluss Bilder“): Zoom „+“ klicken, dann „Reset“ auf 100 %.
 
 ## Docker-Image
 

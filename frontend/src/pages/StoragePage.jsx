@@ -9,27 +9,37 @@ import { useNavigate } from 'react-router'
 
 const EMPTY_FORM = { name: '', location: '', fill_level: 0, allowed_stone_types: [] }
 
-/** Fuellstand als Noppenreihe: eine Noppe je 10 %.
- *  Eine Kiste zaehlt man in Steinen, nicht in Prozentpunkten. */
+/** Fuellstand als Noppen auf einem Stein: eine Noppe je 10 %.
+ *  Eine Kiste zaehlt man in Steinen, nicht in Prozentpunkten.
+ *  Die Noppe ist rund - das ist die Draufsicht auf einen Klemmbaustein.
+ *  Der Glanz oben und der Schatten unten machen sie erhaben statt flach. */
 function Noppen({ prozent }) {
   const voll = Math.round(prozent / 10)
   const farbe = fuellFarbe(prozent)
   return (
-    <div className="flex gap-[3px]" role="img" aria-label={`Füllstand ${prozent} Prozent`}>
+    <div
+      className="flex items-center gap-[5px] rounded-md border border-line bg-surface-3 px-1.5 py-1.5"
+      role="img"
+      aria-label={`Füllstand ${prozent} Prozent`}
+    >
       {Array.from({ length: 10 }, (_, i) => (
         <span
           key={i}
-          className={`relative h-4 flex-1 rounded-[3px] border ${
-            i < voll ? '' : 'border-line bg-surface-3'
-          }`}
-          style={i < voll ? { background: farbe, borderColor: farbe } : undefined}
-        >
-          <span
-            className={`absolute inset-x-[30%] top-[3px] h-[5px] rounded-[2px] ${
-              i < voll ? 'bg-white/55' : 'bg-ink-3/25'
-            }`}
-          />
-        </span>
+          className="aspect-square min-w-0 flex-1 rounded-full"
+          style={
+            i < voll
+              ? {
+                  background: farbe,
+                  boxShadow:
+                    'inset 0 1.5px 1px rgb(255 255 255 / 0.5), inset 0 -1.5px 1.5px rgb(0 0 0 / 0.28)',
+                }
+              : {
+                  background: 'var(--bh-line-2)',
+                  opacity: 0.45,
+                  boxShadow: 'inset 0 -1px 1px rgb(0 0 0 / 0.15)',
+                }
+          }
+        />
       ))}
     </div>
   )

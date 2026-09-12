@@ -1,0 +1,743 @@
+<title>Statistikleiste BrickHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap">
+
+<style>
+:root {
+  --ground:    #eef1f6;
+  --surface:   #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-3: #edf1f7;
+  --ink:       #101e33;
+  --ink-2:     #4a5c73;
+  --ink-3:     #7c8ca3;
+  --line:      #dce3ed;
+  --line-2:    #c6d1e0;
+  --gold:      #d99b1c;
+  --gold-soft: #fbf0d6;
+  --icon-line: #16243b;
+  --stud:      rgb(30 58 95 / .085);
+  --shadow-s:  0 1px 2px rgb(16 30 51 / .06), 0 1px 1px rgb(16 30 51 / .04);
+  --shadow-m:  0 4px 16px rgb(16 30 51 / .08);
+
+  --s1: #4f7fe0; --s2: #8b6fe8; --s3: #2aa396;
+  --s4: #d96ba8; --s5: #e0913c; --s6: #7a8aa3;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0c121d; --surface: #141d2c; --surface-2: #1a2435; --surface-3: #202c40;
+    --ink: #e9eff7; --ink-2: #9eb0c6; --ink-3: #6b7d94;
+    --line: #243145; --line-2: #33445e;
+    --gold: #f0b429; --gold-soft: rgb(240 180 41 / .15);
+    --icon-line: #2b4166; --stud: rgb(150 175 210 / .07);
+    --shadow-s: 0 1px 2px rgb(0 0 0 / .35); --shadow-m: 0 6px 20px rgb(0 0 0 / .4);
+    --s1: #6e97ec; --s2: #a58bf2; --s3: #3fbdaf;
+    --s4: #e884bc; --s5: #eca659; --s6: #91a2bb;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0c121d; --surface: #141d2c; --surface-2: #1a2435; --surface-3: #202c40;
+  --ink: #e9eff7; --ink-2: #9eb0c6; --ink-3: #6b7d94;
+  --line: #243145; --line-2: #33445e;
+  --gold: #f0b429; --gold-soft: rgb(240 180 41 / .15);
+  --icon-line: #2b4166; --stud: rgb(150 175 210 / .07);
+  --shadow-s: 0 1px 2px rgb(0 0 0 / .35); --shadow-m: 0 6px 20px rgb(0 0 0 / .4);
+  --s1: #6e97ec; --s2: #a58bf2; --s3: #3fbdaf;
+  --s4: #e884bc; --s5: #eca659; --s6: #91a2bb;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+:where(button):focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 18px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kopf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.kopf h1 {
+  font-family: Archivo, sans-serif;
+  font-size: 20px; font-weight: 700; letter-spacing: -.02em;
+  margin: 0; margin-right: auto;
+}
+.schalter {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 12px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--surface);
+  font-size: 12.5px; font-weight: 500; color: var(--ink-2);
+  box-shadow: var(--shadow-s);
+}
+.schalter:hover { color: var(--ink); border-color: var(--line-2); }
+
+.hinweis {
+  font-size: 13px; color: var(--ink-2); line-height: 1.55;
+  max-width: 70ch;
+}
+.hinweis b { color: var(--ink); font-weight: 600; }
+
+/* ---- Rahmen je Variante ---- */
+.fall { display: flex; flex-direction: column; gap: 8px; }
+.fall-kopf { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.fall-kopf h2 {
+  font-family: Archivo, sans-serif;
+  font-size: 15px; font-weight: 700; margin: 0;
+}
+.marke {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 5px;
+  background: var(--gold-soft); color: var(--ink); border: 1px solid var(--gold);
+}
+.fall-kopf p { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.buehne {
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background-image: radial-gradient(var(--stud) 1px, transparent 1.1px);
+  background-size: 16px 16px;
+}
+
+.eyebrow {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.num { font-variant-numeric: tabular-nums; }
+.wert {
+  font-family: Archivo, sans-serif; font-weight: 700;
+  letter-spacing: -.025em; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.wert small { font-size: .58em; font-weight: 600; color: var(--ink-3); }
+
+.karte {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: var(--shadow-s); overflow: hidden;
+}
+
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 1.5px; flex: 1; min-width: 0; }
+.bar > i { display: block; }
+
+/* ============================================================
+   IST — so sieht es heute aus
+   ============================================================ */
+.ist { display: grid; grid-template-columns: minmax(330px, 1.05fr) minmax(340px, 1.25fr); }
+.ist .kpis { display: grid; grid-template-columns: repeat(3, 1fr); }
+.ist .kpi {
+  padding: 14px 16px; border-right: 1px solid var(--line);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+}
+.ist .kpi:last-child { border-right: none; }
+.ist .wert { font-size: 26px; }
+.ist .k { font-size: 11px; color: var(--ink-3); margin-top: 4px; }
+.ist .dist {
+  padding: 14px 16px; background: var(--surface-2);
+  border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ist .zeile { display: flex; align-items: center; gap: 10px; }
+.ist .dl { width: 34px; text-align: right; flex: none; }
+.ist .legende { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 2px 16px; }
+.ist .li { display: flex; align-items: center; gap: 7px; font-size: 11.5px; min-width: 0; }
+.ist .li .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.ist .li .nm { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ist .li .vl { margin-left: auto; font-weight: 600; }
+
+/* ============================================================
+   A — Eine Zeile
+   ============================================================ */
+.vA { display: flex; align-items: stretch; flex-wrap: wrap; }
+.vA .zahlen { display: flex; flex: none; }
+.vA .kpi {
+  padding: 12px 18px; border-right: 1px solid var(--line);
+  display: flex; align-items: center; gap: 11px;
+}
+.vA .wert { font-size: 23px; }
+.vA .k { font-size: 10.5px; color: var(--ink-3); margin-top: 3px; }
+.vA .ic { width: 27px; height: 27px; color: var(--icon-line); flex: none; }
+.vA .rechts {
+  flex: 1; min-width: 280px; padding: 11px 16px;
+  background: var(--surface-2); display: flex; flex-direction: column; gap: 7px; justify-content: center;
+}
+.vA .chips { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.vA .chip { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11.5px; white-space: nowrap; }
+.vA .chip .sw { width: 7px; height: 7px; border-radius: 2px; align-self: center; }
+.vA .chip .nm { color: var(--ink-2); }
+.vA .chip .vl { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   B — Zahlen groß, Verteilung als Fußleiste
+   ============================================================ */
+.vB .oben { display: grid; grid-template-columns: repeat(3, 1fr); }
+.vB .kpi {
+  position: relative; padding: 16px 18px 15px;
+  border-right: 1px solid var(--line); overflow: hidden;
+}
+.vB .kpi:last-child { border-right: none; }
+.vB .wert { font-size: 30px; position: relative; }
+.vB .k { font-size: 11px; color: var(--ink-3); margin-top: 5px; position: relative; }
+.vB .ic {
+  position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+  width: 62px; height: 62px; opacity: .13; color: var(--icon-line); pointer-events: none;
+}
+.vB .unten {
+  border-top: 1px solid var(--line); background: var(--surface-2);
+  padding: 10px 16px 12px; display: flex; flex-direction: column; gap: 7px;
+}
+.vB .zeile { display: flex; align-items: center; gap: 10px; }
+.vB .dl { width: 34px; text-align: right; flex: none; }
+.vB .chips { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 2px; }
+.vB .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; white-space: nowrap; }
+.vB .chip .sw { width: 7px; height: 7px; border-radius: 2px; }
+.vB .chip .nm { color: var(--ink-2); }
+.vB .chip .vl { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   C — Verteilung als Tabelle
+   ============================================================ */
+.vC { display: grid; grid-template-columns: minmax(230px, .8fr) minmax(360px, 1.2fr); }
+.vC .zahlen {
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 14px; padding: 16px 18px; border-right: 1px solid var(--line);
+}
+.vC .kpi { display: flex; align-items: center; gap: 12px; }
+.vC .ic { width: 30px; height: 30px; color: var(--icon-line); flex: none; }
+.vC .wert { font-size: 24px; }
+.vC .k { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+.vC .tab { padding: 12px 16px 13px; background: var(--surface-2); }
+.vC table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.vC th {
+  font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3); text-align: right; padding: 0 0 6px; white-space: nowrap;
+}
+.vC th:first-child { text-align: left; }
+.vC td { font-size: 12px; padding: 3px 0; border-top: 1px solid var(--line); text-align: right; }
+.vC td:first-child { text-align: left; color: var(--ink-2); }
+.vC td.z { font-weight: 600; }
+.vC .nm { display: inline-flex; align-items: center; gap: 7px; }
+.vC .nm .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.vC td:last-child, .vC th:last-child { width: 78px; }
+.vC .mini { display: inline-block; width: 62px; vertical-align: middle; }
+.vC .mini span {
+  display: block; height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden;
+}
+.vC .mini span i { display: block; height: 100%; border-radius: 3px; }
+
+
+/* ============================================================
+   E — Zahlen zweizeilig: Sets und Teile teilen sich die obere Zeile,
+   der Gesamtwert steht darunter. Der Zahlenblock wird dadurch schmaler,
+   die Verteilung bekommt Breite und kommt mit weniger Zeilen aus.
+   ============================================================ */
+.vE { display: grid; grid-template-columns: minmax(262px, .72fr) minmax(400px, 1.28fr); }
+.vE .zahlen { display: flex; flex-direction: column; border-right: 1px solid var(--line); }
+.vE .oben { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); flex: 1; }
+.vE .kpi { display: flex; align-items: center; gap: 9px; padding: 9px 13px; min-width: 0; }
+.vE .oben .kpi:first-child { border-right: 1px solid var(--line); }
+.vE .unten { flex: 1; }
+.vE .ic { width: 24px; height: 24px; color: var(--icon-line); flex: none; }
+.vE .txt { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.vE .wert { font-size: 20px; }
+.vE .k { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+.vE .dist {
+  padding: 11px 16px; background: var(--surface-2);
+  display: flex; flex-direction: column; gap: 7px; justify-content: center;
+}
+.vE .zeile { display: flex; align-items: center; gap: 10px; }
+.vE .dl { width: 34px; text-align: right; flex: none; }
+.vE .chips { display: flex; flex-wrap: wrap; gap: 3px 13px; margin-top: 1px; }
+.vE .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; white-space: nowrap; }
+.vE .chip .sw { width: 7px; height: 7px; border-radius: 2px; }
+.vE .chip .nm { color: var(--ink-2); }
+.vE .chip .vl { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 860px) {
+  .vE { grid-template-columns: 1fr; }
+  .vE .zahlen { border-right: none; border-bottom: 1px solid var(--line); }
+  .vE .dist { border-top: none; }
+}
+
+
+/* ============================================================
+   F — E plus D: der zweizeilige Zahlenblock aus E, die Balkenliste
+   aus D. Damit sechs Steinarten nicht sechs Zeilen brauchen, laufen
+   sie in zwei Spalten - die laengsten links.
+   ============================================================ */
+.vF { display: grid; grid-template-columns: minmax(258px, .62fr) minmax(430px, 1.38fr); }
+.vF .zahlen { display: flex; flex-direction: column; border-right: 1px solid var(--line); }
+.vF .oben { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); flex: 1; }
+.vF .kpi { display: flex; align-items: center; gap: 9px; padding: 9px 13px; min-width: 0; }
+.vF .oben .kpi:first-child { border-right: 1px solid var(--line); }
+.vF .unten { flex: 1; }
+.vF .ic { width: 24px; height: 24px; color: var(--icon-line); flex: none; }
+.vF .txt { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.vF .wert { font-size: 20px; }
+.vF .k { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+
+.vF .liste { padding: 10px 16px 12px; background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; }
+.vF .kopfz { display: flex; align-items: center; gap: 8px; }
+.vF .kopfz .um { margin-left: auto; display: flex; gap: 2px; background: var(--surface-3); border-radius: 7px; padding: 2px; }
+.vF .kopfz .um button {
+  border: none; background: none; font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 5px; color: var(--ink-3);
+}
+.vF .kopfz .um button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-s); }
+.vF .gitter { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+.vF .reihe { display: grid; grid-template-columns: 132px minmax(60px, 1fr) 46px; align-items: center; gap: 8px; }
+.vF .reihe .nm { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-2); min-width: 0; }
+.vF .reihe .nm span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vF .reihe .nm .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.vF .spur { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+.vF .spur i { display: block; height: 100%; border-radius: 4px; }
+.vF .reihe .vl { text-align: right; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 980px) {
+  .vF { grid-template-columns: 1fr; }
+  .vF .zahlen { border-right: none; border-bottom: 1px solid var(--line); }
+  .vF .gitter { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   D — Balkenliste
+   ============================================================ */
+.vD { display: grid; grid-template-columns: minmax(250px, .75fr) minmax(380px, 1.25fr); }
+.vD .zahlen { display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--line); }
+.vD .kpi {
+  display: flex; align-items: center; gap: 12px; padding: 11px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.vD .kpi:last-child { border-bottom: none; }
+.vD .ic { width: 28px; height: 28px; color: var(--icon-line); flex: none; }
+.vD .wert { font-size: 22px; }
+.vD .k { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+.vD .liste { padding: 12px 16px 13px; background: var(--surface-2); display: flex; flex-direction: column; gap: 5px; }
+.vD .kopfz { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+.vD .kopfz .um { margin-left: auto; display: flex; gap: 2px; background: var(--surface-3); border-radius: 7px; padding: 2px; }
+.vD .kopfz .um button {
+  border: none; background: none; font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 5px; color: var(--ink-3);
+}
+.vD .kopfz .um button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-s); }
+.vD .reihe { display: grid; grid-template-columns: 132px 1fr 62px; align-items: center; gap: 10px; }
+.vD .reihe .nm { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-2); min-width: 0; }
+.vD .reihe .nm span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vD .reihe .nm .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.vD .spur { height: 9px; border-radius: 5px; background: var(--surface-3); overflow: hidden; }
+.vD .spur i { display: block; height: 100%; border-radius: 5px; }
+.vD .reihe .vl { text-align: right; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 860px) {
+  .ist, .vC, .vD { grid-template-columns: 1fr; }
+  .ist .dist, .vC .tab, .vD .liste { border-left: none; border-top: 1px solid var(--line); }
+  .vC .zahlen, .vD .zahlen { border-right: none; border-bottom: 1px solid var(--line); }
+  .ist .kpis, .vB .oben { grid-template-columns: 1fr; }
+  .ist .kpi, .vB .kpi { border-right: none; border-bottom: 1px solid var(--line); }
+  .vA .zahlen { flex-direction: column; width: 100%; }
+  .vA .kpi { border-right: none; border-bottom: 1px solid var(--line); }
+  .vD .reihe { grid-template-columns: 110px 1fr 56px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="ic-sets"><g stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">
+    <path d="M7 22.5 L7 27.5 L20 34 L20 29 Z" fill="#C98F16"/>
+    <path d="M20 29 L20 34 L33 27.5 L33 22.5 Z" fill="#E0A526"/>
+    <path d="M20 16 L33 22.5 L20 29 L7 22.5 Z" fill="#F5CC5E"/>
+    <path d="M7 17.5 L7 22.5 L20 29 L20 24 Z" fill="#C98F16"/>
+    <path d="M20 24 L20 29 L33 22.5 L33 17.5 Z" fill="#E0A526"/>
+    <path d="M20 11 L33 17.5 L20 24 L7 17.5 Z" fill="#F5CC5E"/>
+    <path d="M7 12.5 L7 17.5 L20 24 L20 19 Z" fill="#C98F16"/>
+    <path d="M20 19 L20 24 L33 17.5 L33 12.5 Z" fill="#E0A526"/>
+    <path d="M20 6 L33 12.5 L20 19 L7 12.5 Z" fill="#F5CC5E"/>
+  </g></g>
+  <g id="ic-parts">
+    <g stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">
+      <path d="M7 19 L7 26 L20 32.5 L20 25.5 Z" fill="#C98F16"/>
+      <path d="M20 25.5 L20 32.5 L33 26 L33 19 Z" fill="#E0A526"/>
+      <path d="M20 12.5 L33 19 L20 25.5 L7 19 Z" fill="#F5CC5E"/>
+    </g>
+    <g stroke="currentColor" stroke-width="1.1" stroke-linejoin="round">
+      <path d="M17.2 14.5 L17.2 16.4 A2.8 1.4 0 0 1 22.8 16.4 L22.8 14.5 Z" fill="#E0A526"/>
+      <ellipse cx="20" cy="14.5" rx="2.8" ry="1.4" fill="#F5CC5E"/>
+      <path d="M12 17.1 L12 19 A2.8 1.4 0 0 1 17.6 19 L17.6 17.1 Z" fill="#E0A526"/>
+      <ellipse cx="14.8" cy="17.1" rx="2.8" ry="1.4" fill="#F5CC5E"/>
+      <path d="M22.4 17.1 L22.4 19 A2.8 1.4 0 0 1 28 19 L28 17.1 Z" fill="#E0A526"/>
+      <ellipse cx="25.2" cy="17.1" rx="2.8" ry="1.4" fill="#F5CC5E"/>
+      <path d="M17.2 19.7 L17.2 21.6 A2.8 1.4 0 0 1 22.8 21.6 L22.8 19.7 Z" fill="#E0A526"/>
+      <ellipse cx="20" cy="19.7" rx="2.8" ry="1.4" fill="#F5CC5E"/>
+    </g>
+  </g>
+  <g id="ic-value">
+    <path d="M7 18 L7 21 A13 12 0 0 1 33 21 L33 18 Z" fill="#C98F16" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+    <ellipse cx="20" cy="18" rx="13" ry="12" fill="#F0B429" stroke="currentColor" stroke-width="1.3"/>
+    <ellipse cx="20" cy="18" rx="10.8" ry="9.9" fill="none" stroke="currentColor" stroke-width=".8" opacity=".3"/>
+    <path d="M26.2 12.5 C23.1 9.4 14.3 11.2 14.3 18 C14.3 24.8 23.1 26.7 26.2 23.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M13.9 16.1 H24.3 M13.9 19.9 H24.3" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+  </g>
+</defs></svg>
+
+<div class="page">
+
+  <div class="kopf">
+    <h1>Statistikleiste</h1>
+    <button type="button" class="schalter" id="themeToggle">
+      <span id="themeLabel">Dunkel</span>
+    </button>
+  </div>
+
+  <p class="hinweis">
+    Drei Dinge stören an der jetzigen Fassung: Die Kennzahlen stehen oben in einer Kachel,
+    die sich auf die Höhe der Verteilung streckt — <b>darunter bleibt totes Feld</b>. Die
+    Legende steht in gleich breiten Spalten, wodurch <b>zwischen Name und Zahl große Lücken</b>
+    klaffen. Und <b>Sets und Teile lassen sich nicht vergleichen</b>, weil die Zahlen nur
+    hintereinander stehen. Sechs Vorschläge, alle mit deinen echten Zahlen.
+  </p>
+
+  <!-- ============ IST ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>So ist es jetzt</h2>
+      <p>zum Vergleich · 130 px hoch</p>
+    </div>
+    <div class="buehne">
+      <div class="karte ist">
+        <div class="kpis">
+          <div class="kpi"><div><div class="wert">105</div><div class="k">Sets</div></div><svg class="ic" width="32" height="32" viewBox="0 0 40 40" style="color:var(--icon-line)"><use href="#ic-sets"></use></svg></div>
+          <div class="kpi"><div><div class="wert">129.539</div><div class="k">Teile</div></div><svg class="ic" width="32" height="32" viewBox="0 0 40 40" style="color:var(--icon-line)"><use href="#ic-parts"></use></svg></div>
+          <div class="kpi"><div><div class="wert">4.673,95<small> €</small></div><div class="k">Gesamtwert</div></div><svg class="ic" width="32" height="32" viewBox="0 0 40 40" style="color:var(--icon-line)"><use href="#ic-value"></use></svg></div>
+        </div>
+        <div class="dist">
+          <div class="eyebrow">Verteilung nach Steinart</div>
+          <div class="zeile"><span class="eyebrow dl">Sets</span><div class="bar" data-bar="sets"></div></div>
+          <div class="zeile"><span class="eyebrow dl">Teile</span><div class="bar" data-bar="teile"></div></div>
+          <div class="legende" data-legende="ist"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ A ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>A · Eine Zeile</h2>
+      <span class="marke">am kompaktesten</span>
+      <p>76 px statt 130 — kein totes Feld, mehr Platz für die Tabelle darunter</p>
+    </div>
+    <div class="buehne">
+      <div class="karte vA">
+        <div class="zahlen">
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-sets"></use></svg><div><div class="wert">105</div><div class="k">Sets</div></div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-parts"></use></svg><div><div class="wert">129.539</div><div class="k">Teile</div></div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-value"></use></svg><div><div class="wert">4.673,95<small> €</small></div><div class="k">Gesamtwert</div></div></div>
+        </div>
+        <div class="rechts">
+          <div class="zeile" style="display:flex;align-items:center;gap:10px">
+            <span class="eyebrow" style="width:34px;text-align:right;flex:none">Sets</span>
+            <div class="bar" data-bar="sets"></div>
+          </div>
+          <div class="zeile" style="display:flex;align-items:center;gap:10px">
+            <span class="eyebrow" style="width:34px;text-align:right;flex:none">Teile</span>
+            <div class="bar" data-bar="teile"></div>
+          </div>
+          <div class="chips" data-legende="chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ B ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>B · Zahlen zuerst</h2>
+      <span class="marke">Zahlen am größten</span>
+      <p>Kennzahlen über die volle Breite, Icons als Wasserzeichen, Verteilung als Fußleiste</p>
+    </div>
+    <div class="buehne">
+      <div class="karte vB">
+        <div class="oben">
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-sets"></use></svg><div class="wert">105</div><div class="k">Sets</div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-parts"></use></svg><div class="wert">129.539</div><div class="k">Teile</div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-value"></use></svg><div class="wert">4.673,95<small> €</small></div><div class="k">Gesamtwert</div></div>
+        </div>
+        <div class="unten">
+          <div class="zeile"><span class="eyebrow dl">Sets</span><div class="bar" data-bar="sets"></div></div>
+          <div class="zeile"><span class="eyebrow dl">Teile</span><div class="bar" data-bar="teile"></div></div>
+          <div class="chips" data-legende="chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ C ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>C · Verteilung als Tabelle</h2>
+      <span class="marke">am besten lesbar</span>
+      <p>Zahlen fluchten in Spalten — keine Lücken mehr, und Sets und Teile stehen nebeneinander</p>
+    </div>
+    <div class="buehne">
+      <div class="karte vC">
+        <div class="zahlen">
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-sets"></use></svg><div><div class="wert">105</div><div class="k">Sets</div></div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-parts"></use></svg><div><div class="wert">129.539</div><div class="k">Teile</div></div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-value"></use></svg><div><div class="wert">4.673,95<small> €</small></div><div class="k">Gesamtwert</div></div></div>
+        </div>
+        <div class="tab">
+          <table>
+            <thead>
+              <tr><th>Steinart</th><th>Sets</th><th>Teile</th><th>Anteil</th></tr>
+            </thead>
+            <tbody data-tabelle></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ E ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>E &middot; Zahlen zweizeilig</h2>
+      <span class="marke">dein Vorschlag</span>
+      <p>Sets und Teile teilen sich die obere Zeile, der Gesamtwert steht darunter &mdash;
+         der Zahlenblock wird schmaler, die Verteilung bekommt die Breite</p>
+    </div>
+    <div class="buehne">
+      <div class="karte vE">
+        <div class="zahlen">
+          <div class="oben">
+            <div class="kpi">
+              <svg class="ic" viewBox="0 0 40 40"><use href="#ic-sets"></use></svg>
+              <span class="txt"><span class="wert">105</span><span class="k">Sets</span></span>
+            </div>
+            <div class="kpi">
+              <svg class="ic" viewBox="0 0 40 40"><use href="#ic-parts"></use></svg>
+              <span class="txt"><span class="wert">129.539</span><span class="k">Teile</span></span>
+            </div>
+          </div>
+          <div class="kpi unten">
+            <svg class="ic" viewBox="0 0 40 40"><use href="#ic-value"></use></svg>
+            <span class="txt"><span class="wert">4.673,95<small> &euro;</small></span><span class="k">Gesamtwert</span></span>
+          </div>
+        </div>
+        <div class="dist">
+          <div class="zeile"><span class="eyebrow dl">Sets</span><div class="bar" data-bar="sets"></div></div>
+          <div class="zeile"><span class="eyebrow dl">Teile</span><div class="bar" data-bar="teile"></div></div>
+          <div class="chips" data-legende="chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ F ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>F &middot; E plus D</h2>
+      <span class="marke">deine Mischung</span>
+      <p>Zahlenblock zweizeilig wie in E, Verteilung als Balkenliste wie in D &mdash;
+         sechs Steinarten in zwei Spalten, damit es in der H&ouml;he zusammenpasst</p>
+    </div>
+    <div class="buehne">
+      <div class="karte vF">
+        <div class="zahlen">
+          <div class="oben">
+            <div class="kpi">
+              <svg class="ic" viewBox="0 0 40 40"><use href="#ic-sets"></use></svg>
+              <span class="txt"><span class="wert">105</span><span class="k">Sets</span></span>
+            </div>
+            <div class="kpi">
+              <svg class="ic" viewBox="0 0 40 40"><use href="#ic-parts"></use></svg>
+              <span class="txt"><span class="wert">129.539</span><span class="k">Teile</span></span>
+            </div>
+          </div>
+          <div class="kpi unten">
+            <svg class="ic" viewBox="0 0 40 40"><use href="#ic-value"></use></svg>
+            <span class="txt"><span class="wert">4.673,95<small> &euro;</small></span><span class="k">Gesamtwert</span></span>
+          </div>
+        </div>
+        <div class="liste">
+          <div class="kopfz">
+            <span class="eyebrow">Verteilung nach Steinart</span>
+            <span class="um" role="group" aria-label="Verteilung nach">
+              <button type="button" id="fSets" aria-pressed="true">Sets</button>
+              <button type="button" id="fTeile" aria-pressed="false">Teile</button>
+            </span>
+          </div>
+          <div class="gitter" data-fliste></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ D ============ -->
+  <div class="fall">
+    <div class="fall-kopf">
+      <h2>D · Balkenliste</h2>
+      <span class="marke">Vergleich am direktesten</span>
+      <p>Eine Zeile je Steinart mit eigenem Balken — Größenverhältnisse sofort ablesbar</p>
+    </div>
+    <div class="buehne">
+      <div class="karte vD">
+        <div class="zahlen">
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-sets"></use></svg><div><div class="wert">105</div><div class="k">Sets</div></div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-parts"></use></svg><div><div class="wert">129.539</div><div class="k">Teile</div></div></div>
+          <div class="kpi"><svg class="ic" viewBox="0 0 40 40"><use href="#ic-value"></use></svg><div><div class="wert">4.673,95<small> €</small></div><div class="k">Gesamtwert</div></div></div>
+        </div>
+        <div class="liste">
+          <div class="kopfz">
+            <span class="eyebrow">Verteilung nach Steinart</span>
+            <span class="um" role="group" aria-label="Verteilung nach">
+              <button type="button" id="dSets" aria-pressed="true">Sets</button>
+              <button type="button" id="dTeile" aria-pressed="false">Teile</button>
+            </span>
+          </div>
+          <div data-balkenliste></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Echte Zahlen aus der Sammlung, Stand 12.09.2026 */
+const ARTEN = [
+  { name: 'Standard',             sets: 73, teile: 87788, f: 'var(--s1)' },
+  { name: 'Diamond',              sets: 24, teile: 34007, f: 'var(--s2)' },
+  { name: 'Mini',                 sets:  3, teile:  1960, f: 'var(--s4)' },
+  { name: 'Standard, beleuchtet', sets:  2, teile:   169, f: 'var(--s5)' },
+  { name: 'Standard, Technik',    sets:  2, teile:  4795, f: 'var(--s3)' },
+  { name: 'Sonder-Steine',        sets:  1, teile:   820, f: 'var(--s6)' },
+]
+const n = (v) => v.toLocaleString('de-DE')
+const sum = (k) => ARTEN.reduce((s, a) => s + a[k], 0)
+
+/* Gestapelte Balken */
+document.querySelectorAll('[data-bar]').forEach(el => {
+  const k = el.dataset.bar
+  const g = sum(k)
+  el.innerHTML = ARTEN.map(a =>
+    `<i style="width:${(a[k] / g * 100).toFixed(2)}%;background:${a.f}" title="${a.name}: ${n(a[k])}"></i>`
+  ).join('')
+})
+
+/* Legende der Ist-Fassung: gleich breite Spalten, Wert rechtsbündig */
+document.querySelectorAll('[data-legende="ist"]').forEach(el => {
+  el.innerHTML = ARTEN.map(a =>
+    `<div class="li"><span class="sw" style="background:${a.f}"></span>` +
+    `<span class="nm">${a.name}</span>` +
+    `<span class="vl">${n(a.sets)}<span style="color:var(--ink-3);font-weight:400"> · ${n(a.teile)}</span></span></div>`
+  ).join('')
+})
+
+/* Legende als fließende Chips: Name und Zahl bleiben zusammen */
+document.querySelectorAll('[data-legende="chips"]').forEach(el => {
+  el.innerHTML = ARTEN.map(a =>
+    `<span class="chip"><span class="sw" style="background:${a.f}"></span>` +
+    `<span class="nm">${a.name}</span>` +
+    `<span class="vl">${n(a.sets)}<span style="color:var(--ink-3);font-weight:400"> · ${n(a.teile)}</span></span></span>`
+  ).join('')
+})
+
+/* Tabelle */
+const gTeile = sum('teile')
+document.querySelectorAll('[data-tabelle]').forEach(el => {
+  el.innerHTML = ARTEN.map(a => {
+    const p = a.teile / gTeile * 100
+    return `<tr>
+      <td><span class="nm"><span class="sw" style="background:${a.f}"></span>${a.name}</span></td>
+      <td class="z">${n(a.sets)}</td>
+      <td class="z">${n(a.teile)}</td>
+      <td><span class="mini"><span><i style="width:${p.toFixed(1)}%;background:${a.f}"></i></span></span></td>
+    </tr>`
+  }).join('')
+})
+
+/* Variante F: dieselbe Balkenliste, zweispaltig und nach dem aktiven
+   Maßstab sortiert - der längste Balken steht dadurch immer oben links. */
+let fModus = 'sets'
+function fListe() {
+  const sortiert = [...ARTEN].sort((a, b) => b[fModus] - a[fModus])
+  const max = sortiert[0][fModus]
+  document.querySelectorAll('[data-fliste]').forEach(el => {
+    el.innerHTML = sortiert.map(a => `
+      <div class="reihe">
+        <span class="nm"><span class="sw" style="background:${a.f}"></span><span>${a.name}</span></span>
+        <span class="spur"><i style="width:${(a[fModus] / max * 100).toFixed(1)}%;background:${a.f}"></i></span>
+        <span class="vl">${n(a[fModus])}</span>
+      </div>`).join('')
+  })
+}
+fListe()
+document.getElementById('fSets').addEventListener('click', () => {
+  fModus = 'sets'
+  document.getElementById('fSets').setAttribute('aria-pressed', 'true')
+  document.getElementById('fTeile').setAttribute('aria-pressed', 'false')
+  fListe()
+})
+document.getElementById('fTeile').addEventListener('click', () => {
+  fModus = 'teile'
+  document.getElementById('fSets').setAttribute('aria-pressed', 'false')
+  document.getElementById('fTeile').setAttribute('aria-pressed', 'true')
+  fListe()
+})
+
+/* Balkenliste, umschaltbar */
+let modus = 'sets'
+function balkenliste() {
+  const max = Math.max(...ARTEN.map(a => a[modus]))
+  document.querySelectorAll('[data-balkenliste]').forEach(el => {
+    el.innerHTML = ARTEN.map(a => `
+      <div class="reihe">
+        <span class="nm"><span class="sw" style="background:${a.f}"></span><span>${a.name}</span></span>
+        <span class="spur"><i style="width:${(a[modus] / max * 100).toFixed(1)}%;background:${a.f}"></i></span>
+        <span class="vl">${n(a[modus])}</span>
+      </div>`).join('')
+  })
+}
+balkenliste()
+document.getElementById('dSets').addEventListener('click', () => {
+  modus = 'sets'
+  document.getElementById('dSets').setAttribute('aria-pressed', 'true')
+  document.getElementById('dTeile').setAttribute('aria-pressed', 'false')
+  balkenliste()
+})
+document.getElementById('dTeile').addEventListener('click', () => {
+  modus = 'teile'
+  document.getElementById('dSets').setAttribute('aria-pressed', 'false')
+  document.getElementById('dTeile').setAttribute('aria-pressed', 'true')
+  balkenliste()
+})
+
+/* Hell / Dunkel */
+const istDunkel = () => {
+  const s = document.documentElement.getAttribute('data-theme')
+  return s ? s === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+const label = () => { document.getElementById('themeLabel').textContent = istDunkel() ? 'Hell' : 'Dunkel' }
+document.getElementById('themeToggle').addEventListener('click', () => {
+  document.documentElement.setAttribute('data-theme', istDunkel() ? 'light' : 'dark')
+  label()
+})
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', label)
+label()
+</script>

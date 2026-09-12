@@ -181,35 +181,36 @@ export function SetsPage() {
 
   const coverUrl = (pfad) => imagesApi.fileUrl(pfad) + '&t=' + imgCacheBuster
 
-  /** Front und Back als Stapel - beide bleiben einzeln anklickbar. */
-  const CoverStapel = ({ row }) => {
+  /* Vorder- und Rueckseite nebeneinander statt gestapelt: gestapelt verdeckt
+     die Rueckseite fast vollstaendig. `object-contain` statt `cover`, damit
+     nichts beschnitten wird - die Verpackungen sind mal quer, mal hochkant. */
+  const CoverPaar = ({ row }) => {
     const s = row.original
-    const bild = (pfad, gross, titel, hinten) =>
+    const bild = (pfad, gross, titel) =>
       pfad ? (
         <button
           type="button"
           onClick={() => setImageModal({ url: coverUrl(gross), title: `${s.name} – ${titel}` })}
-          title={`${s.name} – ${titel}`}
-          className={`relative block h-[34px] w-[46px] shrink-0 cursor-zoom-in overflow-hidden rounded-sm
-            border border-line-2 bg-surface-2 shadow-s transition-transform duration-150
-            hover:z-3 hover:scale-110 ${hinten ? '-ml-[27px] rotate-3 translate-y-1 z-0' : 'z-1'}`}
+          title={`${s.name} – ${titel} vergrößern`}
+          className="block h-[58px] w-[76px] shrink-0 cursor-zoom-in overflow-hidden rounded-md border
+            border-line-2 bg-surface-2 p-px shadow-s transition-all duration-150
+            hover:border-gold hover:shadow-m focus-visible:border-gold"
         >
-          <img src={coverUrl(pfad)} alt="" className="h-full w-full object-cover" />
+          <img src={coverUrl(pfad)} alt="" className="h-full w-full rounded-sm object-contain" />
         </button>
       ) : (
         <div
-          className={`h-[34px] w-[46px] shrink-0 rounded-sm border border-dashed border-line bg-surface-3
-            ${hinten ? '-ml-[27px] translate-y-1' : ''}`}
-          title="Kein Cover"
-        />
+          className="grid h-[58px] w-[76px] shrink-0 place-items-center rounded-md border border-dashed
+            border-line text-[10px] text-ink-3"
+          title={`Kein ${titel}`}
+        >
+          {titel === 'Frontcover' ? 'Vorne' : 'Hinten'}
+        </div>
       )
-    if (!s.frontcover_thumbnail && !s.backcover_thumbnail) {
-      return <div className="grid h-[34px] w-[46px] place-items-center rounded-sm border border-dashed border-line text-[11px] text-ink-3">–</div>
-    }
     return (
-      <div className="flex items-center">
-        {bild(s.frontcover_thumbnail, s.frontcover_edited, 'Frontcover', false)}
-        {bild(s.backcover_thumbnail, s.backcover_edited, 'Backcover', true)}
+      <div className="flex items-center gap-1.5">
+        {bild(s.frontcover_thumbnail, s.frontcover_edited, 'Frontcover')}
+        {bild(s.backcover_thumbnail, s.backcover_edited, 'Backcover')}
       </div>
     )
   }
@@ -221,7 +222,7 @@ export function SetsPage() {
       id: 'cover',
       header: 'Cover',
       enableSorting: false,
-      cell: ({ row }) => <CoverStapel row={row} />,
+      cell: ({ row }) => <CoverPaar row={row} />,
     }),
     columnHelper.accessor('name', {
       header: 'Set',
@@ -517,14 +518,16 @@ export function SetsPage() {
       </div>
 
       <div className="studs-bg flex-1 p-4 md:p-5">
-        {/* Kennzahlen und Verteilung - ein Objekt statt fuenf Kacheln */}
+        {/* Kennzahlen und Verteilung auf einer Hoehe. Die Legende laeuft als
+            Chips - dadurch bleiben Name und Zahl zusammen, statt in gleich
+            breiten Spalten auseinandergezogen zu werden. */}
         {showStats && (
           <section
-            className="mb-3.5 grid overflow-hidden rounded-xl border border-line bg-surface shadow-s
-              xl:grid-cols-[minmax(330px,1.05fr)_minmax(340px,1.25fr)]"
+            className="mb-3.5 flex flex-wrap items-stretch overflow-hidden rounded-xl border
+              border-line bg-surface shadow-s"
             aria-label="Kennzahlen der Sammlung"
           >
-            <div className="grid sm:grid-cols-3">
+            <div className="flex flex-none max-sm:w-full max-sm:flex-col">
               {[
                 { wert: zahl(summary.total_count), label: 'Sets', Icon: IconSets },
                 { wert: zahl(summary.total_parts), label: 'Teile', Icon: IconParts },
@@ -532,32 +535,30 @@ export function SetsPage() {
                   wert: (
                     <>
                       {summary.total_price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <small className="ml-0.5 text-[15px] font-semibold text-ink-3">&nbsp;€</small>
+                      <small className="ml-0.5 text-[14px] font-semibold text-ink-3">&nbsp;€</small>
                     </>
                   ),
                   label: 'Gesamtwert',
                   Icon: IconValue,
-                  letzte: true,
                 },
-              ].map(({ wert, label, Icon, letzte }) => (
+              ].map(({ wert, label, Icon }) => (
                 <div
                   key={label}
-                  className={`flex items-start justify-between gap-2.5 px-4 py-3.5
-                    ${letzte ? '' : 'border-b border-line sm:border-r sm:border-b-0'}`}
+                  className="flex items-center gap-2.5 border-line px-4 py-3
+                    max-sm:border-b sm:border-r"
                 >
+                  <Icon className="h-7 w-7 shrink-0 text-icon-line" />
                   <div className="min-w-0">
-                    <div className="font-display text-[clamp(19px,1.6vw,26px)] leading-none font-bold tracking-tight tabular-nums">
+                    <div className="font-display text-[23px] leading-none font-bold tracking-tight tabular-nums">
                       {wert}
                     </div>
-                    <div className="mt-1 text-[11px] font-medium text-ink-3">{label}</div>
+                    <div className="mt-[3px] text-[10.5px] font-medium text-ink-3">{label}</div>
                   </div>
-                  <Icon className="mt-px h-8 w-8 shrink-0 text-icon-line" />
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-col gap-2.5 border-t border-line bg-surface-2 px-4 py-3.5 xl:border-t-0 xl:border-l">
-              <div className="eyebrow">Verteilung nach Steinart</div>
+            <div className="flex min-w-[280px] flex-1 flex-col justify-center gap-[7px] bg-surface-2 px-4 py-3">
               {verteilung.length === 0 ? (
                 <p className="text-sm text-ink-3">–</p>
               ) : (
@@ -570,16 +571,16 @@ export function SetsPage() {
                     <span className="w-[34px] shrink-0 text-right text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase">Teile</span>
                     <Balken feld="teile" />
                   </div>
-                  <div className="grid gap-x-4 gap-y-0.5 [grid-template-columns:repeat(auto-fill,minmax(196px,1fr))]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
                     {verteilung.map(r => (
-                      <div key={r.name} className="flex min-w-0 items-center gap-1.5 text-[11.5px]">
-                        <span className="h-2 w-2 shrink-0 rounded-xs" style={{ background: r.farbe }} />
-                        <span className="truncate text-ink-2">{r.name}</span>
-                        <span className="ml-auto font-semibold tabular-nums">
+                      <span key={r.name} className="inline-flex items-baseline gap-1.5 text-[11.5px] whitespace-nowrap">
+                        <span className="h-[7px] w-[7px] self-center rounded-xs" style={{ background: r.farbe }} />
+                        <span className="text-ink-2">{r.name}</span>
+                        <span className="font-semibold tabular-nums">
                           {zahl(r.sets)}
                           <span className="font-normal text-ink-3"> · {zahl(r.teile)}</span>
                         </span>
-                      </div>
+                      </span>
                     ))}
                   </div>
                 </>
@@ -624,7 +625,7 @@ export function SetsPage() {
         {/* Tabelle */}
         {ansicht === 'tabelle' && (
           <div className="panel">
-            <div className="overflow-auto" style={{ maxHeight: showStats ? 'calc(100vh - 24rem)' : 'calc(100vh - 15rem)' }}>
+            <div className="overflow-auto" style={{ maxHeight: showStats ? 'calc(100vh - 21rem)' : 'calc(100vh - 15rem)' }}>
               <table className="w-full border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30">
                   {table.getHeaderGroups().map(hg => (

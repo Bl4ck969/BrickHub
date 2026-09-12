@@ -6,7 +6,7 @@ Webapplikation zur Verwaltung, Inventarisierung und Einlagerung von Klemmbaustei
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688?logo=fastapi)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)
-![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)
 
@@ -41,17 +41,33 @@ Es geht rund um das Thema **Klemmbausteine** und dessen Inventarisierung. Wer vi
 
 ## Screenshots
 
-### Login
+### Anmeldung
 ![Login](docs/screenshots/login.png)
 
-### Set-Übersicht mit Summary-Dashboard und Statistik-Icons
+### Set-Übersicht – Kennzahlen, Verteilung nach Steinart und die Tabelle
 ![Sets](docs/screenshots/sets-overview.png)
 
-### PDF-Setliste exportieren
-![PDF Export](docs/screenshots/pdf-export.png)
+Vorder- und Rückseite stehen nebeneinander, Status und Kiste sind direkt in der
+Zeile änderbar. Alle elf sortierbaren Spalten zeigen das auch an.
 
-### Backup exportieren / importieren mit Fortschrittsanzeige
-![Backup](docs/screenshots/backup.png)
+### Galerie-Ansicht
+![Galerie](docs/screenshots/sets-galerie.png)
+
+Dieselbe Sammlung als Cover-Raster – umschaltbar in der Kopfleiste.
+
+### Dunkelmodus
+![Dunkelmodus](docs/screenshots/sets-overview-dark.png)
+
+Folgt der Systemeinstellung, der Schalter in der Seitenleiste überschreibt sie,
+und die Wahl wird gemerkt.
+
+### Lagerverwaltung – Kisten
+![Lagerung](docs/screenshots/storage.png)
+
+Der Füllstand steht als Noppenreihe: eine Noppe je 10 Prozent.
+
+### Kisteninventur – Welches Set liegt wo?
+![Kisteninventur](docs/screenshots/box-inventory.png)
 
 ### Set bearbeiten – Grunddaten & OneDrive
 ![Set bearbeiten](docs/screenshots/set-edit.png)
@@ -65,20 +81,20 @@ Es geht rund um das Thema **Klemmbausteine** und dessen Inventarisierung. Wer vi
 ### ImageEditor – Eckpunkte setzen & Perspektivkorrektur
 ![ImageEditor](docs/screenshots/image-editor.png)
 
-### Lagerverwaltung – Kisten
-![Lagerung](docs/screenshots/storage.png)
-
-### Kisteninventur – Welches Set liegt wo?
-![Kisteninventur](docs/screenshots/box-inventory.png)
-
 ### Einlagerungsschilder generieren
 ![Schilder](docs/screenshots/labels.png)
 
 ### Beispiel: Generiertes Schilder-PDF
 ![Schilder PDF](docs/screenshots/schilder.png)
 
+### PDF-Setliste exportieren
+![PDF Export](docs/screenshots/pdf-export.png)
+
 ### Benutzerverwaltung
 ![Benutzer](docs/screenshots/users.png)
+
+### Backup exportieren / importieren mit Fortschrittsanzeige
+![Backup](docs/screenshots/backup.png)
 
 ---
 

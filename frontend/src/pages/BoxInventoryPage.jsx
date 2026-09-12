@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { setsApi, boxesApi } from '../api/client'
 import { useToast } from '../hooks/useToast'
 import { MagnifyingGlassIcon, PencilSquareIcon, CheckIcon, ArrowUpIcon, ArrowDownIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline'
+import { PageShell, Ladet } from '../components/PageShell'
 
 const SORT_COLS = {
   name: (a, b) => (a.name || '').localeCompare(b.name || ''),
@@ -97,26 +98,24 @@ export function BoxInventoryPage() {
       })
     : filteredSets
 
-  const thClass = "table-th cursor-pointer select-none hover:bg-brand-navy/80 transition"
+  const thClass = "table-th cursor-pointer select-none hover:bg-surface-3 transition"
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-brand-navy">Kisteninventur</h1>
-
-      <div className="card py-3">
+    <PageShell titel="Kisteninventur" untertitel="Welches Set liegt in welcher Kiste">
+      <div className="card mb-3 py-3">
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3" />
           <input type="text" placeholder="Suche nach Name, Hersteller..." className="input-field pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-navy" /></div>
+        <Ladet />
       ) : (
-        <div className="card p-0 overflow-hidden">
+        <div className="panel">
           <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-14rem)]">
             <table className="w-full text-sm">
-              <thead className="bg-brand-navy sticky top-0 z-30">
+              <thead className="sticky top-0 z-30">
                 <tr>
                   <th className={thClass} onClick={() => handleSort('name')}>Name <SortIcon col="name"/></th>
                   <th className={thClass} onClick={() => handleSort('manufacturer')}>Hersteller <SortIcon col="manufacturer"/></th>
@@ -132,9 +131,9 @@ export function BoxInventoryPage() {
                   <th className="table-th">Kiste ändern</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {sortedSets.length === 0 ? (
-                  <tr><td colSpan={999} className="text-center py-12 text-gray-400">Keine eingelagerten Sets</td></tr>
+                  <tr><td colSpan={999} className="text-center py-12 text-ink-3">Keine eingelagerten Sets</td></tr>
                 ) : sortedSets.map(set => (
                   <tr key={set.id} className="table-row">
                     <td className="table-td font-medium">{set.name}</td>
@@ -146,7 +145,7 @@ export function BoxInventoryPage() {
                     {boxes.map(box => (
                       <td key={box.id} className="table-td text-center">
                         {set.box_id === box.id ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-700 rounded-full">✓</span>
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-st-done-bg font-semibold text-st-done">✓</span>
                         ) : ''}
                       </td>
                     ))}
@@ -161,12 +160,12 @@ export function BoxInventoryPage() {
                             <option value="">– Keine –</option>
                             {boxes.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                           </select>
-                          <button onClick={handleSaveBox} className="p-1.5 text-green-600 hover:bg-green-50 rounded" disabled={saving}>
+                          <button onClick={handleSaveBox} className="grid h-7 w-7 place-items-center rounded-md text-st-done transition-colors hover:bg-st-done-bg" disabled={saving}>
                             <CheckIcon className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => handleEditBox(set)} className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded transition">
+                        <button onClick={() => handleEditBox(set)} className="grid h-7 w-7 place-items-center rounded-md text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink">
                           <PencilSquareIcon className="w-4 h-4" />
                         </button>
                       )}
@@ -178,6 +177,6 @@ export function BoxInventoryPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   )
 }

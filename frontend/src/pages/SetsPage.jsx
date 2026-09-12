@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import {
   useReactTable,
@@ -18,23 +18,29 @@ import {
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
   ChartBarIcon,
+  PlusIcon,
+  TableCellsIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline'
 import { setsApi, labelsApi, imagesApi, boxesApi } from '../api/client'
 import { OneDriveIcon } from '../components/OneDriveIcon'
+import { IconSets, IconParts, IconValue } from '../components/BrickIcons'
 import { useAuth } from '../hooks/useAuth'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { useToast } from '../hooks/useToast'
+import { STEINARTEN, steinFarbe, fuellFarbe, zahl, euro } from '../lib/stein'
 
-const STATUS_COLORS = {
-  'Neu': 'bg-blue-100 text-blue-700',
-  'Aufgebaut': 'bg-green-100 text-green-700',
-  'Im Bau': 'bg-amber-100 text-amber-700',
-  'Eingelagert': 'bg-gray-100 text-gray-600',
+/* Status ist ein Lebenszyklus, keine Schwereskala - die Farben bilden ihn ab.
+   Umriss plus Punkt, damit es nie mit dem gefuellten Gold-Akzent kollidiert. */
+const STATUS_STIL = {
+  'Neu': 'text-st-new bg-st-new-bg border-st-new/30',
+  'Aufgebaut': 'text-st-done bg-st-done-bg border-st-done/30',
+  'Im Bau': 'text-st-build bg-st-build-bg border-st-build/30',
+  'Eingelagert': 'text-st-rest bg-st-rest-bg border-st-rest/30',
 }
 
 const STATUSES = ['Neu', 'Aufgebaut', 'Im Bau', 'Eingelagert']
 
-const BAR_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#F97316', '#EF4444', '#6B7280']
 
 export function SetsPage() {
   const { isAdmin } = useAuth()
@@ -52,6 +58,25 @@ export function SetsPage() {
   const [boxes, setBoxes] = useState([])
   const [distinctValues, setDistinctValues] = useState({ manufacturers: [], categories: [], subcategories: [] })
   const [showStats, setShowStats] = useState(true)
+  // Die gewaehlte Ansicht ueberlebt den Seitenwechsel
+  const [ansicht, setAnsicht] = useState(() => {
+    try {
+      return localStorage.getItem('brickhub-sets-ansicht') === 'galerie' ? 'galerie' : 'tabelle'
+    } catch {
+      return 'tabelle'
+    }
+  })
+
+  const ansichtWechseln = useCallback((neu) => {
+    setAnsicht(neu)
+    try {
+      localStorage.setItem('brickhub-sets-ansicht', neu)
+    } catch {
+      // nicht speicherbar - gilt dann nur fuer diese Sitzung
+    }
+  }, [])
+  // Cache-Buster: aendert sich bei jedem fetchSets(), damit neue Thumbnails sofort sichtbar sind
+  const [imgCacheBuster, setImgCacheBuster] = useState(Date.now())
 
   useEffect(() => {
     boxesApi.list().then(res => setBoxes(res.data)).catch(err => { if (import.meta.env.DEV) console.warn('Boxes laden fehlgeschlagen', err) })
@@ -112,7 +137,7 @@ export function SetsPage() {
       a.download = `BrickHub-Export-${new Date().toISOString().slice(0, 10)}.json`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (err) {
+    } catch {
       toast('Export fehlgeschlagen', 'error')
     }
   }
@@ -126,7 +151,7 @@ export function SetsPage() {
       a.download = `BrickHub-Setliste-${new Date().toISOString().slice(0, 10)}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (err) {
+    } catch {
       toast('PDF-Export fehlgeschlagen', 'error')
     }
   }
@@ -154,94 +179,142 @@ export function SetsPage() {
     }
   }
 
+  const coverUrl = (pfad) => imagesApi.fileUrl(pfad) + '&t=' + imgCacheBuster
+
+  /** Front und Back als Stapel - beide bleiben einzeln anklickbar. */
+  const CoverStapel = ({ row }) => {
+    const s = row.original
+    const bild = (pfad, gross, titel, hinten) =>
+      pfad ? (
+        <button
+          type="button"
+          onClick={() => setImageModal({ url: coverUrl(gross), title: `${s.name} – ${titel}` })}
+          title={`${s.name} – ${titel}`}
+          className={`relative block h-[34px] w-[46px] shrink-0 cursor-zoom-in overflow-hidden rounded-sm
+            border border-line-2 bg-surface-2 shadow-s transition-transform duration-150
+            hover:z-3 hover:scale-110 ${hinten ? '-ml-[27px] rotate-3 translate-y-1 z-0' : 'z-1'}`}
+        >
+          <img src={coverUrl(pfad)} alt="" className="h-full w-full object-cover" />
+        </button>
+      ) : (
+        <div
+          className={`h-[34px] w-[46px] shrink-0 rounded-sm border border-dashed border-line bg-surface-3
+            ${hinten ? '-ml-[27px] translate-y-1' : ''}`}
+          title="Kein Cover"
+        />
+      )
+    if (!s.frontcover_thumbnail && !s.backcover_thumbnail) {
+      return <div className="grid h-[34px] w-[46px] place-items-center rounded-sm border border-dashed border-line text-[11px] text-ink-3">–</div>
+    }
+    return (
+      <div className="flex items-center">
+        {bild(s.frontcover_thumbnail, s.frontcover_edited, 'Frontcover', false)}
+        {bild(s.backcover_thumbnail, s.backcover_edited, 'Backcover', true)}
+      </div>
+    )
+  }
+
   const columnHelper = createColumnHelper()
-  // Cache-Buster: ändert sich bei jedem fetchSets(), damit neue Thumbnails sofort sichtbar sind
-  const [imgCacheBuster, setImgCacheBuster] = useState(Date.now())
 
   const columns = [
-    // Frontcover – eigene Spalte, adaptives Format (Quer/Hochkant)
     columnHelper.display({
-      id: 'frontcover',
-      header: 'Front',
+      id: 'cover',
+      header: 'Cover',
       enableSorting: false,
-      cell: ({ row }) => row.original.frontcover_thumbnail ? (
-        <div className="flex items-center justify-center">
-          <img
-            src={imagesApi.fileUrl(row.original.frontcover_thumbnail) + '&t=' + imgCacheBuster}
-            alt="Front"
-            className="max-h-36 max-w-[120px] w-auto h-auto object-contain rounded cursor-pointer hover:opacity-80 transition"
-            onClick={() => setImageModal({ url: imagesApi.fileUrl(row.original.frontcover_edited) + '&t=' + imgCacheBuster, title: `${row.original.name} – Frontcover` })}
-          />
-        </div>
-      ) : (
-        <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-300 text-xs">–</div>
-      ),
+      cell: ({ row }) => <CoverStapel row={row} />,
     }),
-    // Backcover – eigene Spalte, adaptives Format
-    columnHelper.display({
-      id: 'backcover',
-      header: 'Back',
-      enableSorting: false,
-      cell: ({ row }) => row.original.backcover_thumbnail ? (
-        <div className="flex items-center justify-center">
-          <img
-            src={imagesApi.fileUrl(row.original.backcover_thumbnail) + '&t=' + imgCacheBuster}
-            alt="Back"
-            className="max-h-36 max-w-[120px] w-auto h-auto object-contain rounded cursor-pointer hover:opacity-80 transition"
-            onClick={() => setImageModal({ url: imagesApi.fileUrl(row.original.backcover_edited) + '&t=' + imgCacheBuster, title: `${row.original.name} – Backcover` })}
-          />
-        </div>
-      ) : (
-        <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-gray-300 text-xs">–</div>
-      ),
+    columnHelper.accessor('name', {
+      header: 'Set',
+      cell: info => <span className="font-semibold">{info.getValue()}</span>,
     }),
-    columnHelper.accessor('name', { header: 'Name', cell: info => <span className="font-medium">{info.getValue()}</span> }),
-    columnHelper.accessor('manufacturer', { header: 'Hersteller' }),
-    columnHelper.accessor('manufacturer_number', { header: 'Nr.' }),
-    columnHelper.accessor('parts_count', { header: 'Teile', cell: info => info.getValue()?.toLocaleString('de-DE') || '-' }),
-    columnHelper.accessor('stone_size', { header: 'Steinart' }),
-    columnHelper.accessor('category', { header: 'Kategorie', cell: info => <span>{info.getValue()}{info.row.original.subcategory ? ` / ${info.row.original.subcategory}` : ''}</span> }),
-    columnHelper.accessor('status', {
-      header: 'Status',
-      cell: ({ row }) => isAdmin ? (
-        <select
-          value={row.original.status || ''}
-          onChange={e => handleStatusChange(row.original.id, e.target.value)}
-          className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[row.original.status] || 'bg-gray-100'}`}
-        >
-          {STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
-      ) : (
-        <span className={`text-xs font-medium px-2 py-1 rounded-full ${STATUS_COLORS[row.original.status] || 'bg-gray-100'}`}>
-          {row.original.status}
+    columnHelper.accessor('manufacturer', {
+      header: 'Hersteller',
+      cell: info => <span className="text-ink-2">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('manufacturer_number', {
+      header: 'Nr.',
+      cell: info => <span className="font-mono text-[11.5px] text-ink-2">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('parts_count', {
+      header: 'Teile',
+      meta: { rechts: true },
+      cell: info => zahl(info.getValue()),
+    }),
+    columnHelper.accessor('stone_size', {
+      header: 'Steinart',
+      cell: info => (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11.5px] text-ink-2">
+          <span className="h-[7px] w-[7px] shrink-0 rounded-xs" style={{ background: steinFarbe(info.getValue()) }} />
+          {info.getValue()}
         </span>
       ),
     }),
+    columnHelper.accessor('category', {
+      header: 'Kategorie',
+      cell: info => (
+        <div className="leading-tight">
+          <div className="text-[12.5px]">{info.getValue()}</div>
+          {info.row.original.subcategory && (
+            <div className="text-[11px] text-ink-3">{info.row.original.subcategory}</div>
+          )}
+        </div>
+      ),
+    }),
+    columnHelper.accessor('status', {
+      header: 'Status',
+      cell: ({ row }) => {
+        const stil = STATUS_STIL[row.original.status] || 'text-ink-2 bg-surface-3 border-line'
+        return isAdmin ? (
+          <select
+            value={row.original.status || ''}
+            onChange={e => handleStatusChange(row.original.id, e.target.value)}
+            aria-label={`Status von ${row.original.name}`}
+            className={`cursor-pointer appearance-none rounded-full border py-[3px] pr-5 pl-5 text-[11.5px]
+              font-semibold ${stil} bg-[image:radial-gradient(circle_at_9px_50%,currentColor_3px,transparent_3.6px)]
+              bg-no-repeat hover:brightness-97`}
+          >
+            {STATUSES.map(s => <option key={s} className="bg-surface font-medium text-ink">{s}</option>)}
+          </select>
+        ) : (
+          <span className={`status-pill ${stil}`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {row.original.status}
+          </span>
+        )
+      },
+    }),
     columnHelper.accessor('bag_count', {
       header: 'Tüten',
+      meta: { rechts: true },
       cell: ({ row }) => isAdmin ? (
         <input
           type="number"
           min="0"
           value={row.original.bag_count ?? ''}
           onChange={e => handleInlineChange(row.original.id, 'bag_count', e.target.value ? parseInt(e.target.value) : null)}
-          className="w-16 text-center border border-gray-200 rounded px-1 py-0.5 text-sm"
+          aria-label={`Tüten für ${row.original.name}`}
+          className="w-11 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-right text-[12.5px]
+            transition-colors hover:border-line-2 hover:bg-surface focus:border-gold focus:bg-surface
+            focus:ring-3 focus:ring-gold-soft focus:outline-hidden"
         />
-      ) : (row.original.bag_count ?? '-'),
+      ) : (row.original.bag_count ?? '–'),
     }),
     columnHelper.accessor('plate_count', {
       header: 'Platten',
+      meta: { rechts: true },
       cell: ({ row }) => isAdmin ? (
         <input
           type="number"
           min="0"
           value={row.original.plate_count ?? ''}
           onChange={e => handleInlineChange(row.original.id, 'plate_count', e.target.value ? parseInt(e.target.value) : null)}
-          className="w-16 text-center border border-gray-200 rounded px-1 py-0.5 text-sm"
+          aria-label={`Platten für ${row.original.name}`}
+          className="w-11 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-right text-[12.5px]
+            transition-colors hover:border-line-2 hover:bg-surface focus:border-gold focus:bg-surface
+            focus:ring-3 focus:ring-gold-soft focus:outline-hidden"
         />
-      ) : (row.original.plate_count ?? '-'),
+      ) : (row.original.plate_count ?? '–'),
     }),
-    // Kiste direkt auswählbar (Admin), gefiltert nach Steinart
     columnHelper.display({
       id: 'box',
       header: 'Kiste',
@@ -251,58 +324,84 @@ export function SetsPage() {
         const compatBoxes = stoneSize
           ? boxes.filter(b => !b.allowed_stone_types?.length || b.allowed_stone_types.includes(stoneSize))
           : boxes
+        const aktuell = boxes.find(b => b.id === row.original.box_id)
         return isAdmin ? (
-          <select
-            value={row.original.box_id ?? ''}
-            onChange={e => handleInlineChange(row.original.id, 'box_id', e.target.value !== '' ? Number(e.target.value) : null)}
-            className="text-xs border border-gray-200 rounded px-1 py-0.5 min-w-[80px]"
-          >
-            <option value="">– Keine –</option>
-            {compatBoxes.map(b => (
-              <option key={b.id} value={b.id} disabled={b.fill_level >= 100}>
-                {b.name} ({b.fill_level}%)
-              </option>
-            ))}
-          </select>
-        ) : (row.original.box?.name || '-')
+          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+            {aktuell && (
+              <span className="h-1 w-6 shrink-0 overflow-hidden rounded-full bg-surface-3" title={`Füllstand ${aktuell.fill_level} %`}>
+                <span className="block h-full rounded-full" style={{ width: `${aktuell.fill_level}%`, background: fuellFarbe(aktuell.fill_level) }} />
+              </span>
+            )}
+            <select
+              value={row.original.box_id ?? ''}
+              onChange={e => handleInlineChange(row.original.id, 'box_id', e.target.value !== '' ? Number(e.target.value) : null)}
+              aria-label={`Kiste für ${row.original.name}`}
+              className={`min-w-[92px] cursor-pointer rounded-md border border-transparent bg-transparent py-0.5 pr-1 pl-1.5
+                text-[12px] transition-colors hover:border-line-2 hover:bg-surface focus:border-gold focus:bg-surface
+                focus:ring-3 focus:ring-gold-soft focus:outline-hidden ${aktuell ? '' : 'text-ink-3'}`}
+            >
+              <option value="">– Keine –</option>
+              {compatBoxes.map(b => (
+                <option key={b.id} value={b.id} disabled={b.fill_level >= 100 && b.id !== row.original.box_id}>
+                  {b.name} ({b.fill_level}%)
+                </option>
+              ))}
+            </select>
+          </span>
+        ) : (row.original.box?.name || '–')
       },
     }),
-    columnHelper.accessor('price', { header: 'Preis (€)', cell: info => info.getValue() != null ? `${info.getValue().toFixed(2)} €` : '-' }),
-    columnHelper.accessor('notes', { header: 'Anmerkungen', cell: info => <span className="max-w-sm block whitespace-normal break-words" title={info.getValue()}>{info.getValue() || ''}</span> }),
+    columnHelper.accessor('price', {
+      header: 'Preis',
+      meta: { rechts: true },
+      cell: info => info.getValue() != null
+        ? <span className="font-medium">{info.getValue().toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+        : '–',
+    }),
+    columnHelper.accessor('notes', {
+      header: 'Anmerkung',
+      cell: info => (
+        <span className="block max-w-[230px] min-w-[150px] text-[12px] leading-snug wrap-break-word whitespace-normal text-ink-2" title={info.getValue()}>
+          {info.getValue() || ''}
+        </span>
+      ),
+    }),
     columnHelper.display({
       id: 'actions',
       header: '',
       enableSorting: false,
       cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-0.5 opacity-60 transition-opacity
+          group-hover/row:opacity-100 focus-within:opacity-100 max-[1024px]:opacity-100">
           {row.original.onedrive_url && (
             <a
               href={row.original.onedrive_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition"
+              className="grid h-[26px] w-[26px] place-items-center rounded-md text-ink-3 transition-colors
+                hover:bg-st-new-bg hover:text-st-new"
               title="OneDrive-Ordner öffnen"
             >
-              <OneDriveIcon className="w-4 h-4" />
+              <OneDriveIcon className="h-4 w-4" />
             </a>
           )}
           {isAdmin && (
             <>
               <button
                 onClick={() => navigate(`/sets/${row.original.id}/edit`)}
-                className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
+                className="grid h-[26px] w-[26px] place-items-center rounded-md text-ink-3 transition-colors
+                  hover:bg-surface-3 hover:text-ink"
                 title="Bearbeiten"
               >
-                <PencilSquareIcon className="w-4 h-4" />
+                <PencilSquareIcon className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setDeleteId(row.original.id)}
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                className="grid h-[26px] w-[26px] place-items-center rounded-md text-ink-3 transition-colors
+                  hover:bg-crit-bg hover:text-crit"
                 title="Löschen"
               >
-                <div className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold leading-none">×</span>
-                </div>
+                <TrashIcon className="h-4 w-4" />
               </button>
             </>
           )}
@@ -320,241 +419,334 @@ export function SetsPage() {
     getSortedRowModel: getSortedRowModel(),
   })
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-brand-navy">Sets</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => setShowStats(s => !s)} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
-            <ChartBarIcon className="w-4 h-4" /> Statistik {showStats ? '▲' : '▼'}
-          </button>
-          {isAdmin && (
-            <>
-              <button onClick={handleExportJson} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
-                <ArrowUpTrayIcon className="w-4 h-4" /> JSON Export
-              </button>
-              <label className="btn-secondary flex items-center gap-1.5 text-sm py-1.5 cursor-pointer">
-                <ArrowDownTrayIcon className="w-4 h-4" /> {importLoading ? 'Importiere...' : 'JSON Import'}
-                <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-              </label>
-              <button onClick={handleExportPdf} className="btn-secondary flex items-center gap-1.5 text-sm py-1.5">
-                <DocumentArrowDownIcon className="w-4 h-4" /> PDF Export
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+  /* Beide Verteilungen nebeneinander vergleichbar - sortiert nach Sets,
+     damit die Reihenfolge in beiden Balken dieselbe ist. */
+  const verteilung = useMemo(() => {
+    const nachSets = {}
+    sets.forEach(s => {
+      const k = s.stone_size || 'Unbekannt'
+      nachSets[k] = (nachSets[k] || 0) + 1
+    })
+    const nachTeilen = summary.parts_by_stone_size || {}
+    const arten = [...new Set([...Object.keys(nachSets), ...Object.keys(nachTeilen)])]
+      .sort((a, b) => (nachSets[b] || 0) - (nachSets[a] || 0))
+    return arten.map((name, i) => ({
+      name,
+      sets: nachSets[name] || 0,
+      teile: nachTeilen[name] || 0,
+      farbe: steinFarbe(name, i),
+    }))
+  }, [sets, summary.parts_by_stone_size])
 
-      {/* Summary cards */}
-      {showStats && (() => {
-        const allStoneTypes = [...new Set([
-          ...sets.map(s => s.stone_size || 'Unbekannt'),
-          ...Object.keys(summary.parts_by_stone_size || {})
-        ])].sort()
-        const stoneColorMap = Object.fromEntries(allStoneTypes.map((k, i) => [k, BAR_COLORS[i % BAR_COLORS.length]]))
-        return <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr 1fr 1.8fr 1.8fr' }}>
-        <div className="card py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-gray-500">Gesamt Sets</p>
-              <p className="text-2xl font-bold text-brand-navy">{summary.total_count}</p>
-            </div>
-            <svg className="w-9 h-9 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Hintere Box – gelber Akzent */}
-              <rect x="7" y="2" width="14" height="9" rx="1.5" fill="#FFD700" stroke="#1E3A5F" strokeWidth="1.25"/>
-              {/* Mittlere Box */}
-              <rect x="4" y="6" width="14" height="9" rx="1.5" fill="#e8eef5" stroke="#1E3A5F" strokeWidth="1.25"/>
-              {/* Vordere Box */}
-              <rect x="1" y="10" width="14" height="11" rx="1.5" fill="white" stroke="#1E3A5F" strokeWidth="1.25"/>
-              {/* Noppen auf vorderer Box */}
-              <circle cx="5" cy="16" r="1.3" fill="#1E3A5F"/>
-              <circle cx="8.5" cy="16" r="1.3" fill="#1E3A5F"/>
-              <circle cx="12" cy="16" r="1.3" fill="#1E3A5F"/>
-            </svg>
-          </div>
-        </div>
-        <div className="card py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-gray-500">Gesamt Teile</p>
-              <p className="text-2xl font-bold text-brand-navy">{summary.total_parts.toLocaleString('de-DE')}</p>
-            </div>
-            {/* LEGO-Stein Draufsicht */}
-            <svg className="w-9 h-9 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="5" width="20" height="15" rx="2" fill="#FFD700" stroke="#1E3A5F" strokeWidth="1.25"/>
-              <circle cx="7"  cy="10"   r="2" fill="#1E3A5F"/>
-              <circle cx="12" cy="10"   r="2" fill="#1E3A5F"/>
-              <circle cx="17" cy="10"   r="2" fill="#1E3A5F"/>
-              <circle cx="7"  cy="15.5" r="2" fill="#1E3A5F"/>
-              <circle cx="12" cy="15.5" r="2" fill="#1E3A5F"/>
-              <circle cx="17" cy="15.5" r="2" fill="#1E3A5F"/>
-            </svg>
-          </div>
-        </div>
-        <div className="card py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-gray-500">Gesamtwert</p>
-              <p className="text-2xl font-bold text-brand-navy">{summary.total_price.toFixed(2)} €</p>
-            </div>
-            {/* Euro-Münze */}
-            <svg className="w-9 h-9 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#1E3A5F" strokeWidth="1.25"/>
-              <path d="M16 7.5 C13.5 5 7.5 6.5 7.5 12 C7.5 17.5 13.5 19 16 16.5" stroke="#1E3A5F" strokeWidth="2" fill="none" strokeLinecap="round"/>
-              <line x1="6" y1="10.5" x2="14.5" y2="10.5" stroke="#1E3A5F" strokeWidth="1.75" strokeLinecap="round"/>
-              <line x1="6" y1="13.5" x2="14.5" y2="13.5" stroke="#1E3A5F" strokeWidth="1.75" strokeLinecap="round"/>
-            </svg>
-          </div>
-        </div>
-        {/* Sets nach Steinart */}
-        <div className="card py-3">
-          <p className="text-xs text-gray-500 mb-2">Sets nach Steinart</p>
-          {(() => {
-            const counts = {}
-            sets.forEach(s => { const k = s.stone_size || 'Unbekannt'; counts[k] = (counts[k] || 0) + 1 })
-            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
-            const total = sorted.reduce((s, [, v]) => s + v, 0)
-            return sorted.length === 0 ? (
-              <p className="text-sm text-gray-400">–</p>
-            ) : (
-              <>
-                <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5 gap-px">
-                  {sorted.map(([k, v]) => (
-                    <div key={k} title={`${k}: ${v}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: stoneColorMap[k] }} />
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                  {sorted.map(([k, v]) => (
-                    <div key={k} className="flex items-start gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: stoneColorMap[k] }} />
-                      <span className="text-xs text-gray-600 leading-tight flex-1 break-words">{k}</span>
-                      <span className="text-xs font-bold text-brand-navy shrink-0">{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )
-          })()}
-        </div>
-        {/* Teile nach Steinart */}
-        <div className="card py-3">
-          <p className="text-xs text-gray-500 mb-2">Teile nach Steinart</p>
-          {(() => {
-            const sorted = Object.entries(summary.parts_by_stone_size || {}).sort((a, b) => b[1] - a[1])
-            const total = sorted.reduce((s, [, v]) => s + v, 0)
-            return sorted.length === 0 ? (
-              <p className="text-sm text-gray-400">–</p>
-            ) : (
-              <>
-                <div className="flex h-2.5 rounded-full overflow-hidden mb-2.5 gap-px">
-                  {sorted.map(([k, v]) => (
-                    <div key={k} title={`${k}: ${v.toLocaleString('de-DE')}`} className="transition-all" style={{ width: `${(v / total) * 100}%`, backgroundColor: stoneColorMap[k] }} />
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                  {sorted.map(([k, v]) => (
-                    <div key={k} className="flex items-start gap-1.5 min-w-0">
-                      <div className="w-2 h-2 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: stoneColorMap[k] }} />
-                      <span className="text-xs text-gray-600 leading-tight flex-1 break-words">{k}</span>
-                      <span className="text-xs font-bold text-brand-navy shrink-0">{v.toLocaleString('de-DE')}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )
-          })()}
-        </div>
-        </div>
-      })()}
-
-      {/* Search & Filters */}
-      <div className="card py-4 flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-48">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Suche nach Name, Hersteller, Kategorie..."
-            className="input-field pl-9"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+  const Balken = ({ feld }) => {
+    const gesamt = verteilung.reduce((s, r) => s + r[feld], 0) || 1
+    return (
+      <div className="flex h-2.5 min-w-0 flex-1 gap-px overflow-hidden rounded-full">
+        {verteilung.map(r => (
+          <span
+            key={r.name}
+            title={`${r.name}: ${zahl(r[feld])}`}
+            style={{ width: `${(r[feld] / gesamt) * 100}%`, background: r.farbe }}
           />
-        </div>
-        <select className="input-field w-auto" value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
-          <option value="">Alle Status</option>
-          {STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
-        <select className="input-field w-auto" value={filters.stone_size} onChange={e => setFilters(f => ({ ...f, stone_size: e.target.value }))}>
-          <option value="">Alle Steinarten</option>
-          {['Standard', 'Standard, beleuchtet', 'Standard, Technik', 'Mini', 'Diamond', 'Sonder-Steine'].map(s => <option key={s}>{s}</option>)}
-        </select>
-        <select className="input-field w-auto" value={filters.manufacturer} onChange={e => setFilters(f => ({ ...f, manufacturer: e.target.value }))}>
-          <option value="">Alle Hersteller</option>
-          {distinctValues.manufacturers.map(m => <option key={m}>{m}</option>)}
-        </select>
-        <select className="input-field w-auto" value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
-          <option value="">Alle Kategorien</option>
-          {distinctValues.categories.map(c => <option key={c}>{c}</option>)}
-        </select>
-        <select className="input-field w-auto" value={filters.subcategory} onChange={e => setFilters(f => ({ ...f, subcategory: e.target.value }))}>
-          <option value="">Alle Unterkategorien</option>
-          {distinctValues.subcategories?.map(c => <option key={c}>{c}</option>)}
-        </select>
+        ))}
+      </div>
+    )
+  }
+
+  const Werkzeug = () => (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex gap-0.5 rounded-lg border border-line bg-surface p-[3px] shadow-s" role="group" aria-label="Darstellung">
+        {[
+          { id: 'tabelle', label: 'Tabelle', Icon: TableCellsIcon },
+          { id: 'galerie', label: 'Galerie', Icon: Squares2X2Icon },
+        ].map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => ansichtWechseln(id)}
+            aria-pressed={ansicht === id}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+              ansicht === id ? 'bg-brand-navy text-white dark:bg-surface-3 dark:text-ink' : 'text-ink-2 hover:bg-surface-3 hover:text-ink'
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Table */}
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: showStats ? 'calc(100vh - 22rem)' : 'calc(100vh - 13rem)' }}>
-          <table className="w-full">
-            <thead className="bg-brand-navy sticky top-0 z-30">
-              {table.getHeaderGroups().map(hg => (
-                <tr key={hg.id}>
-                  {hg.headers.map(header => (
-                    <th
-                      key={header.id}
-                      className="table-th"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <span className="flex items-center gap-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && (
-                          header.column.getIsSorted() === 'asc' ? <ArrowUpIcon className="w-3 h-3" /> :
-                          header.column.getIsSorted() === 'desc' ? <ArrowDownIcon className="w-3 h-3" /> :
-                          <ArrowsUpDownIcon className="w-3 h-3 opacity-50" />
-                        )}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
+      <button onClick={() => setShowStats(s => !s)} className="btn-secondary" aria-expanded={showStats}>
+        <ChartBarIcon className="h-4 w-4" /> Statistik
+      </button>
+
+      {isAdmin && (
+        <>
+          <button onClick={handleExportJson} className="btn-secondary">
+            <ArrowUpTrayIcon className="h-4 w-4" /> JSON Export
+          </button>
+          <label className="btn-secondary cursor-pointer">
+            <ArrowDownTrayIcon className="h-4 w-4" /> {importLoading ? 'Importiere…' : 'JSON Import'}
+            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+          </label>
+          <button onClick={handleExportPdf} className="btn-secondary">
+            <DocumentArrowDownIcon className="h-4 w-4" /> PDF Export
+          </button>
+          <button onClick={() => navigate('/sets/new')} className="btn-yellow">
+            <PlusIcon className="h-4 w-4 stroke-[2.2]" /> Set anlegen
+          </button>
+        </>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      {/* Kopfleiste */}
+      <div className="flex flex-wrap items-end gap-4 border-b border-line bg-surface px-4 py-4 md:px-6">
+        <div className="mr-auto min-w-0">
+          <h1 className="mb-0.5 text-[25px] font-bold">Sets</h1>
+          <p className="text-[12.5px] text-ink-3">
+            <b className="font-semibold text-ink-2">{zahl(summary.total_count)}</b> Sets
+            {' · '}<b className="font-semibold text-ink-2">{zahl(summary.total_parts)}</b> Teile
+            {' · '}<b className="font-semibold text-ink-2">
+              {summary.total_price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+            </b>
+          </p>
+        </div>
+        <Werkzeug />
+      </div>
+
+      <div className="studs-bg flex-1 p-4 md:p-5">
+        {/* Kennzahlen und Verteilung - ein Objekt statt fuenf Kacheln */}
+        {showStats && (
+          <section
+            className="mb-3.5 grid overflow-hidden rounded-xl border border-line bg-surface shadow-s
+              xl:grid-cols-[minmax(330px,1.05fr)_minmax(340px,1.25fr)]"
+            aria-label="Kennzahlen der Sammlung"
+          >
+            <div className="grid sm:grid-cols-3">
+              {[
+                { wert: zahl(summary.total_count), label: 'Sets', Icon: IconSets },
+                { wert: zahl(summary.total_parts), label: 'Teile', Icon: IconParts },
+                {
+                  wert: (
+                    <>
+                      {summary.total_price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <small className="ml-0.5 text-[15px] font-semibold text-ink-3">&nbsp;€</small>
+                    </>
+                  ),
+                  label: 'Gesamtwert',
+                  Icon: IconValue,
+                  letzte: true,
+                },
+              ].map(({ wert, label, Icon, letzte }) => (
+                <div
+                  key={label}
+                  className={`flex items-start justify-between gap-2.5 px-4 py-3.5
+                    ${letzte ? '' : 'border-b border-line sm:border-r sm:border-b-0'}`}
+                >
+                  <div className="min-w-0">
+                    <div className="font-display text-[clamp(19px,1.6vw,26px)] leading-none font-bold tracking-tight tabular-nums">
+                      {wert}
+                    </div>
+                    <div className="mt-1 text-[11px] font-medium text-ink-3">{label}</div>
+                  </div>
+                  <Icon className="mt-px h-8 w-8 shrink-0 text-icon-line" />
+                </div>
               ))}
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr><td colSpan={999} className="text-center py-12 text-gray-400">Lade...</td></tr>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <tr><td colSpan={999} className="text-center py-12 text-gray-400">Keine Sets gefunden</td></tr>
+            </div>
+
+            <div className="flex flex-col gap-2.5 border-t border-line bg-surface-2 px-4 py-3.5 xl:border-t-0 xl:border-l">
+              <div className="eyebrow">Verteilung nach Steinart</div>
+              {verteilung.length === 0 ? (
+                <p className="text-sm text-ink-3">–</p>
               ) : (
-                table.getRowModel().rows.map(row => (
-                  <tr key={row.id} className="table-row">
-                    {row.getVisibleCells().map(cell => (
-                      <td key={cell.id} className="table-td">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
+                <>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-[34px] shrink-0 text-right text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase">Sets</span>
+                    <Balken feld="sets" />
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-[34px] shrink-0 text-right text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase">Teile</span>
+                    <Balken feld="teile" />
+                  </div>
+                  <div className="grid gap-x-4 gap-y-0.5 [grid-template-columns:repeat(auto-fill,minmax(196px,1fr))]">
+                    {verteilung.map(r => (
+                      <div key={r.name} className="flex min-w-0 items-center gap-1.5 text-[11.5px]">
+                        <span className="h-2 w-2 shrink-0 rounded-xs" style={{ background: r.farbe }} />
+                        <span className="truncate text-ink-2">{r.name}</span>
+                        <span className="ml-auto font-semibold tabular-nums">
+                          {zahl(r.sets)}
+                          <span className="font-normal text-ink-3"> · {zahl(r.teile)}</span>
+                        </span>
+                      </div>
                     ))}
-                  </tr>
-                ))
+                  </div>
+                </>
               )}
-            </tbody>
-          </table>
+            </div>
+          </section>
+        )}
+
+        {/* Suche und Filter */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[200px] flex-1">
+            <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink-3" />
+            <input
+              type="text"
+              placeholder="Suche nach Name, Hersteller, Kategorie…"
+              className="input-field pl-9"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          {[
+            { schluessel: 'status', leer: 'Alle Status', werte: STATUSES },
+            { schluessel: 'stone_size', leer: 'Alle Steinarten', werte: STEINARTEN },
+            { schluessel: 'manufacturer', leer: 'Alle Hersteller', werte: distinctValues.manufacturers },
+            { schluessel: 'category', leer: 'Alle Kategorien', werte: distinctValues.categories },
+            { schluessel: 'subcategory', leer: 'Alle Unterkategorien', werte: distinctValues.subcategories || [] },
+          ].map(({ schluessel, leer, werte }) => (
+            <select
+              key={schluessel}
+              aria-label={leer}
+              className="rounded-lg border border-line bg-surface px-2.5 py-2 text-[12.5px] text-ink-2 shadow-s
+                focus:border-gold focus:ring-3 focus:ring-gold-soft focus:outline-hidden"
+              value={filters[schluessel]}
+              onChange={e => setFilters(f => ({ ...f, [schluessel]: e.target.value }))}
+            >
+              <option value="">{leer}</option>
+              {werte.map(w => <option key={w}>{w}</option>)}
+            </select>
+          ))}
         </div>
+
+        {/* Tabelle */}
+        {ansicht === 'tabelle' && (
+          <div className="panel">
+            <div className="overflow-auto" style={{ maxHeight: showStats ? 'calc(100vh - 24rem)' : 'calc(100vh - 15rem)' }}>
+              <table className="w-full border-separate border-spacing-0">
+                <thead className="sticky top-0 z-30">
+                  {table.getHeaderGroups().map(hg => (
+                    <tr key={hg.id}>
+                      {hg.headers.map(header => (
+                        <th
+                          key={header.id}
+                          className={`table-th ${header.column.columnDef.meta?.rechts ? 'text-right' : ''}`}
+                          onClick={header.column.getToggleSortingHandler()}
+                          aria-sort={
+                            header.column.getIsSorted() === 'asc' ? 'ascending'
+                              : header.column.getIsSorted() === 'desc' ? 'descending'
+                                : undefined
+                          }
+                        >
+                          <span className={`flex items-center gap-1.5 ${header.column.columnDef.meta?.rechts ? 'justify-end' : ''}`}>
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {header.column.getCanSort() && (
+                              header.column.getIsSorted() === 'asc' ? <ArrowUpIcon className="h-3 w-3 text-gold" /> :
+                                header.column.getIsSorted() === 'desc' ? <ArrowDownIcon className="h-3 w-3 text-gold" /> :
+                                  <ArrowsUpDownIcon className="h-3 w-3 opacity-35" />
+                            )}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr><td colSpan={999} className="py-12 text-center text-ink-3">Lade…</td></tr>
+                  ) : table.getRowModel().rows.length === 0 ? (
+                    <tr><td colSpan={999} className="py-12 text-center text-ink-3">Keine Sets gefunden</td></tr>
+                  ) : (
+                    table.getRowModel().rows.map(row => (
+                      <tr key={row.id} className="group/row table-row">
+                        {row.getVisibleCells().map(cell => (
+                          <td key={cell.id} className={`table-td ${cell.column.columnDef.meta?.rechts ? 'text-right whitespace-nowrap' : ''}`}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 border-t border-line bg-surface-2 px-3.5 py-2.5 text-[12px] text-ink-3">
+              <span>
+                <b className="font-semibold text-ink-2">{sets.length}</b> von{' '}
+                <b className="font-semibold text-ink-2">{summary.total_count}</b> Sets
+              </span>
+              {isAdmin && (
+                <span className="ml-auto">Änderungen an Status, Tüten, Platten und Kiste werden sofort gespeichert</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Galerie */}
+        {ansicht === 'galerie' && (
+          loading ? (
+            <div className="py-12 text-center text-ink-3">Lade…</div>
+          ) : sets.length === 0 ? (
+            <div className="py-12 text-center text-ink-3">Keine Sets gefunden</div>
+          ) : (
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(176px,1fr))]">
+              {sets.map(s => (
+                <article
+                  key={s.id}
+                  className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-s
+                    transition-all duration-150 hover:-translate-y-0.5 hover:border-line-2 hover:shadow-m"
+                >
+                  <button
+                    type="button"
+                    onClick={() => s.frontcover_edited && setImageModal({ url: coverUrl(s.frontcover_edited), title: `${s.name} – Frontcover` })}
+                    className="relative block aspect-4/3 w-full cursor-zoom-in overflow-hidden border-b border-line bg-surface-2"
+                  >
+                    {s.frontcover_thumbnail ? (
+                      <img src={coverUrl(s.frontcover_thumbnail)} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="grid h-full w-full place-items-center text-[11px] text-ink-3">Kein Cover</span>
+                    )}
+                    {s.stone_size && (
+                      <span className="absolute top-2 left-2 inline-flex items-center gap-1.5 rounded-md bg-[#0a1220]/65
+                        px-1.5 py-0.5 text-[10.5px] font-semibold text-white backdrop-blur-xs">
+                        <span className="h-1.5 w-1.5 rounded-xs" style={{ background: steinFarbe(s.stone_size) }} />
+                        {s.stone_size}
+                      </span>
+                    )}
+                    <span
+                      className={`absolute top-2 right-2 h-2.5 w-2.5 rounded-full border-2 border-[#0a1220]/35
+                        ${STATUS_STIL[s.status]?.split(' ')[0]?.replace('text-', 'bg-') || 'bg-ink-3'}`}
+                      title={s.status}
+                    />
+                  </button>
+                  <div className="flex flex-1 flex-col gap-0.5 px-3 pt-2.5 pb-3">
+                    <div className="text-[13px] leading-snug font-semibold">{s.name}</div>
+                    <div className="text-[11.5px] text-ink-3">{s.manufacturer}</div>
+                    <div className="mt-1.5 flex items-baseline gap-2 text-[11.5px] text-ink-2 tabular-nums">
+                      <span>{zahl(s.parts_count)} Teile</span>
+                      {s.box?.name && <span className="text-ink-3">· {s.box.name}</span>}
+                      {s.price != null && (
+                        <span className="ml-auto font-semibold text-ink">
+                          {s.price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )
+        )}
       </div>
 
-      {/* Image Modal */}
+      {/* Bild-Vergrößerung */}
       <Modal open={!!imageModal} onClose={() => setImageModal(null)} title={imageModal?.title} size="xl">
-        <img src={imageModal?.url} alt="Cover" className="w-full h-auto rounded-lg" />
+        <img src={imageModal?.url} alt="Cover" className="h-auto w-full rounded-lg" />
       </Modal>
 
-      {/* Delete Confirm */}
+      {/* Löschen bestätigen */}
       <ConfirmModal
         open={!!deleteId}
         onClose={() => setDeleteId(null)}

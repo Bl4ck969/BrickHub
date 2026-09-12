@@ -6,6 +6,7 @@ import { OneDriveIcon } from '../components/OneDriveIcon'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
 import { ImageEditor } from '../components/ImageEditor'
+import { PageShell } from '../components/PageShell'
 
 const STONE_SIZES = ['Standard', 'Standard, beleuchtet', 'Standard, Technik', 'Mini', 'Diamond', 'Sonder-Steine']
 const STATUSES = ['Neu', 'Aufgebaut', 'Im Bau', 'Eingelagert']
@@ -131,74 +132,72 @@ export function AddEditSetPage() {
   })
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-brand-navy">{isEdit ? 'Set bearbeiten' : 'Neues Set anlegen'}</h1>
-        <button onClick={() => navigate('/sets')} className="btn-secondary text-sm">Zurück</button>
-      </div>
-
-      <form onSubmit={handleSave} className="space-y-6">
+    <PageShell
+      titel={isEdit ? 'Set bearbeiten' : 'Neues Set anlegen'}
+      aktionen={<button onClick={() => navigate('/sets')} className="btn-secondary">Zurück</button>}
+    >
+      <form onSubmit={handleSave} className="mx-auto flex max-w-3xl flex-col gap-5">
         {/* Basic Info */}
         <div className="card space-y-4">
-          <h2 className="font-semibold text-brand-navy border-b border-gray-100 pb-2">Grunddaten</h2>
+          <h2 className="font-semibold text-heading border-b border-line pb-2">Grunddaten</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Name *</label>
               <input type="text" className="input-field" {...field('name')} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hersteller</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Hersteller</label>
               <input type="text" className="input-field" list="manufacturers-list" {...field('manufacturer')} />
               <datalist id="manufacturers-list">{suggestions.manufacturers.map(m => <option key={m} value={m} />)}</datalist>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Herstellernummer</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Herstellernummer</label>
               <input type="text" className="input-field" {...field('manufacturer_number')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teilezahl</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Teilezahl</label>
               <input type="number" min="0" className="input-field" {...field('parts_count')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preis (€)</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Preis (€)</label>
               <input type="number" step="0.01" min="0" className="input-field" {...field('price')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Steinart</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Steinart</label>
               <select className="input-field" {...field('stone_size')}>
                 <option value="">– Auswählen –</option>
                 {STONE_SIZES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Status</label>
               <select className="input-field" {...field('status')}>
                 {STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Kategorie</label>
               <input type="text" className="input-field" list="categories-list" {...field('category')} />
               <datalist id="categories-list">{suggestions.categories.map(c => <option key={c} value={c} />)}</datalist>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unterkategorie</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Unterkategorie</label>
               <input type="text" className="input-field" list="subcategories-list" {...field('subcategory')} />
               <datalist id="subcategories-list">{suggestions.subcategories.map(c => <option key={c} value={c} />)}</datalist>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Anzahl Tüten</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Anzahl Tüten</label>
               <input type="number" min="0" className="input-field" {...field('bag_count')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Anzahl Platten</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Anzahl Platten</label>
               <input type="number" min="0" className="input-field" {...field('plate_count')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink-2 mb-1">
                 Lagerort / Kiste
                 {form.stone_size && compatibleBoxes.length < boxes.length && (
-                  <span className="ml-2 text-xs text-amber-600 font-normal">
+                  <span className="ml-2 text-xs text-st-build font-normal">
                     (gefiltert nach Steinart)
                   </span>
                 )}
@@ -212,11 +211,11 @@ export function AddEditSetPage() {
                 ))}
               </select>
               {form.stone_size && compatibleBoxes.length === 0 && (
-                <p className="text-xs text-red-500 mt-1">Keine kompatible Kiste für diese Steinart gefunden.</p>
+                <p className="text-xs text-crit mt-1">Keine kompatible Kiste für diese Steinart gefunden.</p>
               )}
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Anmerkungen</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Anmerkungen</label>
               <textarea rows={3} className="input-field resize-none" {...field('notes')} />
             </div>
           </div>
@@ -224,21 +223,21 @@ export function AddEditSetPage() {
 
         {/* OneDrive-Verknüpfung */}
         <div className="card space-y-4">
-          <h2 className="font-semibold text-brand-navy border-b border-gray-100 pb-2 flex items-center gap-2">
+          <h2 className="font-semibold text-heading border-b border-line pb-2 flex items-center gap-2">
             <OneDriveIcon className="w-5 h-5" />
             OneDrive-Verknüpfung
           </h2>
 
           {/* Basis-Ordner */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Basis-Ordner</label>
+            <label className="block text-sm font-medium text-ink-2 mb-1">Basis-Ordner</label>
             {oneDriveBaseUrl && !editingBaseUrl ? (
               <div className="flex items-center gap-2">
                 <a
                   href={oneDriveBaseUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-st-new hover:text-st-new hover:underline"
                 >
                   <ArrowTopRightOnSquareIcon className="w-4 h-4" />
                   Klemmbausteine-Ordner öffnen
@@ -246,7 +245,7 @@ export function AddEditSetPage() {
                 {isAdmin && (
                   <button
                     type="button"
-                    className="p-1 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded transition"
+                    className="p-1 text-ink-3 hover:text-heading hover:bg-surface-2 rounded-sm transition"
                     title="Basis-Link bearbeiten"
                     onClick={() => setEditingBaseUrl(true)}
                   >
@@ -291,21 +290,21 @@ export function AddEditSetPage() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">Noch nicht konfiguriert (Admin-Einstellung)</p>
+              <p className="text-sm text-ink-3">Noch nicht konfiguriert (Admin-Einstellung)</p>
             )}
           </div>
 
           {/* Automatisch generierter Ordnername */}
           {form.manufacturer && form.manufacturer_number && form.name && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ordnername</label>
+              <label className="block text-sm font-medium text-ink-2 mb-1">Ordnername</label>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-mono bg-gray-50 border border-gray-200 rounded px-3 py-2 flex-1 select-all">
+                <span className="text-sm font-mono bg-surface-2 border border-line rounded-sm px-3 py-2 flex-1 select-all">
                   {form.manufacturer} - {form.manufacturer_number} - {form.name}
                 </span>
                 <button
                   type="button"
-                  className="p-2 text-gray-500 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
+                  className="p-2 text-ink-3 hover:text-heading hover:bg-surface-2 rounded-lg transition"
                   title="Ordnernamen kopieren"
                   onClick={async () => {
                     const text = `${form.manufacturer} - ${form.manufacturer_number} - ${form.name}`
@@ -330,7 +329,7 @@ export function AddEditSetPage() {
                     }
                   }}
                 >
-                  {copied ? <CheckIcon className="w-5 h-5 text-green-600" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
+                  {copied ? <CheckIcon className="w-5 h-5 text-st-done" /> : <ClipboardDocumentIcon className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -338,7 +337,7 @@ export function AddEditSetPage() {
 
           {/* OneDrive Unterordner-Link */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">OneDrive Unterordner-Link</label>
+            <label className="block text-sm font-medium text-ink-2 mb-1">OneDrive Unterordner-Link</label>
             <input
               type="url"
               className="input-field"
@@ -350,7 +349,7 @@ export function AddEditSetPage() {
                 href={form.onedrive_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline"
+                className="inline-flex items-center gap-1 mt-1 text-xs text-st-new hover:underline"
               >
                 <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
                 Ordner öffnen
@@ -359,7 +358,7 @@ export function AddEditSetPage() {
           </div>
         </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
+        {error && <div className="bg-crit-bg border border-crit/30 text-crit rounded-lg px-4 py-3 text-sm">{error}</div>}
 
         <div className="flex justify-end">
           <button type="submit" className="btn-primary px-8 py-3" disabled={loading}>
@@ -370,15 +369,15 @@ export function AddEditSetPage() {
 
       {/* Image Upload */}
       <div className="card mt-6 space-y-4">
-        <h2 className="font-semibold text-brand-navy border-b border-gray-100 pb-2">
-          Bilder {!savedSetId && <span className="text-xs font-normal text-gray-400">(erst Set speichern)</span>}
+        <h2 className="font-semibold text-heading border-b border-line pb-2">
+          Bilder {!savedSetId && <span className="text-xs font-normal text-ink-3">(erst Set speichern)</span>}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {['frontcover', 'backcover'].map(side => (
             <div key={side}>
-              <p className="text-sm font-medium text-gray-700 mb-2">{side === 'frontcover' ? 'Frontcover' : 'Backcover'}</p>
+              <p className="text-sm font-medium text-ink-2 mb-2">{side === 'frontcover' ? 'Frontcover' : 'Backcover'}</p>
               <div
-                className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition overflow-hidden ${savedSetId ? 'border-brand-navy hover:bg-blue-50' : 'border-gray-200 cursor-not-allowed opacity-50'}`}
+                className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition overflow-hidden ${savedSetId ? 'border-brand-navy hover:bg-surface-2' : 'border-line cursor-not-allowed opacity-50'}`}
                 onClick={() => savedSetId && handleOpenEditor(side)}
               >
                 {imagePreviews[side] ? (
@@ -388,7 +387,7 @@ export function AddEditSetPage() {
                     className="absolute inset-0 w-full h-full object-contain p-2"
                   />
                 ) : (
-                  <div className="text-center text-gray-400">
+                  <div className="text-center text-ink-3">
                     <PhotoIcon className="w-10 h-10 mx-auto mb-2" />
                     <p className="text-sm">Bild hochladen</p>
                     <p className="text-xs mt-1">JPG, PNG, WebP bis 30 MB</p>
@@ -397,10 +396,10 @@ export function AddEditSetPage() {
               </div>
               {imagePreviews[side] && savedSetId && (
                 <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs text-green-600">Bild verarbeitet</p>
+                  <p className="text-xs text-st-done">Bild verarbeitet</p>
                   <button
                     type="button"
-                    className="flex items-center gap-1 text-xs text-brand-navy hover:underline"
+                    className="flex items-center gap-1 text-xs text-heading hover:underline"
                     onClick={() => handleOpenEditor(side)}
                   >
                     <PencilSquareIcon className="w-3.5 h-3.5" />
@@ -426,6 +425,6 @@ export function AddEditSetPage() {
           setName={form.name}
         />
       )}
-    </div>
+    </PageShell>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
+import { AuthShell, AuthFeld, AuthFehler, authInput } from '../components/AuthShell'
 
 export function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' })
@@ -28,57 +29,47 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-navy to-brand-navy-light flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <img src="/logo.png" alt="BrickHub Logo" className="w-24 h-24 object-contain" />
-          <h1 className="text-3xl font-bold text-brand-navy mt-4">BrickHub</h1>
-          <p className="text-gray-500 text-sm mt-1">Klemmbausteinset-Inventar</p>
-        </div>
+    <AuthShell titel="BrickHub" untertitel="Klemmbausteinset-Inventar">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <AuthFeld id="lg-user" label="Benutzername">
+          <input
+            id="lg-user"
+            type="text"
+            className={authInput}
+            value={form.username}
+            onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+            required
+            autoFocus
+            autoComplete="username"
+          />
+        </AuthFeld>
+        <AuthFeld id="lg-pass" label="Passwort">
+          <input
+            id="lg-pass"
+            type="password"
+            className={authInput}
+            value={form.password}
+            onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+            required
+            autoComplete="current-password"
+          />
+        </AuthFeld>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Benutzername</label>
-            <input
-              type="text"
-              className="input-field"
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              required
-              autoFocus
-              autoComplete="username"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
-            <input
-              type="password"
-              className="input-field"
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              required
-              autoComplete="current-password"
-            />
-          </div>
+        <AuthFehler>{error}</AuthFehler>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              {error}
-            </div>
-          )}
+        <button type="submit" className="btn-yellow w-full py-2.5 text-[14px]" disabled={loading}>
+          {loading ? 'Anmelden…' : 'Anmelden'}
+        </button>
+      </form>
 
-          <button type="submit" className="btn-primary w-full py-3 text-base" disabled={loading}>
-            {loading ? 'Anmelden...' : 'Anmelden'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link to="/forgot-password" className="text-sm text-brand-navy hover:underline">
-            Passwort vergessen?
-          </Link>
-        </div>
+      <div className="text-center text-[12.5px] text-[#93a6c0]">
+        <Link
+          to="/forgot-password"
+          className="border-b border-[rgb(200_214_232/0.3)] text-[#c8d6e8] no-underline hover:border-gold hover:text-gold"
+        >
+          Passwort vergessen?
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

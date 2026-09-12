@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { CloudArrowDownIcon, CloudArrowUpIcon, ClockIcon, XMarkIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { backupApi } from '../api/client'
 import { useToast } from '../hooks/useToast'
+import { PageShell } from '../components/PageShell'
 
 const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
@@ -32,11 +33,11 @@ function ProgressBar({ progress }) {
 
   return (
     <div className="mt-4 space-y-1.5">
-      <div className="flex justify-between text-sm text-gray-600">
+      <div className="flex justify-between text-sm text-ink-2">
         <span className="truncate mr-2">{phaseLabel(phase, current_name)}</span>
-        {detail && <span className="flex-shrink-0 font-medium">{detail}</span>}
+        {detail && <span className="shrink-0 font-medium">{detail}</span>}
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-surface-3 rounded-full h-2 overflow-hidden">
         {percent !== null ? (
           <div
             className="bg-brand-navy h-2 rounded-full transition-all duration-300"
@@ -47,7 +48,7 @@ function ProgressBar({ progress }) {
         )}
       </div>
       {percent !== null && (
-        <p className="text-xs text-gray-500 text-right">{percent}%</p>
+        <p className="text-xs text-ink-3 text-right">{percent}%</p>
       )}
     </div>
   )
@@ -215,16 +216,15 @@ export function BackupPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-brand-navy">Backup & Restore</h1>
-
+    <PageShell titel="Backup" untertitel="Datenbank sichern, wiederherstellen und automatisch sichern lassen">
+      <div className="mx-auto flex max-w-2xl flex-col gap-5">
       {/* Export */}
       <div className="card p-6">
         <div className="flex items-start gap-4">
-          <CloudArrowDownIcon className="w-8 h-8 text-brand-navy flex-shrink-0 mt-1" />
+          <CloudArrowDownIcon className="w-8 h-8 text-heading shrink-0 mt-1" />
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-brand-navy mb-1">Datenbank exportieren</h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <h2 className="text-lg font-semibold text-heading mb-1">Datenbank exportieren</h2>
+            <p className="text-sm text-ink-2 mb-4">
               Erstellt eine vollständige ZIP-Datei mit allen Sets, Bildern, Kisten, Benutzern und Einstellungen.
             </p>
             <button
@@ -240,7 +240,7 @@ export function BackupPage() {
             )}
 
             {exportError && (
-              <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+              <div className="mt-3 bg-crit-bg border border-crit/30 rounded-lg px-4 py-3 text-sm text-crit">
                 {exportError}
               </div>
             )}
@@ -251,10 +251,10 @@ export function BackupPage() {
       {/* Import */}
       <div className="card p-6">
         <div className="flex items-start gap-4">
-          <CloudArrowUpIcon className="w-8 h-8 text-brand-navy flex-shrink-0 mt-1" />
+          <CloudArrowUpIcon className="w-8 h-8 text-heading shrink-0 mt-1" />
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-brand-navy mb-1">Backup wiederherstellen</h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <h2 className="text-lg font-semibold text-heading mb-1">Backup wiederherstellen</h2>
+            <p className="text-sm text-ink-2 mb-4">
               Stellt ein zuvor erstelltes BrickHub-Backup aus einer ZIP-Datei wieder her.
             </p>
 
@@ -276,7 +276,7 @@ export function BackupPage() {
             </div>
 
             {selectedFile && !importing && (
-              <p className="text-sm text-gray-500 mb-2">
+              <p className="text-sm text-ink-3 mb-2">
                 Ausgewählt: <span className="font-medium">{selectedFile.name}</span>
                 {' '}({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
               </p>
@@ -285,7 +285,7 @@ export function BackupPage() {
             {importing && <ProgressBar progress={importProgress} />}
 
             {importResult && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
+              <div className="bg-st-done-bg border border-st-done/30 rounded-lg p-4 text-sm text-st-done">
                 <p className="font-semibold mb-1">Import erfolgreich</p>
                 <ul className="space-y-0.5">
                   <li>Sets: {importResult.sets}</li>
@@ -300,7 +300,7 @@ export function BackupPage() {
             )}
 
             {importError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+              <div className="bg-crit-bg border border-crit/30 rounded-lg p-4 text-sm text-crit">
                 {importError}
               </div>
             )}
@@ -312,10 +312,10 @@ export function BackupPage() {
       {schedule && (
         <div className="card p-6">
           <div className="flex items-start gap-4">
-            <ClockIcon className="w-8 h-8 text-brand-navy flex-shrink-0 mt-1" />
+            <ClockIcon className="w-8 h-8 text-heading shrink-0 mt-1" />
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-brand-navy mb-1">Automatisches Backup</h2>
-              <p className="text-sm text-gray-600 mb-4">
+              <h2 className="text-lg font-semibold text-heading mb-1">Automatisches Backup</h2>
+              <p className="text-sm text-ink-2 mb-4">
                 Erstellt automatisch Backups nach Zeitplan in einem separaten Verzeichnis.
               </p>
 
@@ -325,16 +325,16 @@ export function BackupPage() {
                   type="checkbox"
                   checked={schedule.backup_enabled === 'true'}
                   onChange={e => updateScheduleField('backup_enabled', e.target.checked ? 'true' : 'false')}
-                  className="w-5 h-5 rounded border-gray-300 text-brand-navy focus:ring-brand-navy"
+                  className="w-5 h-5 rounded-sm border-line text-heading focus:ring-brand-navy"
                 />
-                <span className="text-sm font-medium text-gray-700">Automatisches Backup aktivieren</span>
+                <span className="text-sm font-medium text-ink-2">Automatisches Backup aktivieren</span>
               </label>
 
               {schedule.backup_enabled === 'true' && (
                 <div className="space-y-4 pl-8">
                   {/* Frequenz */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Häufigkeit</label>
+                    <label className="block text-sm font-medium text-ink-2 mb-1">Häufigkeit</label>
                     <div className="flex gap-2">
                       {[
                         { value: 'daily', label: 'Täglich' },
@@ -348,7 +348,7 @@ export function BackupPage() {
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                             schedule.backup_frequency === opt.value
                               ? 'bg-brand-navy text-white border-brand-navy'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-brand-navy'
+                              : 'bg-surface text-ink-2 border-line hover:border-brand-navy'
                           }`}
                         >
                           {opt.label}
@@ -360,7 +360,7 @@ export function BackupPage() {
                   {/* Tag (bei wöchentlich/monatlich) */}
                   {schedule.backup_frequency === 'weekly' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Wochentage</label>
+                      <label className="block text-sm font-medium text-ink-2 mb-1">Wochentage</label>
                       <div className="flex flex-wrap gap-1.5">
                         {WEEKDAYS.map((day, i) => {
                           const selected = (schedule.backup_day || '').split(',').filter(Boolean)
@@ -378,7 +378,7 @@ export function BackupPage() {
                               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                                 isActive
                                   ? 'bg-brand-navy text-white border-brand-navy'
-                                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-navy'
+                                  : 'bg-surface text-ink-2 border-line hover:border-brand-navy'
                               }`}
                             >
                               {day.slice(0, 2)}
@@ -386,7 +386,7 @@ export function BackupPage() {
                           )
                         })}
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-ink-3 mt-1">
                         {(schedule.backup_day || '0').split(',').filter(Boolean).map(d => WEEKDAYS[Number(d)]).join(', ') || 'Kein Tag ausgewählt'}
                       </p>
                     </div>
@@ -394,7 +394,7 @@ export function BackupPage() {
 
                   {schedule.backup_frequency === 'monthly' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tag des Monats</label>
+                      <label className="block text-sm font-medium text-ink-2 mb-1">Tag des Monats</label>
                       <select
                         value={schedule.backup_day}
                         onChange={e => updateScheduleField('backup_day', e.target.value)}
@@ -409,7 +409,7 @@ export function BackupPage() {
 
                   {/* Uhrzeit */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Uhrzeit</label>
+                    <label className="block text-sm font-medium text-ink-2 mb-1">Uhrzeit</label>
                     <input
                       type="time"
                       value={schedule.backup_time}
@@ -419,11 +419,11 @@ export function BackupPage() {
                   </div>
 
                   {/* Retention */}
-                  <div className="border-t border-gray-100 pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-3">Aufbewahrung</p>
+                  <div className="border-t border-line pt-4">
+                    <p className="text-sm font-medium text-ink-2 mb-3">Aufbewahrung</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Max. Anzahl Backups</label>
+                        <label className="block text-xs text-ink-3 mb-1">Max. Anzahl Backups</label>
                         <input
                           type="number"
                           min="0"
@@ -432,10 +432,10 @@ export function BackupPage() {
                           className="input-field"
                           placeholder="0 = unbegrenzt"
                         />
-                        <p className="text-xs text-gray-400 mt-0.5">0 = unbegrenzt</p>
+                        <p className="text-xs text-ink-3 mt-0.5">0 = unbegrenzt</p>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Max. Alter (Tage)</label>
+                        <label className="block text-xs text-ink-3 mb-1">Max. Alter (Tage)</label>
                         <input
                           type="number"
                           min="0"
@@ -444,7 +444,7 @@ export function BackupPage() {
                           className="input-field"
                           placeholder="0 = unbegrenzt"
                         />
-                        <p className="text-xs text-gray-400 mt-0.5">0 = unbegrenzt</p>
+                        <p className="text-xs text-ink-3 mt-0.5">0 = unbegrenzt</p>
                       </div>
                     </div>
                   </div>
@@ -470,35 +470,35 @@ export function BackupPage() {
               </div>
 
               {schedule.backup_last_run && (
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-ink-3 mt-2">
                   Letztes automatisches Backup: {new Date(schedule.backup_last_run).toLocaleString('de-DE')}
                 </p>
               )}
 
               {/* Liste der automatischen Backups */}
               {autoBackups.length > 0 && (
-                <div className="mt-4 border-t border-gray-100 pt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Vorhandene Backups ({autoBackups.length})</p>
+                <div className="mt-4 border-t border-line pt-4">
+                  <p className="text-sm font-medium text-ink-2 mb-2">Vorhandene Backups ({autoBackups.length})</p>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {autoBackups.map(b => (
-                      <div key={b.filename} className="flex items-center justify-between py-1.5 px-3 bg-gray-50 rounded-lg text-sm">
+                      <div key={b.filename} className="flex items-center justify-between py-1.5 px-3 bg-surface-2 rounded-lg text-sm">
                         <div className="flex-1 min-w-0">
-                          <span className="font-medium text-gray-700 truncate block">{b.filename}</span>
-                          <span className="text-xs text-gray-400">
+                          <span className="font-medium text-ink-2 truncate block">{b.filename}</span>
+                          <span className="text-xs text-ink-3">
                             {b.size_mb} MB · {new Date(b.created_at).toLocaleString('de-DE')}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 ml-2">
                           <a
                             href={backupApi.downloadAutoBackup(b.filename)}
-                            className="p-1.5 text-gray-400 hover:text-brand-navy transition-colors"
+                            className="p-1.5 text-ink-3 hover:text-heading transition-colors"
                             title="Herunterladen"
                           >
                             <ArrowDownTrayIcon className="w-4 h-4" />
                           </a>
                           <button
                             onClick={() => handleDeleteBackup(b.filename)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-1.5 text-ink-3 hover:text-crit transition-colors"
                             title="Löschen"
                           >
                             <TrashIcon className="w-4 h-4" />
@@ -517,16 +517,16 @@ export function BackupPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b">
-              <h3 className="text-lg font-semibold text-brand-navy">Backup importieren</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-semibold text-heading">Backup importieren</h3>
+              <button onClick={() => setShowModal(false)} className="text-ink-3 hover:text-ink-2">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
-              <p className="text-sm text-gray-600">Wähle den Import-Modus:</p>
+              <p className="text-sm text-ink-2">Wähle den Import-Modus:</p>
 
               <label className="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors
                                hover:border-brand-navy"
@@ -540,16 +540,16 @@ export function BackupPage() {
                   className="mt-0.5"
                 />
                 <div>
-                  <p className="font-medium text-gray-900">Ergänzen</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="font-medium text-ink">Ergänzen</p>
+                  <p className="text-sm text-ink-3 mt-0.5">
                     Neue Sets und Kisten werden hinzugefügt. Benutzer mit gleichem Namen werden übersprungen.
                   </p>
-                  <p className="text-xs text-green-700 mt-1 font-medium">→ Kein Datenverlust möglich</p>
+                  <p className="text-xs text-st-done mt-1 font-medium">→ Kein Datenverlust möglich</p>
                 </div>
               </label>
 
               <label className="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors
-                               hover:border-red-400"
+                               hover:border-crit"
                      style={{ borderColor: importMode === 'replace' ? '#ef4444' : '#e5e7eb' }}>
                 <input
                   type="radio"
@@ -560,17 +560,17 @@ export function BackupPage() {
                   className="mt-0.5"
                 />
                 <div>
-                  <p className="font-medium text-gray-900">Alles ersetzen ⚠️</p>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="font-medium text-ink">Alles ersetzen ⚠️</p>
+                  <p className="text-sm text-ink-3 mt-0.5">
                     Alle bestehenden Daten und Bilder werden gelöscht und durch das Backup ersetzt.
                   </p>
-                  <p className="text-xs text-red-700 mt-1 font-medium">→ Echter Restore, nicht umkehrbar</p>
+                  <p className="text-xs text-crit mt-1 font-medium">→ Echter Restore, nicht umkehrbar</p>
                 </div>
               </label>
             </div>
 
             <div className="flex justify-end gap-3 p-5 border-t">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-ink-2 hover:text-ink">
                 Abbrechen
               </button>
               <button
@@ -583,6 +583,7 @@ export function BackupPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PageShell>
   )
 }

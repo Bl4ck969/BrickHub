@@ -1,41 +1,339 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* BrickHub Design-System 2.0
+   ---------------------------------------------------------------
+   Archivo tragt Uberschriften und Zahlen, IBM Plex Sans die Oberflache,
+   IBM Plex Mono die Herstellernummern - die sind Codes und lesen sich
+   als Codes besser.
+   --------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap')
+layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
+/* Dunkelmodus hangt an der Klasse `dark` auf <html>. Das Startskript in
+   index.html setzt sie aus der gemerkten Wahl oder der Systemeinstellung -
+   damit ist die Klasse immer die Wahrheit und es gibt kein Aufblitzen. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------
+   Semantische Tokens. Hell ist die Basis, `.dark` schreibt um.
+   Neutrale mit Blaustich Richtung Navy - kein reines Grau.
+   --------------------------------------------------------------- */
+:root {
+  --bh-ground:      #eef1f6;
+  --bh-surface:     #ffffff;
+  --bh-surface-2:   #f7f9fc;
+  --bh-surface-3:   #edf1f7;
+
+  --bh-ink:         #101e33;
+  --bh-ink-2:       #4a5c73;
+  --bh-ink-3:       #7c8ca3;
+
+  --bh-line:        #dce3ed;
+  --bh-line-2:      #c6d1e0;
+
+  /* Uberschriften: im Dunkeln hell, damit `text-heading` uberall tragt */
+  --bh-heading:     #1e3a5f;
+
+  --bh-gold:        #d99b1c;
+  --bh-gold-soft:   #fbf0d6;
+  --bh-gold-line:   #ebcb84;
+
+  /* Semantik - bewusst getrennt vom Gold-Akzent */
+  --bh-st-new:      #2563eb;
+  --bh-st-new-bg:   #e4edfe;
+  --bh-st-build:    #e2620b;
+  --bh-st-build-bg: #fdebdc;
+  --bh-st-done:     #12855a;
+  --bh-st-done-bg:  #ddf3e9;
+  --bh-st-rest:     #5a6b82;
+  --bh-st-rest-bg:  #e7ecf3;
+  --bh-crit:        #c62828;
+  --bh-crit-bg:     #fbe4e4;
+
+  /* Steinarten - eine abgestimmte Skala, keine Signalfarben */
+  --bh-s1: #4f7fe0;
+  --bh-s2: #8b6fe8;
+  --bh-s3: #2aa396;
+  --bh-s4: #d96ba8;
+  --bh-s5: #e0913c;
+  --bh-s6: #7a8aa3;
+
+  /* Noppenraster: 8 mm Pitch ist das Mass, in dem Klemmbausteine
+     gedacht werden. Hier als 16-px-Punktmatrix, kaum sichtbar. */
+  --bh-stud:        rgb(30 58 95 / 0.085);
+  --bh-icon-line:   #16243b;
+
+  --bh-shadow-s: 0 1px 2px rgb(16 30 51 / 0.06), 0 1px 1px rgb(16 30 51 / 0.04);
+  --bh-shadow-m: 0 4px 16px rgb(16 30 51 / 0.08), 0 1px 3px rgb(16 30 51 / 0.05);
+  --bh-shadow-l: 0 24px 60px rgb(10 18 32 / 0.22);
+
+  color-scheme: light;
+}
+
+.dark {
+  --bh-ground:      #0c121d;
+  --bh-surface:     #141d2c;
+  --bh-surface-2:   #1a2435;
+  --bh-surface-3:   #202c40;
+
+  --bh-ink:         #e9eff7;
+  --bh-ink-2:       #9eb0c6;
+  --bh-ink-3:       #6b7d94;
+
+  --bh-line:        #243145;
+  --bh-line-2:      #33445e;
+
+  --bh-heading:     #9cc0ee;
+
+  --bh-gold:        #f0b429;
+  --bh-gold-soft:   rgb(240 180 41 / 0.15);
+  --bh-gold-line:   rgb(240 180 41 / 0.38);
+
+  --bh-st-new:      #7aacff;
+  --bh-st-new-bg:   rgb(59 110 220 / 0.2);
+  --bh-st-build:    #fb923c;
+  --bh-st-build-bg: rgb(230 110 30 / 0.2);
+  --bh-st-done:     #45ce95;
+  --bh-st-done-bg:  rgb(30 170 115 / 0.18);
+  --bh-st-rest:     #94a7bf;
+  --bh-st-rest-bg:  rgb(120 140 170 / 0.18);
+  --bh-crit:        #ff7b7b;
+  --bh-crit-bg:     rgb(200 60 60 / 0.2);
+
+  --bh-s1: #6e97ec;
+  --bh-s2: #a58bf2;
+  --bh-s3: #3fbdaf;
+  --bh-s4: #e884bc;
+  --bh-s5: #eca659;
+  --bh-s6: #91a2bb;
+
+  --bh-stud:        rgb(150 175 210 / 0.07);
+  --bh-icon-line:   #2b4166;
+
+  --bh-shadow-s: 0 1px 2px rgb(0 0 0 / 0.35);
+  --bh-shadow-m: 0 6px 20px rgb(0 0 0 / 0.4);
+  --bh-shadow-l: 0 24px 60px rgb(0 0 0 / 0.6);
+
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------
+   Tokens an Tailwind reichen. `inline` ist noetig, weil die Werte
+   selbst var()-Referenzen sind - ohne das wuerde der Wert eingefroren
+   und der Dunkelmodus bliebe wirkungslos.
+   --------------------------------------------------------------- */
+@theme inline {
+  --color-ground:     var(--bh-ground);
+  --color-surface:    var(--bh-surface);
+  --color-surface-2:  var(--bh-surface-2);
+  --color-surface-3:  var(--bh-surface-3);
+
+  --color-ink:        var(--bh-ink);
+  --color-ink-2:      var(--bh-ink-2);
+  --color-ink-3:      var(--bh-ink-3);
+
+  --color-line:       var(--bh-line);
+  --color-line-2:     var(--bh-line-2);
+
+  --color-heading:    var(--bh-heading);
+
+  --color-gold:       var(--bh-gold);
+  --color-gold-soft:  var(--bh-gold-soft);
+  --color-gold-line:  var(--bh-gold-line);
+
+  --color-st-new:      var(--bh-st-new);
+  --color-st-new-bg:   var(--bh-st-new-bg);
+  --color-st-build:    var(--bh-st-build);
+  --color-st-build-bg: var(--bh-st-build-bg);
+  --color-st-done:     var(--bh-st-done);
+  --color-st-done-bg:  var(--bh-st-done-bg);
+  --color-st-rest:     var(--bh-st-rest);
+  --color-st-rest-bg:  var(--bh-st-rest-bg);
+  --color-crit:        var(--bh-crit);
+  --color-crit-bg:     var(--bh-crit-bg);
+
+  --color-icon-line: var(--bh-icon-line);
+  --color-stud: var(--bh-stud);
+
+  --color-stone-1: var(--bh-s1);
+  --color-stone-2: var(--bh-s2);
+  --color-stone-3: var(--bh-s3);
+  --color-stone-4: var(--bh-s4);
+  --color-stone-5: var(--bh-s5);
+  --color-stone-6: var(--bh-s6);
+
+  --shadow-s: var(--bh-shadow-s);
+  --shadow-m: var(--bh-shadow-m);
+  --shadow-l: var(--bh-shadow-l);
+}
+
+/* Markenfarben: feste Werte, in beiden Modi gleich. Die dunkle Seitenleiste
+   bleibt dunkel, und Text auf gelbem Grund bleibt dunkel - deshalb duerfen
+   diese beiden NICHT semantisch umschlagen. */
+@theme {
+  --color-brand-navy: #1e3a5f;
+  --color-brand-navy-light: #2a5080;
+  --color-brand-yellow: #ffd700;
+  --color-brand-bg: #eef1f6;
+
+  --color-rail: #16243b;
+  --color-rail-line: #27405f;
+  --color-rail-ink: #e7edf6;
+  --color-rail-ink-2: #93a6c0;
+  --color-rail-accent: #f0b429;
+
+  --font-display: Archivo, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/*
+  Die Standard-Rahmenfarbe ist in Tailwind v4 `currentcolor`. Diese
+  Kompatibilitaetsregel haelt das Verhalten aus v3 - ersetzt durch unsere
+  eigene Linienfarbe, damit Rahmen ohne Farbangabe in beiden Modi sitzen.
+*/
 @layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--bh-line);
+  }
+
   body {
-    @apply bg-brand-bg font-sans text-gray-800 antialiased m-0;
+    @apply bg-ground font-sans text-ink antialiased m-0;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Zahlenkolonnen fluchten */
+  .num, td, th {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-brand-navy text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-navy-light transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+/* ---------------------------------------------------------------
+   Komponenten. Die Namen sind dieselben wie in 1.0 - dadurch hebt
+   sich jede Seite mit, die sie schon benutzt.
+   --------------------------------------------------------------- */
+@utility btn-primary {
+  @apply inline-flex items-center justify-center gap-1.5 bg-brand-navy text-white px-3 py-2
+         rounded-lg text-sm font-medium border border-transparent
+         hover:bg-brand-navy-light transition-colors duration-150
+         disabled:opacity-50 disabled:cursor-not-allowed
+         dark:bg-surface-3 dark:text-ink dark:border-line-2 dark:hover:bg-line;
+}
+
+@utility btn-secondary {
+  @apply inline-flex items-center justify-center gap-1.5 bg-surface text-ink-2 border border-line
+         px-3 py-2 rounded-lg text-sm font-medium shadow-s
+         hover:bg-surface-3 hover:text-ink hover:border-line-2
+         transition-colors duration-150
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-danger {
+  @apply inline-flex items-center justify-center gap-1.5 bg-crit text-white px-3 py-2
+         rounded-lg text-sm font-medium border border-transparent
+         hover:brightness-110 transition-all duration-150
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Die Primaeraktion in der Markenfarbe */
+@utility btn-yellow {
+  @apply inline-flex items-center justify-center gap-1.5 bg-gold text-[#16243b] px-3 py-2
+         rounded-lg text-sm font-semibold border border-transparent
+         hover:brightness-105 transition-all duration-150
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility input-field {
+  @apply w-full border border-line bg-surface text-ink rounded-lg px-3 py-2 text-sm
+         placeholder:text-ink-3 shadow-s
+         focus:outline-hidden focus:border-gold focus:ring-3 focus:ring-gold-soft
+         disabled:opacity-60 disabled:cursor-not-allowed
+         transition-all duration-150;
+}
+
+@utility card {
+  @apply bg-surface rounded-xl shadow-s border border-line p-6;
+}
+
+@utility panel {
+  @apply bg-surface rounded-xl shadow-s border border-line overflow-hidden;
+}
+
+@utility table-th {
+  @apply px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-ink-3 uppercase tracking-[0.07em]
+         cursor-pointer select-none whitespace-nowrap
+         bg-surface-2 border-b border-line-2 hover:text-ink;
+}
+
+@utility table-td {
+  @apply px-2.5 py-2.5 text-[13px] text-ink border-b border-line;
+}
+
+@utility table-row {
+  @apply hover:bg-surface-2 transition-colors duration-100;
+}
+
+/* Statusabzeichen: Umriss plus Punkt, damit es nie mit dem gefuellten
+   Gold-Akzent verwechselt wird. */
+@utility status-pill {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full
+         text-[11.5px] font-semibold whitespace-nowrap border;
+}
+
+@utility eyebrow {
+  @apply text-[10.5px] font-semibold tracking-[0.1em] uppercase text-ink-3;
+}
+
+@utility studs-bg {
+  background-image: radial-gradient(var(--bh-stud) 1px, transparent 1.1px);
+  background-size: 16px 16px;
+}
+
+/* ---------------------------------------------------------------
+   Kleinigkeiten
+   --------------------------------------------------------------- */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bh-line-2) transparent;
   }
-  .btn-secondary {
-    @apply bg-white text-brand-navy border border-brand-navy px-4 py-2 rounded-lg font-medium hover:bg-brand-bg transition-colors duration-200;
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--bh-line-2);
+    border-radius: 9999px;
   }
-  .btn-danger {
-    @apply bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors duration-200;
+  *::-webkit-scrollbar-thumb:hover { background-color: var(--bh-ink-3); }
+
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--bh-gold);
+    outline-offset: 2px;
   }
-  .btn-yellow {
-    @apply bg-brand-yellow text-brand-navy px-4 py-2 rounded-lg font-semibold hover:brightness-95 transition-all duration-200;
-  }
-  .input-field {
-    @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-transparent transition-all duration-200;
-  }
-  .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
-  }
-  .table-th {
-    @apply px-1.5 py-1.5 text-left text-xs font-semibold text-white uppercase tracking-wide cursor-pointer select-none whitespace-nowrap;
-  }
-  .table-td {
-    @apply px-1.5 py-1 text-sm text-gray-700 whitespace-nowrap;
-  }
-  .table-row {
-    @apply hover:bg-blue-50 transition-colors duration-100;
+}
+
+@keyframes bh-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* In 1.0 wurde `animate-fade-in` benutzt, war aber nie definiert -
+   die Meldungen sind bisher ohne Animation aufgetaucht. */
+@utility animate-fade-in {
+  animation: bh-fade-in 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

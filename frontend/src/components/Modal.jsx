@@ -24,18 +24,18 @@ export function Modal({ open, onClose, title, children, size = 'md', titleExtra 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-[#0a1019]/60 backdrop-blur-xs"
         onClick={onClose}
       />
-      <div className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizeClass} max-h-[95vh] flex flex-col overflow-hidden`}>
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className={`relative bg-surface border border-line rounded-2xl shadow-l w-full ${sizeClass} max-h-[95vh] flex flex-col overflow-hidden`}>
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-line bg-surface-2">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <h2 className="text-lg font-semibold text-brand-navy flex-shrink-0">{title}</h2>
+            <h2 className="text-lg font-semibold text-heading shrink-0">{title}</h2>
             {titleExtra}
           </div>
           <button
             onClick={onClose}
-            className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            className="shrink-0 text-ink-3 hover:text-ink transition-colors p-1 rounded-lg hover:bg-surface-3"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -49,7 +49,7 @@ export function Modal({ open, onClose, title, children, size = 'md', titleExtra 
 export function ConfirmModal({ open, onClose, onConfirm, title, message, confirmLabel = 'Löschen', danger = true }) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
-      <p className="text-gray-600 mb-6">{message}</p>
+      <p className="text-ink-2 mb-6">{message}</p>
       <div className="flex justify-end gap-3">
         <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
         <button

@@ -5,36 +5,36 @@ const ToastContext = createContext(null)
 
 const TYPE_CONFIG = {
   success: {
-    bg: 'bg-green-50 border-green-200',
-    icon: <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" />,
-    text: 'text-green-800',
+    bg: 'bg-st-done-bg border-st-done/30',
+    icon: <CheckCircleIcon className="w-5 h-5 text-st-done shrink-0" />,
+    text: 'text-st-done',
   },
   error: {
-    bg: 'bg-red-50 border-red-200',
-    icon: <ExclamationCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />,
-    text: 'text-red-800',
+    bg: 'bg-crit-bg border-crit/30',
+    icon: <ExclamationCircleIcon className="w-5 h-5 text-crit shrink-0" />,
+    text: 'text-crit',
   },
   info: {
-    bg: 'bg-blue-50 border-[#1E3A5F]/20',
-    icon: <InformationCircleIcon className="w-5 h-5 text-[#1E3A5F] flex-shrink-0" />,
-    text: 'text-[#1E3A5F]',
+    bg: 'bg-st-new-bg border-st-new/30',
+    icon: <InformationCircleIcon className="w-5 h-5 text-st-new shrink-0" />,
+    text: 'text-st-new',
   },
   warning: {
-    bg: 'bg-yellow-50 border-yellow-300',
-    icon: <ExclamationTriangleIcon className="w-5 h-5 text-yellow-700 flex-shrink-0" />,
-    text: 'text-yellow-800',
+    bg: 'bg-st-build-bg border-st-build/30',
+    icon: <ExclamationTriangleIcon className="w-5 h-5 text-st-build shrink-0" />,
+    text: 'text-st-build',
   },
 }
 
 function ToastItem({ toast, onDismiss }) {
   const cfg = TYPE_CONFIG[toast.type] || TYPE_CONFIG.info
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl ${cfg.bg} min-w-[260px] max-w-sm animate-fade-in`}>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-l ${cfg.bg} min-w-[260px] max-w-sm animate-fade-in`}>
       {cfg.icon}
       <p className={`flex-1 text-sm font-medium ${cfg.text}`}>{toast.message}</p>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+        className="text-ink-3 hover:text-ink transition-colors shrink-0"
       >
         <XMarkIcon className="w-4 h-4" />
       </button>
@@ -59,7 +59,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={show}>
       {children}
       {toasts.length > 0 && (
-        <div className="fixed inset-0 pointer-events-none z-[200] flex items-center justify-center">
+        <div className="fixed inset-0 pointer-events-none z-200 flex items-center justify-center">
           <div className="pointer-events-auto flex flex-col gap-2">
             {toasts.map(t => (
               <ToastItem key={t.id} toast={t} onDismiss={dismiss} />

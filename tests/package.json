@@ -1,0 +1,12 @@
+{
+  "name": "brickhub-tests",
+  "private": true,
+  "type": "module",
+  "description": "Rauchtest gegen die laufende Entwicklungsumgebung",
+  "scripts": {
+    "test": "node rauchtest.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { usersApi } from '../api/client'
 import { useAuth } from '../hooks/useAuth'
 import { PlusIcon, TrashIcon, KeyIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
+import { PageShell, Ladet } from '../components/PageShell'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { useToast } from '../hooks/useToast'
 
@@ -71,20 +72,22 @@ export function UsersPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-brand-navy">Benutzerverwaltung</h1>
-        <button onClick={() => { setShowCreate(true); setForm(EMPTY_USER); setError('') }} className="btn-primary flex items-center gap-1.5">
-          <PlusIcon className="w-4 h-4" /> Benutzer anlegen
+    <PageShell
+      titel="Benutzerverwaltung"
+      untertitel={<><b className="font-semibold text-ink-2">{users.length}</b> {users.length === 1 ? 'Konto' : 'Konten'}</>}
+      aktionen={
+        <button onClick={() => { setShowCreate(true); setForm(EMPTY_USER); setError('') }} className="btn-yellow">
+          <PlusIcon className="h-4 w-4 stroke-[2.2]" /> Benutzer anlegen
         </button>
-      </div>
+      }
+    >
 
       {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-navy" /></div>
+        <Ladet />
       ) : (
-        <div className="card p-0 overflow-hidden">
+        <div className="panel mx-auto max-w-4xl">
           <table className="w-full">
-            <thead className="bg-brand-navy">
+            <thead>
               <tr>
                 <th className="table-th">Benutzername</th>
                 <th className="table-th">Rolle</th>
@@ -93,21 +96,21 @@ export function UsersPage() {
                 <th className="table-th">Aktionen</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line">
               {users.map(user => (
                 <tr key={user.id} className="table-row">
                   <td className="table-td font-medium">
                     {user.username}
-                    {user.id === currentUser?.id && <span className="ml-2 text-xs bg-brand-yellow text-brand-navy px-1.5 py-0.5 rounded">Ich</span>}
+                    {user.id === currentUser?.id && <span className="ml-2 text-xs bg-brand-yellow text-[#16243b] px-1.5 py-0.5 rounded-sm">Ich</span>}
                   </td>
                   <td className="table-td">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${user.role === 'admin' ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${user.role === 'admin' ? 'bg-brand-navy text-white' : 'bg-surface-3 text-ink-2'}`}>
                       {user.role === 'admin' ? 'Administrator' : 'Benutzer'}
                     </span>
                   </td>
                   <td className="table-td">{new Date(user.created_at).toLocaleDateString('de-DE')}</td>
                   <td className="table-td">
-                    <span className={`text-xs ${user.must_change_password ? 'text-amber-600' : 'text-green-600'}`}>
+                    <span className={`text-xs ${user.must_change_password ? 'text-st-build' : 'text-st-done'}`}>
                       {user.must_change_password ? 'Ja' : 'Nein'}
                     </span>
                   </td>
@@ -117,21 +120,21 @@ export function UsersPage() {
                         <>
                           <button
                             onClick={() => handleRoleToggle(user)}
-                            className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-blue-50 rounded-lg transition"
+                            className="p-1.5 text-ink-3 hover:text-heading hover:bg-surface-2 rounded-lg transition"
                             title={user.role === 'admin' ? 'Zu Benutzer herabstufen' : 'Zu Admin befördern'}
                           >
                             <ArrowsRightLeftIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => { setResetId(user.id); setNewInitialPw('') }}
-                            className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                            className="p-1.5 text-ink-3 hover:text-st-build hover:bg-st-build-bg rounded-lg transition"
                             title="Initialpasswort setzen"
                           >
                             <KeyIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeleteId(user.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            className="p-1.5 text-ink-3 hover:text-crit hover:bg-crit-bg rounded-lg transition"
                             title="Benutzer löschen"
                           >
                             <TrashIcon className="w-4 h-4" />
@@ -151,22 +154,22 @@ export function UsersPage() {
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Neuen Benutzer anlegen">
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Benutzername *</label>
+            <label className="block text-sm font-medium text-ink-2 mb-1">Benutzername *</label>
             <input type="text" className="input-field" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} required minLength={3} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Initialpasswort *</label>
+            <label className="block text-sm font-medium text-ink-2 mb-1">Initialpasswort *</label>
             <input type="password" className="input-field" value={form.initial_password} onChange={e => setForm(f => ({ ...f, initial_password: e.target.value }))} required minLength={8} />
-            <p className="text-xs text-gray-500 mt-1">Mindestens 8 Zeichen, Buchstaben und Zahlen. Benutzer muss es bei erster Anmeldung ändern.</p>
+            <p className="text-xs text-ink-3 mt-1">Mindestens 8 Zeichen, Buchstaben und Zahlen. Benutzer muss es bei erster Anmeldung ändern.</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rolle</label>
+            <label className="block text-sm font-medium text-ink-2 mb-1">Rolle</label>
             <select className="input-field" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
               <option value="user">Benutzer (Leserechte)</option>
               <option value="admin">Administrator (alle Rechte)</option>
             </select>
           </div>
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
+          {error && <div className="bg-crit-bg border border-crit/30 text-crit rounded-lg px-4 py-3 text-sm">{error}</div>}
           <div className="flex justify-end gap-3">
             <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>Abbrechen</button>
             <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Erstelle...' : 'Benutzer anlegen'}</button>
@@ -177,7 +180,7 @@ export function UsersPage() {
       {/* Reset Password Modal */}
       <Modal open={!!resetId} onClose={() => setResetId(null)} title="Initialpasswort setzen" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Neues Initialpasswort setzen. Der Benutzer muss es bei der nächsten Anmeldung ändern.</p>
+          <p className="text-sm text-ink-2">Neues Initialpasswort setzen. Der Benutzer muss es bei der nächsten Anmeldung ändern.</p>
           <input type="password" className="input-field" placeholder="Neues Passwort..." value={newInitialPw} onChange={e => setNewInitialPw(e.target.value)} minLength={8} />
           <div className="flex justify-end gap-3">
             <button className="btn-secondary" onClick={() => setResetId(null)}>Abbrechen</button>
@@ -193,6 +196,6 @@ export function UsersPage() {
         title="Benutzer löschen"
         message="Soll dieser Benutzer wirklich gelöscht werden?"
       />
-    </div>
+    </PageShell>
   )
 }

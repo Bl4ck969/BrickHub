@@ -56,17 +56,17 @@ function StepIndicator({ phase }) {
         return (
           <div key={label} className="flex items-center gap-1.5">
             {i > 0 && (
-              <div className={`w-5 h-0.5 rounded transition-all ${done || active ? 'bg-brand-navy' : 'bg-gray-200'}`} />
+              <div className={`w-5 h-0.5 rounded-sm transition-all ${done || active ? 'bg-brand-navy' : 'bg-surface-3'}`} />
             )}
             <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
               done ? 'bg-brand-navy border-brand-navy text-brand-yellow'
-              : active ? 'bg-brand-yellow border-brand-yellow text-brand-navy font-bold'
-              : 'bg-white border-gray-200 text-gray-400'
+              : active ? 'bg-brand-yellow border-brand-yellow text-[#16243b] font-bold'
+              : 'bg-surface border-line text-ink-3'
             }`}>
               <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-xs leading-none ${
                 done ? 'bg-brand-yellow/20 text-brand-yellow'
-                : active ? 'bg-brand-navy/15 text-brand-navy'
-                : 'border border-gray-300 text-gray-400'
+                : active ? 'bg-brand-navy/15 text-heading'
+                : 'border border-line text-ink-3'
               }`}>
                 {done ? '✓' : i + 1}
               </span>
@@ -512,7 +512,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
     <span className="flex flex-col leading-tight">
       <span>{sideLabel} bearbeiten</span>
       {(manufacturer || setName) && (
-        <span className="text-sm font-normal text-gray-500 truncate max-w-[40vw]">
+        <span className="text-sm font-normal text-ink-3 truncate max-w-[40vw]">
           {[manufacturer, setName].filter(Boolean).join(' – ')}
         </span>
       )}
@@ -533,7 +533,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-navy mx-auto mb-3" />
-            <p className="text-sm text-gray-600">{loading}</p>
+            <p className="text-sm text-ink-2">{loading}</p>
           </div>
         </div>
       )}
@@ -541,17 +541,17 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       {/* ── Upload-Phase ── */}
       {phase === 'upload' && !loading && (
         <div
-          className={`flex-1 flex items-center justify-center p-8 transition-colors ${isDragging ? 'bg-blue-50' : ''}`}
+          className={`flex-1 flex items-center justify-center p-8 transition-colors ${isDragging ? 'bg-surface-2' : ''}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
           {isDragging ? (
-            <div className="flex flex-col items-center justify-center w-full max-w-md h-56 border-2 border-dashed border-brand-navy rounded-2xl bg-blue-100/50">
-              <svg className="w-14 h-14 text-brand-navy mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-col items-center justify-center w-full max-w-md h-56 border-2 border-dashed border-brand-navy rounded-2xl bg-st-new-bg/50">
+              <svg className="w-14 h-14 text-heading mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              <span className="text-lg font-semibold text-brand-navy">Bild hier ablegen</span>
+              <span className="text-lg font-semibold text-heading">Bild hier ablegen</span>
             </div>
           ) : (
             <div className="flex flex-col items-center w-full max-w-2xl">
@@ -560,31 +560,31 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
                   <button
                     type="button"
                     onClick={handleLoadExisting}
-                    className="flex flex-col items-center justify-center w-full max-w-xs h-56 border-2 border-dashed border-green-500 rounded-2xl cursor-pointer hover:bg-green-50 transition-all group"
+                    className="flex flex-col items-center justify-center w-full max-w-xs h-56 border-2 border-dashed border-st-done rounded-2xl cursor-pointer hover:bg-st-done-bg transition-all group"
                   >
-                    <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-14 h-14 rounded-xl bg-st-done-bg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <svg className="w-7 h-7 text-st-done" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </div>
-                    <span className="text-base font-semibold text-green-700">Vorhandenes Bild bearbeiten</span>
-                    <span className="text-xs text-gray-400 mt-1.5">Gespeicherte Ecken werden geladen</span>
+                    <span className="text-base font-semibold text-st-done">Vorhandenes Bild bearbeiten</span>
+                    <span className="text-xs text-ink-3 mt-1.5">Gespeicherte Ecken werden geladen</span>
                   </button>
                 )}
-                <label className={`flex flex-col items-center justify-center w-full ${existingOriginalPath ? 'max-w-xs' : 'max-w-md'} h-56 border-2 border-dashed border-brand-navy rounded-2xl cursor-pointer hover:bg-blue-50 transition-all group`}>
-                  <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <svg className="w-7 h-7 text-brand-navy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <label className={`flex flex-col items-center justify-center w-full ${existingOriginalPath ? 'max-w-xs' : 'max-w-md'} h-56 border-2 border-dashed border-brand-navy rounded-2xl cursor-pointer hover:bg-surface-2 transition-all group`}>
+                  <div className="w-14 h-14 rounded-xl bg-st-new-bg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg className="w-7 h-7 text-heading" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <span className="text-base font-semibold text-brand-navy">Neues Bild hochladen</span>
-                  <span className="text-xs text-gray-400 mt-1.5">JPG, PNG, WebP bis 30 MB</span>
+                  <span className="text-base font-semibold text-heading">Neues Bild hochladen</span>
+                  <span className="text-xs text-ink-3 mt-1.5">JPG, PNG, WebP bis 30 MB</span>
                   <input type="file" accept="image/*" className="hidden"
                     onChange={e => { if (e.target.files[0]) handleFileSelect(e.target.files[0]) }} />
                 </label>
               </div>
-              <p className="text-xs text-gray-400 mt-4">
-                Oder: Bild per <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">Strg+V</span> aus der Zwischenablage einfügen · Drag &amp; Drop
+              <p className="text-xs text-ink-3 mt-4">
+                Oder: Bild per <span className="font-mono bg-surface-3 px-1.5 py-0.5 rounded-sm">Strg+V</span> aus der Zwischenablage einfügen · Drag &amp; Drop
               </p>
             </div>
           )}
@@ -596,16 +596,16 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
         <div className="flex-1 flex overflow-hidden">
 
           {/* Seitenleiste */}
-          <div className="flex-shrink-0 flex flex-col bg-gray-50 border-r border-gray-100 overflow-y-auto" style={{ width: '252px' }}>
+          <div className="shrink-0 flex flex-col bg-surface-2 border-r border-line overflow-y-auto" style={{ width: '252px' }}>
 
             {/* Eckpunkte-Legende */}
-            <div className="border-b border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2.5">Eckpunkte</p>
-              <p className="text-xs text-gray-500 mb-3">Ziehe die Punkte auf die 4 Verpackungsecken:</p>
+            <div className="border-b border-line p-4">
+              <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2.5">Eckpunkte</p>
+              <p className="text-xs text-ink-3 mb-3">Ziehe die Punkte auf die 4 Verpackungsecken:</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {LABELS.map((l, i) => (
                   <div key={l} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: COLORS[i] }}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-white/30 flex-shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-surface/30 shrink-0" />
                     {CORNER_NAMES[i]}
                   </div>
                 ))}
@@ -624,15 +624,15 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
             </div>
 
             {/* Rotation */}
-            <div className="border-b border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2.5">Rotation</p>
+            <div className="border-b border-line p-4">
+              <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2.5">Rotation</p>
               <div className="flex items-center gap-2 mb-2.5">
                 <input
                   type="range" min="-180" max="180" value={Math.max(-180, Math.min(180, rotation))}
                   onChange={e => setRotation(Number(e.target.value))}
                   className="flex-1 accent-brand-navy"
                 />
-                <span className="font-mono text-xs font-semibold text-brand-navy w-9 text-right">{rotation}°</span>
+                <span className="font-mono text-xs font-semibold text-heading w-9 text-right">{rotation}°</span>
               </div>
               <div className="flex gap-1 flex-wrap">
                 {[-90, -45, 0, 45, 90].map(deg => (
@@ -643,7 +643,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
                     className={`px-2 py-1 rounded-lg text-xs font-medium border transition-all ${
                       rotation === deg
                         ? 'bg-brand-navy text-brand-yellow border-brand-navy'
-                        : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-brand-navy hover:text-white hover:border-brand-navy'
+                        : 'bg-surface-3 text-ink-2 border-line hover:bg-brand-navy hover:text-white hover:border-brand-navy'
                     }`}
                   >
                     {deg > 0 ? `+${deg}°` : `${deg}°`}
@@ -651,25 +651,25 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
                 ))}
               </div>
               {rotation !== 0 && (
-                <p className="text-xs text-amber-600 mt-2">Rotation {rotation}° wird beim Speichern angewendet</p>
+                <p className="text-xs text-st-build mt-2">Rotation {rotation}° wird beim Speichern angewendet</p>
               )}
             </div>
 
             {/* Bildanpassung */}
-            <div className="border-b border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Bildanpassung</p>
+            <div className="border-b border-line p-4">
+              <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-3">Bildanpassung</p>
               {/* Helligkeit */}
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-ink-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    <span className="text-xs text-gray-600">Helligkeit</span>
+                    <span className="text-xs text-ink-2">Helligkeit</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-semibold text-brand-navy">{Math.round(brightness * 100)}%</span>
-                    <button onClick={() => setBrightness(1.05)} className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-200 px-1 py-0.5 rounded transition-all">Std</button>
+                    <span className="text-xs font-mono font-semibold text-heading">{Math.round(brightness * 100)}%</span>
+                    <button onClick={() => setBrightness(1.05)} className="text-xs text-ink-3 hover:text-ink-2 hover:bg-surface-3 px-1 py-0.5 rounded-sm transition-all">Std</button>
                   </div>
                 </div>
                 <input type="range" min="0.5" max="2.0" step="0.05" value={brightness}
@@ -680,14 +680,14 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-ink-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                     </svg>
-                    <span className="text-xs text-gray-600">Farbintensität</span>
+                    <span className="text-xs text-ink-2">Farbintensität</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-semibold text-brand-navy">{Math.round(saturation * 100)}%</span>
-                    <button onClick={() => setSaturation(1.05)} className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-200 px-1 py-0.5 rounded transition-all">Std</button>
+                    <span className="text-xs font-mono font-semibold text-heading">{Math.round(saturation * 100)}%</span>
+                    <button onClick={() => setSaturation(1.05)} className="text-xs text-ink-3 hover:text-ink-2 hover:bg-surface-3 px-1 py-0.5 rounded-sm transition-all">Std</button>
                   </div>
                 </div>
                 <input type="range" min="0.0" max="2.0" step="0.05" value={saturation}
@@ -697,30 +697,30 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
             </div>
 
             {/* Zoom */}
-            <div className="border-b border-gray-100 p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2.5">Ansicht</p>
+            <div className="border-b border-line p-4">
+              <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2.5">Ansicht</p>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-600">Zoom</span>
+                <span className="text-xs text-ink-2">Zoom</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-semibold text-brand-navy">{Math.round(zoom * 100)}%</span>
-                  <button onClick={() => setZoom(1)} className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-200 px-1 py-0.5 rounded transition-all">Reset</button>
+                  <span className="text-xs font-mono font-semibold text-heading">{Math.round(zoom * 100)}%</span>
+                  <button onClick={() => setZoom(1)} className="text-xs text-ink-3 hover:text-ink-2 hover:bg-surface-3 px-1 py-0.5 rounded-sm transition-all">Reset</button>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => setZoom(z => Math.max(0.1, z * 0.85))}
-                  className="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm transition-all">−</button>
-                <div className="flex-1 h-1.5 bg-gray-200 rounded-full mx-1 overflow-hidden">
+                  className="shrink-0 w-7 h-7 rounded-lg bg-surface-3 hover:bg-surface-3 flex items-center justify-center text-ink-2 font-bold text-sm transition-all">−</button>
+                <div className="flex-1 h-1.5 bg-surface-3 rounded-full mx-1 overflow-hidden">
                   <div className="h-full rounded-full bg-brand-navy transition-all"
                     style={{ width: `${Math.min(100, Math.max(3, ((zoom - 0.1) / (5 - 0.1)) * 100))}%` }} />
                 </div>
                 <button onClick={() => setZoom(z => Math.min(10, z * 1.2))}
-                  className="flex-shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm transition-all">+</button>
+                  className="shrink-0 w-7 h-7 rounded-lg bg-surface-3 hover:bg-surface-3 flex items-center justify-center text-ink-2 font-bold text-sm transition-all">+</button>
               </div>
             </div>
 
             {/* Tastaturkürzel */}
             <div className="p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2.5">Tipps</p>
+              <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2.5">Tipps</p>
               <div className="space-y-1.5">
                 {[
                   ['Mausrad', 'Zoom'],
@@ -728,8 +728,8 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
                   ['Drag (Handle)', 'Ecke ziehen'],
                 ].map(([key, desc]) => (
                   <div key={key} className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{desc}</span>
-                    <span className="text-xs font-mono bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">{key}</span>
+                    <span className="text-xs text-ink-3">{desc}</span>
+                    <span className="text-xs font-mono bg-surface-3 text-ink-2 px-1.5 py-0.5 rounded-sm">{key}</span>
                   </div>
                 ))}
               </div>
@@ -769,16 +769,16 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
                 />
               </div>
               {/* Zoom-Anzeige */}
-              <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-lg pointer-events-none">
+              <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-xs px-2.5 py-1 rounded-lg pointer-events-none">
                 {Math.round(zoom * 100)}%
               </div>
               {/* Hinweis-Badge oben */}
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white/80 text-xs px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap">
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-xs text-white/80 text-xs px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap">
                 Eckpunkte ziehen · Scrollen = Zoom · Drag = Verschieben
               </div>
               {/* Rotation-Badge */}
               {rotation !== 0 && (
-                <div className="absolute bottom-3 left-3 bg-amber-500/80 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-lg pointer-events-none">
+                <div className="absolute bottom-3 left-3 bg-st-build-bg0/80 backdrop-blur-xs text-white text-xs px-2.5 py-1 rounded-lg pointer-events-none">
                   ⟳ {rotation}°
                 </div>
               )}
@@ -790,15 +790,15 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       {/* ── Vorschau-Phase ── */}
       {phase === 'preview' && !loading && previewPath && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 flex items-center justify-center bg-gray-100 overflow-hidden p-4">
+          <div className="flex-1 min-h-0 flex items-center justify-center bg-surface-3 overflow-hidden p-4">
             <img src={imagesApi.fileUrl(previewPath) + '&t=' + Date.now()} alt="Vorschau"
               className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
               style={{ filter: `brightness(${brightness}) saturate(${saturation})` }} />
           </div>
-          <div className="flex-shrink-0 flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-white">
+          <div className="shrink-0 flex justify-between items-center px-6 py-4 border-t border-line bg-surface">
             <div>
-              <p className="text-sm font-medium text-gray-700">Perspektivkorrektur angewendet</p>
-              <p className="text-xs text-gray-400">Sieht es korrekt aus? Dann weiter zum Fertigstellen.</p>
+              <p className="text-sm font-medium text-ink-2">Perspektivkorrektur angewendet</p>
+              <p className="text-xs text-ink-3">Sieht es korrekt aus? Dann weiter zum Fertigstellen.</p>
             </div>
             <div className="flex gap-3">
               <button type="button" className="btn-secondary" onClick={() => setPhase('edit')}>
@@ -816,32 +816,32 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       {phase === 'final' && !loading && finalResult && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-auto p-6">
-            <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-              <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-st-done-bg border border-st-done/30 rounded-lg">
+              <svg className="w-4 h-4 text-st-done shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-sm font-medium text-green-700">Bild erfolgreich verarbeitet!</p>
+              <p className="text-sm font-medium text-st-done">Bild erfolgreich verarbeitet!</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {originalPath && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Vorher</p>
-                  <div className="bg-gray-100 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2">Vorher</p>
+                  <div className="bg-surface-3 rounded-xl p-3">
                     <img src={imagesApi.fileUrl(originalPath) + '&t=' + uploadTs} alt="Original"
                       className="max-h-72 mx-auto object-contain" />
                   </div>
                 </div>
               )}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Nachher</p>
-                <div className="bg-gray-100 rounded-xl p-3">
+                <p className="text-xs font-semibold text-ink-3 uppercase tracking-wide mb-2">Nachher</p>
+                <div className="bg-surface-3 rounded-xl p-3">
                   <img src={imagesApi.fileUrl(finalResult.thumbnail) + '&t=' + Date.now()} alt="Fertig"
                     className="max-h-72 mx-auto object-contain" />
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex-shrink-0 flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-white">
+          <div className="shrink-0 flex justify-between items-center px-6 py-4 border-t border-line bg-surface">
             <button type="button" className="btn-secondary"
               onClick={() => { setPreviewPath(null); setFinalResult(null); setPhase('edit') }}>
               Nochmal bearbeiten
@@ -855,12 +855,12 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
 
       {/* ── Footer für Edit-Phase ── */}
       {phase === 'edit' && !loading && (
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-t border-line bg-surface">
           <div className="flex items-center gap-3">
             <button type="button" className="btn-secondary" onClick={onClose}>Abbrechen</button>
             {existingOriginalPath && (
               <button type="button"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-700 transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border text-ink-3 border-line hover:bg-surface-2 hover:text-ink-2 transition-all"
                 onClick={() => { setPhase('upload'); setOriginalPath(null); setCorners(null) }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -877,7 +877,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
 
       {/* Footer für Upload-Phase */}
       {phase === 'upload' && !loading && (
-        <div className="flex-shrink-0 flex justify-start px-6 py-4 border-t border-gray-100 bg-white">
+        <div className="shrink-0 flex justify-start px-6 py-4 border-t border-line bg-surface">
           <button type="button" className="btn-secondary" onClick={onClose}>Abbrechen</button>
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { authApi } from '../api/client'
+import { AuthShell, AuthFeld, AuthFehler, authInput } from '../components/AuthShell'
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate()
@@ -59,83 +60,89 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-navy to-brand-navy-light flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-brand-navy">Passwort vergessen</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {step === 1 ? 'Benutzername eingeben' : 'Sicherheitsfragen beantworten'}
-          </p>
-        </div>
-
-        {step === 1 ? (
-          <form onSubmit={handleStep1} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Benutzername</label>
+    <AuthShell
+      titel="Passwort vergessen"
+      untertitel={step === 1 ? 'Benutzername eingeben' : 'Sicherheitsfragen beantworten'}
+    >
+      {step === 1 ? (
+        <form onSubmit={handleStep1} className="flex flex-col gap-4">
+          <AuthFeld id="fp-user" label="Benutzername">
+            <input
+              id="fp-user"
+              type="text"
+              className={authInput}
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              required
+              autoFocus
+            />
+          </AuthFeld>
+          <AuthFehler>{error}</AuthFehler>
+          <button type="submit" className="btn-yellow w-full py-2.5 text-[14px]" disabled={loading}>
+            {loading ? 'Suche…' : 'Weiter'}
+          </button>
+          <div className="text-center text-[12.5px]">
+            <Link
+              to="/login"
+              className="border-b border-[rgb(200_214_232/0.3)] text-[#c8d6e8] no-underline hover:border-gold hover:text-gold"
+            >
+              Zurück zur Anmeldung
+            </Link>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleStep2} className="flex flex-col gap-4">
+          {questions.map(q => (
+            <div key={q.id} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-[#0a1220]/30 p-3.5">
+              <p className="text-[13px] font-medium text-[#c8d6e8]">{q.question}</p>
               <input
                 type="text"
-                className="input-field"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
+                className={authInput}
+                placeholder="Ihre Antwort…"
+                value={answers[q.id] || ''}
+                onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
                 required
-                autoFocus
               />
             </div>
-            {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
-            <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
-              {loading ? 'Suche...' : 'Weiter'}
+          ))}
+          <AuthFeld id="fp-neu" label="Neues Passwort">
+            <input
+              id="fp-neu"
+              type="password"
+              className={authInput}
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              required
+              minLength={8}
+            />
+            <p className="text-[11px] text-[#93a6c0]">Mindestens 8 Zeichen, Buchstaben und Zahlen</p>
+          </AuthFeld>
+          <AuthFeld id="fp-neu2" label="Passwort wiederholen">
+            <input
+              id="fp-neu2"
+              type="password"
+              className={authInput}
+              value={newPasswordConfirm}
+              onChange={e => setNewPasswordConfirm(e.target.value)}
+              required
+            />
+          </AuthFeld>
+          <AuthFehler>{error}</AuthFehler>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              className="flex-1 rounded-lg border border-white/16 py-2.5 text-sm font-medium text-[#c8d6e8]
+                transition-colors hover:bg-white/6"
+              onClick={() => setStep(1)}
+            >
+              Zurück
             </button>
-            <div className="text-center">
-              <Link to="/login" className="text-sm text-brand-navy hover:underline">Zurück zur Anmeldung</Link>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleStep2} className="space-y-4">
-            {questions.map(q => (
-              <div key={q.id} className="bg-gray-50 rounded-xl p-4 space-y-2">
-                <p className="text-sm font-medium text-gray-700">{q.question}</p>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="Ihre Antwort..."
-                  value={answers[q.id] || ''}
-                  onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
-                  required
-                />
-              </div>
-            ))}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Neues Passwort</label>
-              <input
-                type="password"
-                className="input-field"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                required
-                minLength={8}
-              />
-              <p className="text-xs text-gray-500 mt-1">Mindestens 8 Zeichen, Buchstaben und Zahlen</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Passwort wiederholen</label>
-              <input
-                type="password"
-                className="input-field"
-                value={newPasswordConfirm}
-                onChange={e => setNewPasswordConfirm(e.target.value)}
-                required
-              />
-            </div>
-            {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{error}</div>}
-            <div className="flex gap-3">
-              <button type="button" className="btn-secondary flex-1" onClick={() => setStep(1)}>Zurück</button>
-              <button type="submit" className="btn-primary flex-1 py-3" disabled={loading}>
-                {loading ? 'Speichere...' : 'Passwort speichern'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+            <button type="submit" className="btn-yellow flex-1 py-2.5" disabled={loading}>
+              {loading ? 'Speichere…' : 'Passwort speichern'}
+            </button>
+          </div>
+        </form>
+      )}
+    </AuthShell>
   )
 }

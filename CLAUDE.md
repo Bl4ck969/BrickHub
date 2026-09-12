@@ -59,9 +59,34 @@ auf „Update" klicken. Maßgeblich ist dort das **Template**, nicht `docker-com
 cd frontend && npx eslint src/
 ```
 
-Es gibt keine automatisierten Tests. `npx eslint src/` meldet aktuell 7 vorbestehende
-Errors und 3 Warnings (unbenutzte `err`-Variablen, `exhaustive-deps`, ein
-`react-refresh`-Hinweis) — die sind Bestand, kein Ergebnis der letzten Änderung.
+`npx eslint src/` meldet aktuell **21 Errors und 5 Warnings** — Bestand, kein Ergebnis
+der letzten Änderung. Die Zahl ist seit dem Sprung auf **eslint 10** (12.09.2026) höher:
+`eslint-plugin-react-hooks` 7.x bringt die React-Compiler-Regeln `static-components`,
+`set-state-in-effect`, `purity`, `immutability` und `incompatible-library` mit, die
+vorbestehende Muster zum ersten Mal melden. Sie sind bewusst **nicht** stummgeschaltet.
+
+⚠ **Lint läuft weder im Dockerfile noch in GitHub Actions** — er bricht also nichts.
+Wer die Zahl senken will, fasst Code an, nicht die Konfiguration.
+
+## Rauchtest
+
+```bash
+cd tests && npm install          # einmalig
+BH_USER=<benutzer> BH_PASS=<passwort> npm test
+```
+
+Prüft mit **echten Klicks** gegen die laufende Entwicklungsumgebung (beide Server nötig):
+Anmeldung, Sortierung, Inline-Bearbeitung **inklusive belegtem `PATCH`**, Status- und
+Kistenauswahl, Bild-Vergrößerung, Galerie, Theme, alle sechs Navigationsziele und die
+schmale Ansicht. Details und Grenzen in `tests/README.md`.
+
+⚠ **Der Test schreibt einen Wert in die Datenbank und setzt ihn zurück.** Meldet er
+`Testwert zurückgesetzt — BITTE PRÜFEN`, von Hand nachsehen. Für das Konto gilt die
+Regel oben: temporären Benutzer anlegen, danach löschen.
+
+⚠ **Playwright liegt in `tests/`, nicht in `frontend/`** — das Dockerfile kopiert
+`frontend/` komplett und führt dort `npm ci` aus; in `frontend/package.json` würde
+Playwright bei jedem Image-Bau mitinstalliert.
 
 ## Architektur
 
@@ -83,7 +108,7 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 > stumm `index.html` mit Status 200. Lokal fällt das nicht auf, weil `backend/frontend/dist`
 > dort fehlt und der ganze Block übersprungen wird. Genau so war `/api/health` monatelang tot.
 
-### Frontend (React 19 + Vite 8 + Tailwind 3)
+### Frontend (React 19 + Vite 8 + Tailwind 4)
 
 - **Einstieg**: `frontend/src/main.jsx` → `App.jsx` (react-router v8, lazy-loaded Pages)
 - **Router**: Paket heißt `react-router` (nicht `react-router-dom`). Genutzt wird nur der
@@ -91,6 +116,14 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - **API-Client**: `frontend/src/api/client.js` – Axios mit `withCredentials: true`, 401-Interceptor, organisiert als `authApi`, `usersApi`, `setsApi`, `boxesApi`, `imagesApi`, `settingsApi`, `backupApi`, `labelsApi`
 - **Auth**: `frontend/src/hooks/useAuth.jsx` (muss .jsx sein wegen JSX im Hook)
 - **Proxy**: Vite leitet `/api` → `http://localhost:8000` weiter (konfiguriert in `vite.config.js`)
+- **Navigation**: `components/Sidebar.jsx` (seit 2.0 eine Seitenleiste, keine Navbar mehr).
+  Die `adminOnly`-Marken je Punkt sind dieselben wie vorher — wer dort etwas ändert,
+  ändert die Sichtbarkeit für Nicht-Admins
+- **Gerüste**: `components/PageShell.jsx` (Seiten hinter der Anmeldung) und
+  `components/AuthShell.jsx` (Anmeldung, Ersteinrichtung, Passwort vergessen/ändern).
+  Jede Seite nutzt eins davon — wer eine neue anlegt, auch
+- **Theme**: `hooks/useTheme.jsx` plus ein Inline-Skript im `<head>` von `index.html`.
+  ⚠ Das Skript muss **vor** React laufen, sonst blitzt beim Laden das falsche Theme auf
 
 > **Ohne laufendes Backend bleibt die App dauerhaft im Suspense-Spinner.** Das ist kein
 > Fehler, sondern der fehlende Auth-Call. Wer eine UI-Änderung prüfen will, braucht beide
@@ -109,11 +142,34 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - `pdf_service.py` nutzt ReportLab Canvas API + Platypus Flowables
 - Logo-Pfad: `BrickHub/Logo.png` (Projektroot, nicht backend/)
 
-## Design-System
+## Design-System (2.0, seit 12.09.2026)
 
-- Navy `#1E3A5F` (Navbar, Buttons, Überschriften), Yellow `#FFD700` (Akzent, aktive Links)
-- CSS-Klassen: `.input-field`, `.btn-primary`, `.btn-danger`, `.card`, `.table-th`, `.table-td`
-- Icons: `@heroicons/react` v2 (outline)
+**Es gibt keine `tailwind.config.js` mehr.** Tailwind 4 konfiguriert sich in CSS —
+alles steht in `frontend/src/index.css`:
+
+- **Semantische Tokens** in `:root` und `.dark` (Präfix `--bh-`), durchgereicht über
+  `@theme inline`. ⚠ Das `inline` ist Pflicht: Ohne es friert Tailwind den Wert ein
+  und der Dunkelmodus bleibt wirkungslos
+- **Farben nie hart schreiben.** `bg-surface`, `text-ink`, `text-ink-2`, `text-ink-3`,
+  `border-line`, `text-heading`, `bg-gold`, dazu `st-new|st-build|st-done|st-rest` für
+  Status und `crit` für Kritisches. Ein `bg-white` oder `text-gray-500` in einer Seite
+  ist ein Fehler — es bricht den Dunkelmodus
+- **Markenfarben bleiben fest** (`brand-navy`, `brand-yellow`, `rail-*`): Die
+  Seitenleiste ist in beiden Modi dunkel, und Text auf gelbem Grund bleibt dunkel.
+  Diese dürfen **nicht** semantisch umschlagen
+- **Komponenten-Klassen** (`@utility`): `.btn-primary`, `.btn-secondary`, `.btn-danger`,
+  `.btn-yellow`, `.input-field`, `.card`, `.panel`, `.table-th`, `.table-td`,
+  `.table-row`, `.status-pill`, `.eyebrow`, `.studs-bg`. Die Namen sind dieselben wie in
+  1.0 — wer sie ändert, ändert das Aussehen aller Seiten auf einmal
+- **Schrift**: Archivo (Überschriften und Zahlen), IBM Plex Sans (Oberfläche),
+  IBM Plex Mono (Herstellernummern — das sind Codes)
+- **Steinart-Farben** kommen aus `src/lib/stein.js`, damit dieselbe Farbe überall
+  dieselbe Steinart meint. Nicht dupliziert werden
+- **Dunkelmodus** hängt an der Klasse `dark` auf `<html>`, gesetzt vom Startskript aus
+  gemerkter Wahl oder Systemeinstellung
+- Icons: `@heroicons/react` v2 (outline); die drei isometrischen Kennzahl-Icons in
+  `components/BrickIcons.jsx`
+- Entwurf mit Begründungen: `docs/design-2.0-mockup.html`
 
 ## Docker-Image
 
@@ -136,3 +192,37 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - `imagesApi.fileUrl()` hat keinen Cache-Buster eingebaut – Pages nutzen `&t=Date.now()` manuell
 - Inline-Updates: `PATCH /api/sets/{id}/inline` akzeptiert nur: status, bag_count, plate_count, box_id, notes
 - Box mit `allowed_stone_types = []` → kompatibel mit allen Steinarten
+
+---
+
+## Geheimnisse gehören NICHT in diesen Ordner — seit 21.08.2026
+
+**Dieser Projektordner wird per Syncthing auf den Unraid gespiegelt**, und dort
+läuft seit dem 21.08.2026 eine **Claude-Agent-VM**, die diese Dateien unter
+`/workspace` liest. Alles, was hier liegt, ist damit für einen Agenten lesbar.
+
+**Was an dem Tag gefunden wurde** (adversariales Sicherheitsreview): Im
+gespiegelten Ordner lagen der **Unraid-Root-Schlüssel**, ein **GitHub-PAT**, der
+`THALIA_PASSWORD_KEY` (AES-256-Master), Tolino-OAuth-Token, der Paperless-Token
+sowie sämtliche Datenbank- und JWT-Geheimnisse. Der Agent konnte sich damit am
+eigens gebauten Vermittler vorbei eine **Root-Shell auf dem Server** holen — im
+Review vorgeführt.
+
+**Daraus folgt für die Arbeit in diesem Projekt:**
+
+* **Niemals** `.env`, private Schlüssel, `*.pem`, Token- oder Zugangsdateien in
+  diesen Ordner schreiben. `.env.example` ohne Werte ist in Ordnung.
+* Syncthing ignoriert im Ordner `Setups` inzwischen `**/.env`, `**/*.pem`,
+  Schlüssel- und Token-Dateien. **Verlass dich nicht darauf** — das ist ein Netz,
+  keine Erlaubnis, Geheimnisse hier abzulegen.
+* Neue Zugangsdateien außerhalb des gespiegelten Ordners ablegen
+  (Muster: `%USERPROFILE%\OneDrive\Dokumente\...-Secrets\`) und den Pfad per Umgebungsvariable hereinreichen.
+* **Vor jedem neuen Dienst, der auf diesen Ordner zugreift**, prüfen, was darin
+  tatsächlich liegt:
+  `find . \( -name '.env' -o -name '*_key' -o -name '*.pem' -o -name '*token*' \) -not -path '*/node_modules/*'`
+
+**Die Lehre:** Eine Zugangsschleuse ist nur so viel wert wie die Aussage „dort
+liegt nichts Verwertbares". Genau diese Prüfung war beim Bau der VM versäumt
+worden.
+
+Vollständige Aufarbeitung: `Claude Agent Container/README.md` im selben Sync-Ordner.

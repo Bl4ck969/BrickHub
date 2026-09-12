@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { ToastProvider } from './hooks/useToast'
+import { ThemeProvider } from './hooks/useTheme'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { Navbar } from './components/Navbar'
+import { Sidebar } from './components/Sidebar'
 import { LoginPage } from './pages/LoginPage'
 import { SetupPage } from './pages/SetupPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
@@ -25,18 +26,20 @@ const BackupPage = lazy(() => import('./pages/BackupPage').then(m => ({ default:
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-navy" />
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gold" />
     </div>
   )
 }
 
+/** Seitenleiste plus Inhalt. Die Seiten bringen ihre Kopfleiste ueber
+ *  PageShell selbst mit und setzen ihr Innenmass. */
 function Layout({ children }) {
   const { user } = useAuth()
   if (!user) return children
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1 p-6">
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <Sidebar />
+      <main className="min-w-0 flex-1">
         <Suspense fallback={<LoadingSpinner />}>
           {children}
         </Suspense>
@@ -60,6 +63,7 @@ function FirstRunGate({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <ToastProvider>
       <AuthProvider>
         <Routes>
@@ -77,7 +81,7 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* Protected routes with Navbar */}
+          {/* Geschuetzte Routen mit Seitenleiste */}
           <Route path="/sets" element={
             <ProtectedRoute>
               <Layout><SetsPage /></Layout>
@@ -130,6 +134,7 @@ export default function App() {
         </Routes>
       </AuthProvider>
       </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

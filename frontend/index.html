@@ -6,22 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#16243b" />
     <title>BrickHub</title>
-    <script>
-      // Laeuft vor React und vor dem ersten Anstrich: ohne das blitzt beim
-      // Laden kurz das falsche Theme auf. Gemerkte Wahl schlaegt System.
-      (function () {
-        try {
-          var gewaehlt = localStorage.getItem('brickhub-theme')
-          var dunkel =
-            gewaehlt === 'dark' ||
-            (gewaehlt !== 'light' &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.classList.toggle('dark', dunkel)
-        } catch (e) {
-          // Privates Fenster oder gesperrte Speicherung: dann eben hell.
-        }
-      })()
-    </script>
+    <!-- Theme vor dem ersten Anstrich setzen. Externe Datei, weil die CSP
+         Inline-Skripte blockiert; klassisch und synchron, siehe Datei. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

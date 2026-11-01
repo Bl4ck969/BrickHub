@@ -122,8 +122,12 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - **Gerüste**: `components/PageShell.jsx` (Seiten hinter der Anmeldung) und
   `components/AuthShell.jsx` (Anmeldung, Ersteinrichtung, Passwort vergessen/ändern).
   Jede Seite nutzt eins davon — wer eine neue anlegt, auch
-- **Theme**: `hooks/useTheme.jsx` plus ein Inline-Skript im `<head>` von `index.html`.
-  ⚠ Das Skript muss **vor** React laufen, sonst blitzt beim Laden das falsche Theme auf
+- **Theme**: `hooks/useTheme.jsx` plus `public/theme-init.js`, im `<head>` von
+  `index.html` klassisch eingebunden (ohne `type="module"`, ohne `defer`).
+  ⚠ Das Skript muss **vor** React laufen, sonst blitzt beim Laden das falsche Theme auf.
+  ⚠ **Kein Inline-Skript daraus machen:** Die CSP in `main.py` (`script-src 'self'`)
+  blockiert es — so lief es von Design 2.0 bis 01.11.2026 in Produktion wirkungslos.
+  Im Vite-Dev-Server fällt das nicht auf, die CSP setzt nur FastAPI
 
 > **Ohne laufendes Backend bleibt die App dauerhaft im Suspense-Spinner.** Das ist kein
 > Fehler, sondern der fehlende Auth-Call. Wer eine UI-Änderung prüfen will, braucht beide

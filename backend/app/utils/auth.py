@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 import bcrypt
-from jose import JWTError, jwt
+import jwt
 from fastapi import Depends, HTTPException, status, Cookie
 from sqlalchemy.orm import Session
 from app.config import settings
@@ -51,7 +51,7 @@ def get_current_user(
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except JWTError:
+    except jwt.PyJWTError:
         raise credentials_exception
 
     user = db.query(User).filter(User.username == username).first()

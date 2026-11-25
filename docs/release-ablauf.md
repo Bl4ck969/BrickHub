@@ -37,7 +37,8 @@ python -I handprobe/testinstanz.py abraeumen --name <projekt>
 python -I -m unittest discover -s handprobe -p "test_*.py"     # Tests, ohne Docker
 ```
 
-- `<ordner>` heißt wie die ZIP ohne `.zip` (`brickhub-auto-JJJJ-MM-TT_HH-MM`) und enthält genau diese ZIP. Das Rezept
+- `<ordner>` heißt wie die ZIP, mit oder ohne `.zip` (`brickhub-auto-JJJJ-MM-TT_HH-MM[.zip]`), und enthält genau diese
+  ZIP. ⚠ Der Leitstand legt ihn **mit** `.zip` an (Originalname der Sicherung); bis BH-6 lehnte das Rezept das ab. Das Rezept
   liest sie nur und prüft am Ende, dass Größe und Zeitstempel gleich geblieben sind.
 - Eingespielt wird über den Weg der App: Upload an `POST /api/backup/import/start?mode=replace`, Fortschritt über
   `/api/backup/import/progress/<id>`. Danach prüft es in der SQLite-Datenbank des Containers, dass Sets, Kisten und

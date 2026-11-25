@@ -6,8 +6,8 @@ Fester Aufruf (Kanban-Leitstand, docs/projekt-anbinden.md), nur Python-Standardb
     python -I handprobe/testinstanz.py bauen     --name <projekt> --port <p> --image <tag> --sicherung <ordner>
     python -I handprobe/testinstanz.py abraeumen --name <projekt> [--port … --image … --sicherung …]
 
-<ordner> ist eine Kopie der neuesten automatischen Sicherung: ein Ordner, der wie die ZIP ohne `.zip` heißt
-(`brickhub-auto-JJJJ-MM-TT_HH-MM`) und genau diese ZIP enthält. Das Rezept liest sie nur – es entpackt,
+<ordner> ist eine Kopie der neuesten automatischen Sicherung: ein Ordner, der wie die ZIP heißt, mit oder ohne `.zip`
+(`brickhub-auto-JJJJ-MM-TT_HH-MM[.zip]`; der Leitstand nimmt den Namen mit Endung), und genau diese ZIP enthält. Das Rezept liest sie nur – es entpackt,
 benennt und legt dort nichts an (der Leitstand hebt eine unveränderte Kopie für den nächsten Versuch auf).
 
 bauen
@@ -253,8 +253,15 @@ def warte_auf_app(name: str, basis: str, umgebung: dict[str, str]) -> None:
 # ── Sicherung ──────────────────────────────────────────────────────────────
 
 
+def _sicherungs_name(ordner: Path) -> str:
+    # Der Leitstand (`backlog.py testinstanz bauen`) legt den Ordner unter dem Originalnamen der
+    # Sicherung an – bei BrickHub ist das die ZIP selbst, also MIT ".zip" (gefunden BH-6, 25.11.2026).
+    # Von Hand angelegt heißt er ohne Endung. Beides gilt; die ZIP darin heißt immer <name>.zip.
+    return ordner.name[:-4] if ordner.name.endswith(".zip") else ordner.name
+
+
 def zip_der_sicherung(ordner: Path) -> Path:
-    return ordner / f"{ordner.name}.zip"
+    return ordner / f"{_sicherungs_name(ordner)}.zip"
 
 
 def pruefe_sicherung(ordner: Path) -> dict[str, int]:
@@ -264,9 +271,9 @@ def pruefe_sicherung(ordner: Path) -> dict[str, int]:
     """
     if not ordner.is_dir():
         raise Abbruch(f"--sicherung '{ordner}' ist kein Ordner", 2)
-    if not SICHERUNGS_NAME.match(ordner.name):
+    if not SICHERUNGS_NAME.match(_sicherungs_name(ordner)):
         raise Abbruch("Der Sicherungsordner muss brickhub-auto-JJJJ-MM-TT_HH-MM heißen "
-                      f"(Name der ZIP ohne .zip), nicht '{ordner.name}'", 2)
+                      f"(wie die ZIP, mit oder ohne .zip), nicht '{ordner.name}'", 2)
     datei = zip_der_sicherung(ordner)
     if not datei.is_file():
         raise Abbruch(f"In '{ordner}' fehlt {datei.name}", 2)

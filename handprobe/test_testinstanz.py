@@ -61,6 +61,13 @@ class PruefungenTest(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in ordner.iterdir()), vorher)
         self.assertEqual(ti.fingerabdruck(ti.zip_der_sicherung(ordner)), abdruck)
 
+    def test_ordner_heisst_wie_die_zip_mit_endung(self):
+        # Der Leitstand (backlog.py testinstanz bauen) legt den Ordner unter dem Originalnamen
+        # der Sicherung an – bei BrickHub ist das die ZIP selbst, also mit ".zip" (BH-6, 25.11.2026).
+        ordner = lege_sicherung(self.wurzel, name=f"{NAME}.zip", zip_name=f"{NAME}.zip")
+        self.assertEqual(ti.zip_der_sicherung(ordner), ordner / f"{NAME}.zip")
+        self.assertEqual(ti.pruefe_sicherung(ordner), {"sets": 2, "users": 1, "boxes": 1})
+
     def test_falscher_ordnername(self):
         ordner = lege_sicherung(self.wurzel, name="20261120_010000-allmybooks")
         with self.assertRaises(ti.Abbruch) as fall:

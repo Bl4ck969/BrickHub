@@ -490,27 +490,31 @@ async def start_import(
         "total": 0,
         "current_name": "Wird vorbereitet…",
     })
-    tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
-    tmp_path = tmp.name
+    tmp = None
+    tmp_path = None
     try:
+        # Auch das Anlegen der Tempdatei und der Thread-Start sind abgesichert:
+        # sonst bliebe der Auftrag auf "running" und sperrte alles bis zum Neustart
+        tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        tmp_path = tmp.name
         while True:
             chunk = await file.read(_CHUNK_SIZE)
             if not chunk:
                 break
             tmp.write(chunk)
+        tmp.close()
+        t = threading.Thread(target=_run_import, args=(task_id, tmp_path, mode), daemon=True)
+        t.start()
     except BaseException:
         _import_tasks.pop(task_id, None)
-        tmp.close()
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
+        if tmp is not None:
+            tmp.close()
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
         raise
-    finally:
-        tmp.close()
-
-    t = threading.Thread(target=_run_import, args=(task_id, tmp_path, mode), daemon=True)
-    t.start()
 
     return {"task_id": task_id}
 

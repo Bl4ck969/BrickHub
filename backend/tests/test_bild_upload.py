@@ -86,6 +86,19 @@ class Loeschen(unittest.TestCase):
             self.assertTrue(draussen.exists())   # außerhalb des Upload-Ordners
             self.assertTrue(ordner.exists())     # nicht leer
 
+    def test_setname_mit_original_findet_preview(self):
+        with tempfile.TemporaryDirectory() as root:
+            ordner = Path(root) / "Lego - Original Burg"
+            ordner.mkdir()
+            orig = ordner / "Original - Frontcover - Lego - Original Burg - 1.jpg"
+            prev = ordner / "Preview - Frontcover - Lego - Original Burg - 1.jpg"
+            orig.write_bytes(b"x")
+            prev.write_bytes(b"x")
+            with mock.patch.object(svc.settings, "upload_dir", root):
+                svc.delete_set_images([str(orig)], set())
+            self.assertFalse(prev.exists())
+            self.assertFalse(ordner.exists())
+
     def test_leerer_ordner_wird_entfernt(self):
         with tempfile.TemporaryDirectory() as root:
             ordner = Path(root) / "Lego - Burg"

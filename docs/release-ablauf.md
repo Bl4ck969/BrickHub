@@ -50,6 +50,9 @@ python -I -m unittest discover -s handprobe -p "test_*.py"     # Tests, ohne Doc
   die Abschaltung also auch.
 - Nach außen spricht BrickHub nur über Ollama, und das kommt allein aus Umgebungsvariablen; die Compose-Datei
   `handprobe/docker-compose.testinstanz.yml` setzt `OLLAMA_ENABLED=false` und einen eigenen `SECRET_KEY`.
+- Der Port ist **bewusst im ganzen Heimnetz** erreichbar (Prüfung auch vom Handy); die Instanz trägt die echten
+  Passwort-Hashes. Nach der Handprobe abräumen – eine nach Exit 1 stehen gelassene Instanz belegt ihre Volumes, bis
+  jemand `abraeumen` ruft.
 - `abraeumen` entfernt nur Projekte, deren Container und Volumes die Marke `de.brickhub.testinstanz` tragen. Der Name
   `brickhub` (lokale Entwicklung) ist gesperrt.
 - Probelauf 25.11.2026 mit einer künstlichen Sicherung (2 Sets, 1 Kiste, 2 Benutzer, 1 Bild): Bau, Nachprüfung und

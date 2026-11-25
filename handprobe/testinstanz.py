@@ -549,12 +549,12 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
         stand = stand_in_der_datenbank(name, umgebung, benutzer)
         melde(f"Datenbank: {stand['sets']} Sets, {stand['boxes']} Kisten, {stand['users']} Benutzer.")
         bewerte_stand(stand, erwartet)
+        if fingerabdruck(datei) != vorher:
+            raise Abbruch(f"Die Sicherungskopie {datei} hat sich während des Baus verändert")
     except BaseException:
         melde("Fehler ab dem Einspielen – halte die App an …")
         notbremse(name, umgebung)
         raise
-    if fingerabdruck(datei) != vorher:
-        raise Abbruch(f"Die Sicherungskopie {datei} hat sich während des Baus verändert")
 
     melde(f"Fertig: http://localhost:{port} – Anmeldung mit den Zugangsdaten aus der Sicherung.")
     melde("Automatische Sicherung und Ollama sind aus.")

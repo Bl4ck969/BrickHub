@@ -241,6 +241,24 @@ class BauenAblaufTest(unittest.TestCase):
                 self.assertRaises(ti.Abbruch) as fall:
             self._bauen()
         self.assertIn("verändert", str(fall.exception))
+        # Auch hier trägt die Instanz schon echte Daten – sie darf nicht weiterlaufen.
+        self.assertEqual(self.schritte[-1], "compose stop app")
+
+
+class FortschrittTest(unittest.TestCase):
+    def test_401_nach_dem_einspielen_heisst_pruefen_in_der_datenbank(self):
+        fehler = ti.urllib.error.HTTPError("u", 401, "x", None, None)
+        with mock.patch.object(ti.urllib.request, "urlopen", side_effect=fehler), \
+                mock.patch("sys.stdout", new=io.StringIO()):
+            self.assertIsNone(ti.warte_auf_einspielen("http://127.0.0.1:1", "keks", "t1"))
+
+    def test_fehlerereignis(self):
+        strom = mock.MagicMock()
+        strom.__enter__.return_value = [b'data: {"status": "error", "error": "Ungueltige ZIP-Datei"}']
+        with mock.patch.object(ti.urllib.request, "urlopen", return_value=strom), \
+                self.assertRaises(ti.Abbruch) as fall:
+            ti.warte_auf_einspielen("http://127.0.0.1:1", "keks", "t1")
+        self.assertIn("ZIP", str(fall.exception))
 
 
 class WegwerfAdminTest(unittest.TestCase):

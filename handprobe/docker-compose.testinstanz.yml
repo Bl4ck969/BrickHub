@@ -8,6 +8,9 @@ services:
     # Nur das lokal gebaute Image, nie still von ghcr.io ziehen – sonst prüfte die
     # Handprobe das veröffentlichte statt des Kandidaten.
     pull_policy: never
+    # Bewusst auf allen Schnittstellen, nicht nur 127.0.0.1: Andreas prüft auch vom Handy bzw. einem
+    # anderen Gerät im Heimnetz (Adresse vom Leitstand). Die Instanz trägt die echten Passwort-Hashes,
+    # Anmeldung bleibt durch Passwort und Anmelde-Limit geschützt – darum nach der Handprobe abräumen.
     ports:
       - "${HANDPROBE_PORT:?HANDPROBE_PORT fehlt}:8080"
     environment:

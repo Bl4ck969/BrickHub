@@ -9,8 +9,8 @@ Leitstand mergt nach `main` und setzt den Tag – **der Merge baut das Image**, 
 ## Was der Agent macht
 
 1. **Version** nach SemVer ab dem letzten Tag `v*` (nur Fehlerbehebungen: letzte Stelle +1, neue Funktion: mittlere
-   Stelle +1). Vor der Anbindung gab es keine Tags; das erste Release per Knopf ist **`v2.0.0`** (Design 2.0 läuft seit
-   12.09.2026). Hat Andreas eine Version gesetzt, gilt seine.
+   Stelle +1). Vor der Anbindung gab es keine Tags; das erste Release per Knopf ist **`v1.0.0`** (von Andreas im Leitstand
+   gesetzt, 25.11.2026). Hat Andreas eine Version gesetzt, gilt seine.
 2. **Versionsdatei:** `version=` in `backend/app/main.py` (FastAPI-Objekt). `frontend/package.json` bleibt auf `0.0.0`,
    die Version dort liest niemand. Die Weboberfläche zeigt die Version nicht an.
 3. **Release-Text:** `docs/release-notes/<version>.md` (Dateiname ohne `v`, z. B. `2.0.0.md`). Der Agent schickt ihn mit

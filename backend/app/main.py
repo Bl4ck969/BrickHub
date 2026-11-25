@@ -7,6 +7,7 @@ from pathlib import Path
 
 from app.config import _is_production, settings
 from app.database import create_tables, run_migrations
+from app.fehler import register_handlers
 from app.routers import auth, users, sets, boxes, images, labels, settings as settings_router, backup
 from app.services.backup_scheduler import start_scheduler
 
@@ -65,6 +66,9 @@ app = FastAPI(
     redoc_url=None if _is_production else "/redoc",
     openapi_url=None if _is_production else "/openapi.json",
 )
+
+# Einheitliche Fehlerantworten {"detail", "code"} (siehe app/fehler.py)
+register_handlers(app)
 
 # Security Headers
 app.add_middleware(SecurityHeadersMiddleware)

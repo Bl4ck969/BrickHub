@@ -109,7 +109,8 @@ export const backupApi = {
   startImport: (form, mode, onUploadProgress) => client.post(
     `/api/backup/import/start?mode=${mode}`,
     form,
-    { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress },
+    // timeout 0 = keine Grenze: Der Upload einer grossen Sicherung (~600 MB) darf bei langsamem Netz laenger dauern.
+    { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress, timeout: 0 },
   ),
   // Automatische Backups
   getSchedule: () => client.get('/api/backup/schedule'),

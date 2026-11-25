@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+import logging
 import os
 import shutil
 import tempfile
@@ -26,6 +27,8 @@ from app.services.backup_scheduler import (
     list_auto_backups, _apply_retention, _create_backup,
 )
 from app.utils.auth import require_admin
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/backup", tags=["backup"])
 
@@ -75,6 +78,7 @@ def _run_export(task_id: str, data: dict, folders: list[tuple[str, list[Path]]])
         task["status"] = "done"
         task["file"] = tmp_path
     except Exception as e:
+        logger.exception("Backup-Export fehlgeschlagen")
         task["status"] = "error"
         task["error"] = str(e)
         if tmp_path:
@@ -250,8 +254,9 @@ def _run_import(task_id: str, zip_path: str, mode: str) -> None:
 
         try:
             data = json.loads(zf.read("data.json"))
-        except Exception:
-            raise ValueError("data.json ist kein gültiges JSON")
+        except Exception as e:
+            logger.warning("data.json im Backup nicht lesbar: %s", e)
+            raise ValueError("data.json ist kein gültiges JSON") from e
 
         if data.get("version") != _BACKUP_VERSION:
             raise ValueError(f"Inkompatible Backup-Version: {data.get('version')}")
@@ -390,6 +395,7 @@ def _run_import(task_id: str, zip_path: str, mode: str) -> None:
             "images": images_extracted,
         }
     except Exception as e:
+        logger.exception("Backup-Import fehlgeschlagen")
         db.rollback()
         task["status"] = "error"
         task["error"] = str(e)

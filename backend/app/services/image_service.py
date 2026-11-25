@@ -70,7 +70,7 @@ def _remove_background_and_crop(image: Image.Image, padding: int = 15) -> Image.
                 alpha_matting_erode_size=10,
             )
         except Exception:
-            logger.warning("rembg alpha_matting fehlgeschlagen, Fallback auf Standard-Modus")
+            logger.warning("rembg alpha_matting fehlgeschlagen, Fallback auf Standard-Modus", exc_info=True)
             result_bytes = remove(raw)
         result = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
 

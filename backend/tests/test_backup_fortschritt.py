@@ -36,6 +36,14 @@ class RiegelTests(unittest.TestCase):
         self.assertIn("läuft bereits", ctx.exception.text)
         self.assertEqual(len(tasks), 1)
 
+    def test_export_waehrend_import_wird_abgelehnt(self):
+        backup._import_tasks["x"] = {"status": "running"}
+        try:
+            with self.assertRaises(AppFehler):
+                backup._reservieren({}, "Export", {"status": "running"})
+        finally:
+            backup._import_tasks.pop("x", None)
+
     def test_nach_abschluss_ist_neuer_start_erlaubt(self):
         tasks = {}
         tid = backup._reservieren(tasks, "Import", {"status": "running"})

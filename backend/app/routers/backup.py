@@ -79,8 +79,11 @@ def _reservieren(tasks: dict[str, dict], was: str, task: dict) -> str:
     """Trägt einen neuen Auftrag ein oder lehnt ab, wenn schon einer läuft."""
     with _tasks_lock:
         _aufraeumen(tasks)
-        if any(t.get("status") == "running" for t in tasks.values()):
-            raise AppFehler("KONFLIKT", f"Es läuft bereits ein {was}. Bitte warten, bis er abgeschlossen ist.")
+        # Import und Export sperren sich gegenseitig: ein Export während eines Ersetzen-Imports
+        # läse eine halb ersetzte Datenbank (Review BH-3).
+        laufend = [tasks, _export_tasks, _import_tasks]
+        if any(t.get("status") == "running" for d in laufend for t in d.values()):
+            raise AppFehler("KONFLIKT", "Es läuft bereits ein Import oder Export. Bitte warten, bis er abgeschlossen ist.")
         task_id = str(uuid.uuid4())
         tasks[task_id] = task
         return task_id

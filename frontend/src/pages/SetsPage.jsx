@@ -23,6 +23,7 @@ import {
   Squares2X2Icon,
 } from '@heroicons/react/24/outline'
 import { setsApi, labelsApi, imagesApi, boxesApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { OneDriveIcon } from '../components/OneDriveIcon'
 import { IconSets, IconParts, IconValue } from '../components/BrickIcons'
 import { useAuth } from '../hooks/useAuth'
@@ -105,7 +106,7 @@ export function SetsPage() {
       await setsApi.delete(id)
       fetchSets()
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler beim Löschen', 'error')
+      toast(fehlerText(err, 'Fehler beim Löschen'), 'error')
     }
   }
 
@@ -114,7 +115,7 @@ export function SetsPage() {
       await setsApi.updateStatus(id, { status })
       setSets(prev => prev.map(s => s.id === id ? { ...s, status } : s))
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler', 'error')
+      toast(fehlerText(err, 'Fehler'), 'error')
     }
   }
 
@@ -172,7 +173,7 @@ export function SetsPage() {
       fetchSets()
       toast('Import erfolgreich', 'success')
     } catch (err) {
-      toast(err.response?.data?.detail || 'Import fehlgeschlagen', 'error')
+      toast(fehlerText(err, 'Import fehlgeschlagen'), 'error')
     } finally {
       setImportLoading(false)
       e.target.value = ''

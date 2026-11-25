@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { authApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { AuthShell, AuthFehler, authInput } from '../components/AuthShell'
 
 const EMPTY_QUESTION = { question: '', answer: '' }
@@ -55,7 +56,7 @@ export function SetupPage() {
       })
       navigate('/login')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Fehler beim Anlegen des Administrators')
+      setError(fehlerText(err, 'Fehler beim Anlegen des Administrators'))
     } finally {
       setLoading(false)
     }

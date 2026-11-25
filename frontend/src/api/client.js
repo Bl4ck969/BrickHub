@@ -7,6 +7,10 @@ const API_BASE = import.meta.env.VITE_API_URL || ''
 const client = axios.create({
   baseURL: API_BASE,
   withCredentials: true, // Send HTTP-only cookies
+  // Zeitgrenze: hängt der Server, wartet die Oberfläche nicht endlos. Bewusst großzügig,
+  // weil Bild-Finalisierung (rembg), PDF-Export und Backup-Import legitim lange dauern.
+  // Netz-/Zeitfehler übersetzt lib/fehler.js (fehlerText) in deutschen Text.
+  timeout: 300000,
 })
 
 // Redirect to login on 401

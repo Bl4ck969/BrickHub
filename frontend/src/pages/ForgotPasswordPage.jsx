@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { authApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { AuthShell, AuthFeld, AuthFehler, authInput } from '../components/AuthShell'
 
 export function ForgotPasswordPage() {
@@ -26,7 +27,7 @@ export function ForgotPasswordPage() {
       setAnswers(initialAnswers)
       setStep(2)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Anfrage fehlgeschlagen')
+      setError(fehlerText(err, 'Anfrage fehlgeschlagen'))
     } finally {
       setLoading(false)
     }
@@ -53,7 +54,7 @@ export function ForgotPasswordPage() {
       })
       navigate('/login', { state: { message: 'Passwort erfolgreich zurückgesetzt. Bitte anmelden.' } })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Fehler beim Zurücksetzen des Passworts')
+      setError(fehlerText(err, 'Fehler beim Zurücksetzen des Passworts'))
     } finally {
       setLoading(false)
     }

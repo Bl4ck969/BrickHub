@@ -1,0 +1,32 @@
+name: PR-Prüfung (Docker-Bau ohne Push)
+
+# Seit 25.11.2026 (Anbindung an den Kanban-Leitstand): Der Leitstand zeigt vor „Übernehmen“ den CI-Stand des PR.
+# Derselbe Bau wie docker-publish.yml, aber ohne Anmeldung und ohne Push – ein Fehler, der den Image-Bau bricht,
+# fällt damit vor dem Merge auf statt danach. Actions in denselben Versionen wie docker-publish.yml.
+on:
+  pull_request:
+    branches: ["main", "runde/bh"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-pruefung-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v6
+
+      - name: Docker Buildx einrichten
+        uses: docker/setup-buildx-action@v4
+
+      - name: Image bauen (ohne Push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          cache-from: type=gha

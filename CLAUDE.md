@@ -229,6 +229,19 @@ anmelden, navigieren, `page.screenshot()`. Zwei Dinge, die dabei Zeit gekostet h
 - Inline-Updates: `PATCH /api/sets/{id}/inline` akzeptiert nur: status, bag_count, plate_count, box_id, notes
 - Box mit `allowed_stone_types = []` → kompatibel mit allen Steinarten
 
+## Kanban-Leitstand (seit 25.11.2026)
+
+BrickHub hängt am Kanban-Leitstand (Kürzel **BH**). Damit gilt:
+
+- **Karten-PRs gehen in den Sammelzweig `runde/bh`**, nie direkt nach `main`. Released wird nur über die Release-Karte
+  im Leitstand („Release vorbereiten“ → Handprobe → „Veröffentlichen“ → „Am Unraid aktualisieren“). Keine Sitzung
+  released BrickHub nebenher, und kein Push direkt auf `main` – jeder Push dort baut `:latest`.
+- **Release-Ablauf** (Version, Release-Text, was gebaut wird): `docs/release-ablauf.md`.
+- **Testinstanz für die Handprobe:** `handprobe/testinstanz.py` mit der neuesten `brickhub-auto-*.zip` aus
+  `/mnt/disk2/Backups/BrickHub` (wöchentlich, ~600 MB). Aufruf, Tests und Fallen (Admin vor den Daten, Sicherungsplan
+  vor dem Einspielen abschalten): `docs/release-ablauf.md`, Abschnitt „Testinstanz“.
+- **CI auf PRs:** `.github/workflows/pr-pruefung.yml` baut das Image ohne Push.
+
 ---
 
 ## Geheimnisse gehören NICHT in diesen Ordner — seit 21.08.2026

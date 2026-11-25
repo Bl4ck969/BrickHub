@@ -187,7 +187,7 @@ def _create_backup() -> str | None:
         return filename
 
     except Exception as e:
-        logger.error(f"Automatisches Backup fehlgeschlagen: {e}")
+        logger.error(f"Automatisches Backup fehlgeschlagen: {e}", exc_info=True)
         db.rollback()
         return None
     finally:
@@ -256,7 +256,7 @@ def _scheduler_loop() -> None:
             finally:
                 db.close()
         except Exception as e:
-            logger.error(f"Scheduler-Fehler: {e}")
+            logger.error(f"Scheduler-Fehler: {e}", exc_info=True)
 
         _stop_event.wait(_CHECK_INTERVAL)
 

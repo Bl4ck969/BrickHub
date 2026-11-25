@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { AuthShell, AuthFeld, AuthFehler, authInput } from '../components/AuthShell'
+import { fehlerText } from '../lib/fehler'
 
 export function LoginPage() {
   const [form, setForm] = useState({ username: '', password: '' })
@@ -22,7 +23,7 @@ export function LoginPage() {
         navigate('/sets')
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login fehlgeschlagen')
+      setError(fehlerText(err, 'Login fehlgeschlagen'))
     } finally {
       setLoading(false)
     }

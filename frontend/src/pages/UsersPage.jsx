@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { usersApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { useAuth } from '../hooks/useAuth'
 import { PlusIcon, TrashIcon, KeyIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
 import { PageShell, Ladet } from '../components/PageShell'
@@ -39,7 +40,7 @@ export function UsersPage() {
       setForm(EMPTY_USER)
       fetch()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Fehler')
+      setError(fehlerText(err, 'Fehler'))
     } finally {
       setSaving(false)
     }
@@ -50,13 +51,13 @@ export function UsersPage() {
       await usersApi.updateRole(user.id, { role: user.role === 'admin' ? 'user' : 'admin' })
       fetch()
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler', 'error')
+      toast(fehlerText(err, 'Fehler'), 'error')
     }
   }
 
   const handleDelete = async (id) => {
     try { await usersApi.delete(id); fetch() }
-    catch (err) { toast(err.response?.data?.detail || 'Fehler', 'error') }
+    catch (err) { toast(fehlerText(err, 'Fehler'), 'error') }
   }
 
   const handleResetPassword = async () => {
@@ -67,7 +68,7 @@ export function UsersPage() {
       setNewInitialPw('')
       toast('Initialpasswort gesetzt. Benutzer muss es bei nächster Anmeldung ändern.', 'success')
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler', 'error')
+      toast(fehlerText(err, 'Fehler'), 'error')
     }
   }
 

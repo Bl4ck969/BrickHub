@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { authApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { AuthShell, AuthFehler, authInput } from '../components/AuthShell'
 
 const EMPTY_Q = { question: '', answer: '' }
@@ -53,7 +54,7 @@ export function ChangePasswordPage() {
       await refreshUser()
       navigate('/sets')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Fehler beim Ändern des Passworts')
+      setError(fehlerText(err, 'Fehler beim Ändern des Passworts'))
     } finally {
       setLoading(false)
     }

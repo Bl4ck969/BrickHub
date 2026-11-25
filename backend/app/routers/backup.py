@@ -1,10 +1,12 @@
 import asyncio
 import io
 import json
+import logging
 import os
 import shutil
 import tempfile
 import threading
+import time
 import uuid
 import zipfile
 from datetime import datetime, timezone
@@ -17,6 +19,7 @@ from starlette.background import BackgroundTask
 
 from app.config import settings
 from app.database import SessionLocal, get_db
+from app.fehler import AppFehler
 from app.models.box import Box
 from app.models.set_model import BrickSet
 from app.models.setting import AppSetting
@@ -26,6 +29,8 @@ from app.services.backup_scheduler import (
     list_auto_backups, _apply_retention, _create_backup,
 )
 from app.utils.auth import require_admin
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/backup", tags=["backup"])
 
@@ -37,6 +42,77 @@ _ALLOWED_SETTING_KEYS = {"onedrive_base_url"}
 # In-Memory Task-Stores
 _export_tasks: dict[str, dict] = {}
 _import_tasks: dict[str, dict] = {}
+
+# BH-3: Riegel + Aufräumen (Entscheidungen):
+# - Höchstens ein laufender Import und ein laufender Export gleichzeitig. Prüfen und Eintragen
+#   passieren unter _tasks_lock, sonst schlüpfen zwei gleichzeitige Starts durch.
+# - Fertige Aufträge (done/error) bleiben _TTL_FERTIG Sekunden abrufbar und werden beim nächsten
+#   Start entfernt; bei Exporten samt liegen gebliebener ZIP. Laufende Aufträge werden nie entfernt.
+# - Der SSE-Strom endet nach _STREAM_MAX_S mit {"status": "running", "reconnect": true};
+#   das Frontend verbindet dann neu, statt Erfolg/Fehler zu verpassen.
+_tasks_lock = threading.Lock()
+_TTL_FERTIG = 3600.0
+_STREAM_MAX_S = {"export": 600.0, "import": 1200.0}
+_NICHT_ANZEIGEN = {"file", "finished_at"}
+
+
+def _task_fertig(task: dict) -> None:
+    task["finished_at"] = time.monotonic()
+
+
+def _aufraeumen(tasks: dict[str, dict]) -> None:
+    """Entfernt abgelaufene fertige Aufträge samt temporärer Datei. Aufrufer hält _tasks_lock."""
+    jetzt = time.monotonic()
+    for tid in list(tasks):
+        t = tasks[tid]
+        fertig = t.get("finished_at")
+        if t.get("status") in ("done", "error") and fertig is not None and jetzt - fertig > _TTL_FERTIG:
+            del tasks[tid]
+            if t.get("file"):
+                try:
+                    os.unlink(t["file"])
+                except OSError:
+                    pass
+
+
+def _reservieren(tasks: dict[str, dict], was: str, task: dict) -> str:
+    """Trägt einen neuen Auftrag ein oder lehnt ab, wenn schon einer läuft."""
+    with _tasks_lock:
+        _aufraeumen(tasks)
+        # Import und Export sperren sich gegenseitig: ein Export während eines Ersetzen-Imports
+        # läse eine halb ersetzte Datenbank (Review BH-3).
+        laufend = [tasks, _export_tasks, _import_tasks]
+        if any(t.get("status") == "running" for d in laufend for t in d.values()):
+            raise AppFehler("KONFLIKT", "Es läuft bereits ein Import oder Export. Bitte warten, bis er abgeschlossen ist.")
+        task_id = str(uuid.uuid4())
+        tasks[task_id] = task
+        return task_id
+
+
+def _strom(tasks: dict[str, dict], task_id: str, art: str):
+    """SSE-Generator: endet immer mit done, error oder reconnect (läuft noch)."""
+    async def generate():
+        ende = time.monotonic() + _STREAM_MAX_S[art]
+        while True:
+            task = tasks.get(task_id)
+            if not task:
+                yield f"data: {json.dumps({'status': 'error', 'error': 'Auftrag nicht gefunden oder abgelaufen'})}\n\n"
+                return
+            payload = {k: v for k, v in task.items() if k not in _NICHT_ANZEIGEN}
+            if task["status"] in ("done", "error"):
+                yield f"data: {json.dumps(payload)}\n\n"
+                return
+            if time.monotonic() >= ende:
+                yield f"data: {json.dumps({**payload, 'reconnect': True})}\n\n"
+                return
+            yield f"data: {json.dumps(payload)}\n\n"
+            await asyncio.sleep(0.5)
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 def _get_set_folder(s: BrickSet) -> str | None:
@@ -72,11 +148,14 @@ def _run_export(task_id: str, data: dict, folders: list[tuple[str, list[Path]]])
                 for file_path in files:
                     zf.write(file_path, arcname=f"uploads/{folder_name}/{file_path.name}")
 
-        task["status"] = "done"
         task["file"] = tmp_path
+        task["status"] = "done"
+        _task_fertig(task)
     except Exception as e:
-        task["status"] = "error"
+        logger.exception("Backup-Export fehlgeschlagen")
         task["error"] = str(e)
+        task["status"] = "error"
+        _task_fertig(task)
         if tmp_path:
             try:
                 os.unlink(tmp_path)
@@ -87,6 +166,21 @@ def _run_export(task_id: str, data: dict, folders: list[tuple[str, list[Path]]])
 @router.post("/export/start", dependencies=[Depends(require_admin)])
 def start_export(db: Session = Depends(get_db)):
     """Startet den ZIP-Export als Hintergrundaufgabe und gibt eine task_id zurück."""
+    # Riegel zuerst: ein zweiter Start kostet sonst unnötig DB-Abfragen
+    task_id = _reservieren(_export_tasks, "Export", {
+        "status": "running",
+        "current": 0,
+        "total": 0,
+        "current_name": "Wird vorbereitet…",
+    })
+    try:
+        return _start_export(db, task_id)
+    except BaseException:
+        _export_tasks.pop(task_id, None)
+        raise
+
+
+def _start_export(db: Session, task_id: str):
     boxes = db.query(Box).all()
     sets = db.query(BrickSet).all()
     users = db.query(User).all()
@@ -167,13 +261,7 @@ def start_export(db: Session = Depends(get_db)):
             if files:
                 folders.append((folder, files))
 
-    task_id = str(uuid.uuid4())
-    _export_tasks[task_id] = {
-        "status": "running",
-        "current": 0,
-        "total": len(folders),
-        "current_name": "Wird vorbereitet…",
-    }
+    _export_tasks[task_id]["total"] = len(folders)
 
     t = threading.Thread(target=_run_export, args=(task_id, data, folders), daemon=True)
     t.start()
@@ -184,23 +272,7 @@ def start_export(db: Session = Depends(get_db)):
 @router.get("/export/progress/{task_id}", dependencies=[Depends(require_admin)])
 async def export_progress(task_id: str):
     """SSE-Stream mit Fortschrittsinfo für den laufenden Export."""
-    async def generate():
-        for _ in range(1200):  # max 10 Minuten (0,5 s Intervall)
-            task = _export_tasks.get(task_id)
-            if not task:
-                yield f"data: {json.dumps({'status': 'error', 'error': 'Task nicht gefunden'})}\n\n"
-                return
-            payload = {k: v for k, v in task.items() if k != "file"}
-            yield f"data: {json.dumps(payload)}\n\n"
-            if task["status"] in ("done", "error"):
-                return
-            await asyncio.sleep(0.5)
-
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return _strom(_export_tasks, task_id, "export")
 
 
 @router.get("/export/download/{task_id}", dependencies=[Depends(require_admin)])
@@ -250,8 +322,9 @@ def _run_import(task_id: str, zip_path: str, mode: str) -> None:
 
         try:
             data = json.loads(zf.read("data.json"))
-        except Exception:
-            raise ValueError("data.json ist kein gültiges JSON")
+        except Exception as e:
+            logger.warning("data.json im Backup nicht lesbar: %s", e)
+            raise ValueError("data.json ist kein gültiges JSON") from e
 
         if data.get("version") != _BACKUP_VERSION:
             raise ValueError(f"Inkompatible Backup-Version: {data.get('version')}")
@@ -381,7 +454,6 @@ def _run_import(task_id: str, zip_path: str, mode: str) -> None:
 
         db.commit()
 
-        task["status"] = "done"
         task["result"] = {
             "sets": sets_imported,
             "boxes": boxes_imported,
@@ -389,11 +461,14 @@ def _run_import(task_id: str, zip_path: str, mode: str) -> None:
             "users_skipped": users_skipped,
             "images": images_extracted,
         }
+        task["status"] = "done"
     except Exception as e:
+        logger.exception("Backup-Import fehlgeschlagen")
         db.rollback()
-        task["status"] = "error"
         task["error"] = str(e)
+        task["status"] = "error"
     finally:
+        _task_fertig(task)
         db.close()
         try:
             os.unlink(zip_path)
@@ -407,28 +482,41 @@ async def start_import(
     mode: str = Query("append", pattern="^(append|replace)$"),
 ):
     """Nimmt die ZIP-Datei entgegen, speichert sie temporär und startet die Verarbeitung im Hintergrund."""
-    tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
-    tmp_path = tmp.name
-    try:
-        while True:
-            chunk = await file.read(_CHUNK_SIZE)
-            if not chunk:
-                break
-            tmp.write(chunk)
-    finally:
-        tmp.close()
-
-    task_id = str(uuid.uuid4())
-    _import_tasks[task_id] = {
+    # Riegel vor dem Zwischenspeichern: Auftrag sofort reservieren, bei Abbruch wieder freigeben.
+    # ⚠ FastAPI hat den Upload (UploadFile) da schon ganz empfangen – eine Ablehnung (409) kommt
+    # also erst nach dem kompletten Upload, sie spart nur das Kopieren und die Verarbeitung.
+    task_id = _reservieren(_import_tasks, "Import", {
         "status": "running",
         "phase": "validating",
         "current": 0,
         "total": 0,
         "current_name": "Wird vorbereitet…",
-    }
-
-    t = threading.Thread(target=_run_import, args=(task_id, tmp_path, mode), daemon=True)
-    t.start()
+    })
+    tmp = None
+    tmp_path = None
+    try:
+        # Auch das Anlegen der Tempdatei und der Thread-Start sind abgesichert:
+        # sonst bliebe der Auftrag auf "running" und sperrte alles bis zum Neustart
+        tmp = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        tmp_path = tmp.name
+        while True:
+            chunk = await file.read(_CHUNK_SIZE)
+            if not chunk:
+                break
+            tmp.write(chunk)
+        tmp.close()
+        t = threading.Thread(target=_run_import, args=(task_id, tmp_path, mode), daemon=True)
+        t.start()
+    except BaseException:
+        _import_tasks.pop(task_id, None)
+        if tmp is not None:
+            tmp.close()
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+        raise
 
     return {"task_id": task_id}
 
@@ -436,22 +524,7 @@ async def start_import(
 @router.get("/import/progress/{task_id}", dependencies=[Depends(require_admin)])
 async def import_progress(task_id: str):
     """SSE-Stream mit Fortschrittsinfo für den laufenden Import."""
-    async def generate():
-        for _ in range(2400):  # max 20 Minuten (0,5 s Intervall)
-            task = _import_tasks.get(task_id)
-            if not task:
-                yield f"data: {json.dumps({'status': 'error', 'error': 'Task nicht gefunden'})}\n\n"
-                return
-            yield f"data: {json.dumps(task)}\n\n"
-            if task["status"] in ("done", "error"):
-                return
-            await asyncio.sleep(0.5)
-
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return _strom(_import_tasks, task_id, "import")
 
 
 # ─── AUTOMATISCHE BACKUPS ────────────────────────────────────────────────────

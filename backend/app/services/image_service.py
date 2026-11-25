@@ -39,10 +39,74 @@ def get_image_dir(manufacturer: str, set_name: str) -> Path:
 
 
 def _make_filename(variant: str, side: str, manufacturer: str, set_name: str,
-                   ext: str = "jpg") -> str:
+                   ext: str = "jpg", set_id: int | None = None) -> str:
+    """Dateiname. Mit set_id (BH-4) hängt die Set-ID an, damit zwei Sets mit
+    gleichem Hersteller/Namen sich nie dieselbe Datei teilen oder überschreiben.
+    Alte Dateien ohne ID bleiben gültig (Pfade stehen in DB und Sicherungen);
+    „Original“/„Thumbmail“ im Namen nicht ändern (Preview-Ableitung, DB)."""
     m = _sanitize_filename(manufacturer)
     n = _sanitize_filename(set_name)
-    return f"{variant} - {side} - {m} - {n}.{ext}"
+    suffix = f" - {set_id}" if set_id is not None else ""
+    return f"{variant} - {side} - {m} - {n}{suffix}.{ext}"
+
+
+# BH-4: eigene Pixelgrenze (Pillow warnt erst ab ~89 MP, wirft ab ~179 MP)
+MAX_IMAGE_PIXELS = 80_000_000
+_ZU_GROSS = "Das Bild hat zu viele Pixel (max. 80 Megapixel)"
+_KEIN_BILD = "Die Datei ist kein gültiges JPG-, PNG- oder WebP-Bild"
+
+
+class ImageRejected(ValueError):
+    """Upload ist kein gültiges Bild oder zu groß; Text ist für Nutzer gedacht."""
+
+
+def validate_image_bytes(file_bytes: bytes) -> None:
+    """Prüft am Inhalt (Magic Bytes), nicht am gemeldeten MIME-Typ, und
+    begrenzt die Pixelzahl über die Kopfdaten, ohne das Bild zu dekodieren."""
+    head = file_bytes[:12]
+    is_jpeg = head[:3] == b"\xff\xd8\xff"
+    is_png = head[:8] == b"\x89PNG\r\n\x1a\n"
+    is_webp = head[:4] == b"RIFF" and head[8:12] == b"WEBP"
+    if not (is_jpeg or is_png or is_webp):
+        raise ImageRejected(_KEIN_BILD)
+    import warnings
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(file_bytes)) as img:
+                w, h = img.size
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):
+        raise ImageRejected(_ZU_GROSS)
+    except Exception:
+        raise ImageRejected(_KEIN_BILD)
+    if w * h > MAX_IMAGE_PIXELS:
+        raise ImageRejected(_ZU_GROSS)
+
+
+def delete_set_images(paths: list, still_used: set) -> None:
+    """Löscht Bilddateien eines gelöschten Sets (BH-4). Nur Dateien unterhalb
+    des Upload-Ordners und nur solche, auf die kein anderes Set zeigt (alte
+    Dateien ohne ID konnten von gleichnamigen Sets geteilt werden). Leere
+    Set-Ordner werden entfernt. Fehler werden protokolliert, nie geworfen."""
+    root = Path(settings.upload_dir).resolve()
+    for raw in paths:
+        if not raw:
+            continue
+        if str(raw).replace("\\", "/") in still_used:
+            continue
+        candidates = [Path(raw)]
+        if "Original" in Path(raw).name:  # Preview-Datei gehört zum Original
+            p = Path(raw)  # nur im Dateinamen ersetzen, der Ordner enthält den Set-Namen
+            candidates.append(p.with_name(p.name.replace("Original", "Preview")))  # wie bei der Erzeugung: alle Treffer
+        for c in candidates:
+            try:
+                r = c.resolve()
+                if root in r.parents and r.is_file():
+                    r.unlink()
+                    if r.parent != root and not any(r.parent.iterdir()):
+                        r.parent.rmdir()
+            except Exception:
+                logger.exception("Bild konnte nicht gelöscht werden: %s", c)
 
 
 def _remove_background_and_crop(image: Image.Image, padding: int = 15) -> Image.Image:
@@ -70,7 +134,7 @@ def _remove_background_and_crop(image: Image.Image, padding: int = 15) -> Image.
                 alpha_matting_erode_size=10,
             )
         except Exception:
-            logger.warning("rembg alpha_matting fehlgeschlagen, Fallback auf Standard-Modus")
+            logger.warning("rembg alpha_matting fehlgeschlagen, Fallback auf Standard-Modus", exc_info=True)
             result_bytes = remove(raw)
         result = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
 
@@ -144,6 +208,7 @@ def save_original(
     side: str,
     manufacturer: str,
     set_name: str,
+    set_id: int | None = None,
 ) -> dict:
     """Speichert Rohbild und gibt Pfad + Dimensionen zurück.
 
@@ -151,7 +216,7 @@ def save_original(
     gemeldeten Dimensionen mit der Browser-Anzeige übereinstimmen.
     """
     image_dir = get_image_dir(manufacturer, set_name)
-    original_filename = _make_filename("Original", side, manufacturer, set_name)
+    original_filename = _make_filename("Original", side, manufacturer, set_name, set_id=set_id)
     original_path = image_dir / original_filename
 
     # EXIF-Rotation anwenden (Browser dreht automatisch, PIL/OpenCV nicht)
@@ -372,6 +437,7 @@ def finalize_image(
     set_name: str,
     brightness: float = 1.05,
     saturation: float = 1.05,
+    set_id: int | None = None,
 ) -> dict[str, str]:
     """
     Finalisierung: Skalierung → Farbnormalisierung → Thumbnail.
@@ -380,8 +446,8 @@ def finalize_image(
     """
     image = Image.open(image_path).convert("RGB")
     image_dir = get_image_dir(manufacturer, set_name)
-    edited_filename = _make_filename("Bearbeitet", side, manufacturer, set_name)
-    thumb_filename = _make_filename("Thumbmail", side, manufacturer, set_name)
+    edited_filename = _make_filename("Bearbeitet", side, manufacturer, set_name, set_id=set_id)
+    thumb_filename = _make_filename("Thumbmail", side, manufacturer, set_name, set_id=set_id)
 
     # Proportional skalieren (kein weißes Padding)
     w, h = image.size
@@ -416,12 +482,13 @@ def process_image(
     side: str,
     manufacturer: str,
     set_name: str,
+    set_id: int | None = None,
 ) -> dict[str, str]:
     """Verarbeitungs-Pipeline. Gibt dict mit relativen Pfaden zurück."""
     image_dir         = get_image_dir(manufacturer, set_name)
-    original_filename = _make_filename("Original",   side, manufacturer, set_name)
-    edited_filename   = _make_filename("Bearbeitet", side, manufacturer, set_name)
-    thumb_filename    = _make_filename("Thumbmail",  side, manufacturer, set_name)
+    original_filename = _make_filename("Original",   side, manufacturer, set_name, set_id=set_id)
+    edited_filename   = _make_filename("Bearbeitet", side, manufacturer, set_name, set_id=set_id)
+    thumb_filename    = _make_filename("Thumbmail",  side, manufacturer, set_name, set_id=set_id)
 
     # 1. Original speichern
     original_path = image_dir / original_filename

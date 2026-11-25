@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { boxesApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { useToast } from '../hooks/useToast'
 import { PencilSquareIcon, TrashIcon, PlusIcon, ClipboardDocumentListIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Modal, ConfirmModal } from '../components/Modal'
@@ -90,7 +91,7 @@ export function StoragePage() {
       setShowForm(false)
       fetch()
     } catch (err) {
-      setError(err.response?.data?.detail || 'Fehler beim Speichern')
+      setError(fehlerText(err, 'Fehler beim Speichern'))
     } finally {
       setSaving(false)
     }
@@ -98,7 +99,7 @@ export function StoragePage() {
 
   const handleDelete = async (id) => {
     try { await boxesApi.delete(id); fetch() }
-    catch (err) { toast(err.response?.data?.detail || 'Fehler', 'error') }
+    catch (err) { toast(fehlerText(err, 'Fehler'), 'error') }
   }
 
   const toggleStoneType = (type) => {

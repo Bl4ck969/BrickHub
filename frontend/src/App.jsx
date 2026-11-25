@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { ToastProvider } from './hooks/useToast'
 import { ThemeProvider } from './hooks/useTheme'
@@ -35,14 +36,18 @@ function LoadingSpinner() {
  *  PageShell selbst mit und setzen ihr Innenmass. */
 function Layout({ children }) {
   const { user } = useAuth()
+  const { pathname } = useLocation()
   if (!user) return children
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <Sidebar />
       <main className="min-w-0 flex-1">
-        <Suspense fallback={<LoadingSpinner />}>
-          {children}
-        </Suspense>
+        {/* Fehlergrenze nur um den Inhalt: die Seitenleiste bleibt bedienbar */}
+        <ErrorBoundary resetKey={pathname}>
+          <Suspense fallback={<LoadingSpinner />}>
+            {children}
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   )
@@ -66,6 +71,8 @@ export default function App() {
       <ThemeProvider>
       <ToastProvider>
       <AuthProvider>
+        {/* Äußere Fehlergrenze für die Seiten ohne Seitenleiste (Anmeldung usw.) */}
+        <ErrorBoundary>
         <Routes>
           {/* Public routes */}
           <Route path="/setup" element={<SetupPage />} />
@@ -132,6 +139,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/sets" replace />} />
           <Route path="*" element={<Navigate to="/sets" replace />} />
         </Routes>
+        </ErrorBoundary>
       </AuthProvider>
       </ToastProvider>
       </ThemeProvider>

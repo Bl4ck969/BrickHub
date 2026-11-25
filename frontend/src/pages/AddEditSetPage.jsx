@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { setsApi, boxesApi, imagesApi, settingsApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import { OneDriveIcon } from '../components/OneDriveIcon'
 import { useAuth } from '../hooks/useAuth'
@@ -100,7 +101,7 @@ export function AddEditSetPage() {
       }
       toast(isEdit ? 'Set gespeichert' : 'Set angelegt – jetzt Bilder hochladen', 'success')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Fehler beim Speichern')
+      setError(fehlerText(err, 'Fehler beim Speichern'))
     } finally {
       setLoading(false)
     }

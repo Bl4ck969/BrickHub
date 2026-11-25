@@ -1,0 +1,36 @@
+name: GitHub-Release zum Tag
+
+# Seit 25.11.2026: Der Leitstand setzt beim Veröffentlichen nur den Tag. Dieser Workflow legt dazu das GitHub-Release an,
+# mit dem Text aus docs/release-notes/<version>.md (ohne „v“ im Dateinamen). Fehlt die Datei, nimmt er den Text aus den
+# Commits. Gibt es zum Tag schon ein Release (von Hand angelegt), tut er nichts. Keine Dateien, keine Fremd-Actions: nur gh.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+      TITEL: BrickHub
+    steps:
+      - name: Release anlegen
+        run: |
+          set -euo pipefail
+          vorhanden=$(gh release list --limit 100 --json tagName --jq '.[].tagName')
+          if grep -qx "$TAG" <<<"$vorhanden"; then
+            echo "Zu $TAG gibt es schon ein Release – nichts zu tun."
+            exit 0
+          fi
+          version="${TAG#v}"
+          if gh api "repos/$GH_REPO/contents/docs/release-notes/$version.md?ref=$TAG" -H "Accept: application/vnd.github.raw" > notizen.md 2>/dev/null && [ -s notizen.md ]; then
+            gh release create "$TAG" --verify-tag --title "$TITEL $version" --notes-file notizen.md
+          else
+            echo "::warning::Keine docs/release-notes/$version.md – Text aus den Commits"
+            gh release create "$TAG" --verify-tag --title "$TITEL $version" --generate-notes
+          fi

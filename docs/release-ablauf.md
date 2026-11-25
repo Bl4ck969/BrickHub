@@ -68,6 +68,7 @@ Workflow**; gebaut wird durch den Push auf `main`:
 | Workflow | Wann | Ergebnis |
 |---|---|---|
 | `docker-publish.yml` | Push auf `main` (ohne Pfadfilter) | Image `ghcr.io/bl4ck969/brickhub` mit `:latest` und `:sha-<kurz>`, Label `org.opencontainers.image.revision` = Merge-Commit |
+| `release-zum-tag.yml` | Tag `v*` | GitHub-Release zum Tag, Text aus `docs/release-notes/<version>.md` (ohne Dateien) |
 | `pr-pruefung.yml` | jeder PR nach `runde/bh` oder `main` | nur Bau, kein Push |
 
 ## Aufbau des Release-Texts

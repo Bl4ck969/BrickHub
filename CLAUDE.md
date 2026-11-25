@@ -237,10 +237,9 @@ BrickHub hängt am Kanban-Leitstand (Kürzel **BH**). Damit gilt:
   im Leitstand („Release vorbereiten“ → Handprobe → „Veröffentlichen“ → „Am Unraid aktualisieren“). Keine Sitzung
   released BrickHub nebenher, und kein Push direkt auf `main` – jeder Push dort baut `:latest`.
 - **Release-Ablauf** (Version, Release-Text, was gebaut wird): `docs/release-ablauf.md`.
-- **Testinstanz für die Handprobe:** `handprobe/testinstanz.py` (fester Aufruf siehe Leitstand-Doku
-  `docs/projekt-anbinden.md`). Die Sicherung, die der Leitstand liefert, ist die neueste
-  `brickhub-auto-*.zip` aus `/mnt/disk2/Backups/BrickHub` (wöchentlich, ~600 MB). Einspielen über den Weg der App:
-  `POST /api/backup/import/start` (Modus `replace`). In der Instanz die automatische Sicherung abschalten.
+- **Testinstanz für die Handprobe:** `handprobe/testinstanz.py` mit der neuesten `brickhub-auto-*.zip` aus
+  `/mnt/disk2/Backups/BrickHub` (wöchentlich, ~600 MB). Aufruf, Tests und Fallen (Admin vor den Daten, Sicherungsplan
+  vor dem Einspielen abschalten): `docs/release-ablauf.md`, Abschnitt „Testinstanz“.
 - **CI auf PRs:** `.github/workflows/pr-pruefung.yml` baut das Image ohne Push.
 
 ---

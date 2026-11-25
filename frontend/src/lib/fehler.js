@@ -81,3 +81,13 @@ export function fehlerText(err, fallback = 'Es ist ein Fehler aufgetreten') {
   }
   return fallback
 }
+
+/**
+ * Für Abläufe, die axios-Fehler UND eigene `new Error('…')` mischen (Backup-Seite: Start per axios,
+ * Fortschritt per EventSource). axios-Fehler über `fehlerText` – deren `message` ist englisch
+ * („Request failed with status code 409“) –, eigene Fehler mit ihrer (deutschen) Meldung.
+ */
+export function fehlerOderMeldung(err, fallback = 'Es ist ein Fehler aufgetreten') {
+  if (err?.isAxiosError || err?.response || err?.request) return fehlerText(err, fallback)
+  return (typeof err?.message === 'string' && err.message) || fallback
+}

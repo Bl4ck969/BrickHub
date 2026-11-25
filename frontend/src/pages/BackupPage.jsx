@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { CloudArrowDownIcon, CloudArrowUpIcon, ClockIcon, XMarkIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { backupApi } from '../api/client'
+import { fehlerOderMeldung } from '../lib/fehler'
 import { useToast } from '../hooks/useToast'
 import { PageShell } from '../components/PageShell'
 
@@ -111,7 +112,7 @@ export function BackupPage() {
 
       window.location.href = `/api/backup/export/download/${task_id}`
     } catch (err) {
-      setExportError(err.message || 'Export fehlgeschlagen')
+      setExportError(fehlerOderMeldung(err, 'Export fehlgeschlagen'))
     } finally {
       setExporting(false)
       setExportProgress(null)
@@ -172,7 +173,7 @@ export function BackupPage() {
       setSelectedFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (err) {
-      setImportError(err.message || 'Fehler beim Import')
+      setImportError(fehlerOderMeldung(err, 'Fehler beim Import'))
     } finally {
       setImporting(false)
       setImportProgress(null)

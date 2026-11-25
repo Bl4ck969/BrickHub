@@ -482,7 +482,9 @@ async def start_import(
     mode: str = Query("append", pattern="^(append|replace)$"),
 ):
     """Nimmt die ZIP-Datei entgegen, speichert sie temporär und startet die Verarbeitung im Hintergrund."""
-    # Riegel vor dem Hochladen: Auftrag sofort reservieren, bei Abbruch wieder freigeben
+    # Riegel vor dem Zwischenspeichern: Auftrag sofort reservieren, bei Abbruch wieder freigeben.
+    # ⚠ FastAPI hat den Upload (UploadFile) da schon ganz empfangen – eine Ablehnung (409) kommt
+    # also erst nach dem kompletten Upload, sie spart nur das Kopieren und die Verarbeitung.
     task_id = _reservieren(_import_tasks, "Import", {
         "status": "running",
         "phase": "validating",

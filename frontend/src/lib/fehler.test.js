@@ -1,7 +1,7 @@
 // Lauf (aus frontend/): node --test src/lib/fehler.test.js   (kein Testframework nötig)
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { fehlerText, detailText } from './fehler.js'
+import { fehlerText, detailText, fehlerOderMeldung } from './fehler.js'
 
 const antwort = (data, status = 422) => ({ response: { status, data } })
 
@@ -35,6 +35,19 @@ test('Text-detail bleibt unverändert', () => {
 test('Netzfehler und Zeitüberschreitung werden unterschieden', () => {
   assert.match(fehlerText({ code: 'ECONNABORTED', request: {} }, 'x'), /nicht rechtzeitig/)
   assert.match(fehlerText({ code: 'ERR_NETWORK', request: {} }, 'x'), /Keine Verbindung/)
+})
+
+test('fehlerOderMeldung: 409 vom Server zeigt den deutschen detail-Text, nicht axios-Englisch', () => {
+  // axios-Fehler tragen isAxiosError und eine englische message ("Request failed with status code 409")
+  const err = { isAxiosError: true, message: 'Request failed with status code 409',
+    response: { status: 409, data: { detail: 'Es läuft bereits ein Import oder Export.', code: 'KONFLIKT' } } }
+  assert.equal(fehlerOderMeldung(err, 'Export fehlgeschlagen'), 'Es läuft bereits ein Import oder Export.')
+})
+
+test('fehlerOderMeldung: eigene Error-Meldung (z. B. aus dem Fortschritts-Strom) bleibt erhalten', () => {
+  assert.equal(fehlerOderMeldung(new Error('Verbindung unterbrochen'), 'Export fehlgeschlagen'), 'Verbindung unterbrochen')
+  assert.equal(fehlerOderMeldung(new Error(''), 'Export fehlgeschlagen'), 'Export fehlgeschlagen')
+  assert.equal(fehlerOderMeldung(undefined, 'Export fehlgeschlagen'), 'Export fehlgeschlagen')
 })
 
 test('Ohne Informationen gilt der Fallback; undefined crasht nicht', () => {

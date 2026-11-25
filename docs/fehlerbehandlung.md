@@ -17,6 +17,11 @@
 - `src/lib/fehler.js` → `fehlerText(err, 'Fallback')` macht aus jedem axios-Fehler einen Text (422-Liste,
   Zeitüberschreitung, Netzfehler). **Nie mehr `err.response?.data?.detail` direkt in `setError`/`toast`.**
   Test: `node --test src/lib/fehler.test.js`.
+- `fehlerOderMeldung(err, 'Fallback')` dort, wo axios-Fehler und eigene `new Error('…')` im selben `catch` landen
+  (Backup-Seite: Start per axios, Fortschritt per EventSource). ⚠ `err.message` eines axios-Fehlers ist englisch
+  („Request failed with status code 409“) – so verschluckte die Backup-Seite die deutsche Sperr-Meldung (Review BH-6).
+- ⚠ Der Riegel aus BH-3 (ein Import/Export gleichzeitig) gilt nur für Export/Import von Hand; automatische Sicherung
+  und „Jetzt sichern“ (`backup_scheduler._create_backup`) prüfen ihn nicht.
 - `components/ErrorBoundary.jsx`: eine Grenze um den Inhalt neben der Seitenleiste (setzt sich beim
   Seitenwechsel zurück), eine äußere für Seiten ohne Seitenleiste.
 - `api/client.js`: Zeitgrenze 300 s – bewusst großzügig, weil Bild-Finalisierung (rembg), PDF-Export und

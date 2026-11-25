@@ -1,0 +1,41 @@
+# Testinstanz für die Handprobe (Karte BH-1). Nur über handprobe/testinstanz.py benutzen:
+#   python -I handprobe/testinstanz.py bauen --name <projekt> --port <p> --image <tag> --sicherung <ordner>
+# Das Skript setzt die HANDPROBE_*-Variablen. Alles trägt die Marke de.brickhub.testinstanz –
+# `abraeumen` entfernt nur Projekte, deren Container und Volumes sie tragen.
+services:
+  app:
+    image: ${HANDPROBE_IMAGE:?HANDPROBE_IMAGE fehlt}
+    # Nur das lokal gebaute Image, nie still von ghcr.io ziehen – sonst prüfte die
+    # Handprobe das veröffentlichte statt des Kandidaten.
+    pull_policy: never
+    ports:
+      - "${HANDPROBE_PORT:?HANDPROBE_PORT fehlt}:8080"
+    environment:
+      # Ohne SECRET_KEY wirft die App im Container beim Start (config.py). Je Instanz neu
+      # erzeugt: Sitzungen der echten Installation gelten hier nicht.
+      SECRET_KEY: ${HANDPROBE_SECRET_KEY:?HANDPROBE_SECRET_KEY fehlt}
+      # Ollama (Bilderkennung) ist die einzige Funktion, die nach außen spricht. Sie kommt nur
+      # aus Umgebungsvariablen, nie aus der Sicherung – hier ausdrücklich aus.
+      OLLAMA_ENABLED: "false"
+      OLLAMA_URL: "http://127.0.0.1:9"
+      TZ: Europe/Berlin
+    volumes:
+      - daten:/app/data
+      - export:/app/export
+      - sicherungen:/app/backup
+    labels:
+      de.brickhub.testinstanz: "1"
+    mem_limit: 4g
+    cpus: 2
+    restart: "no"
+
+volumes:
+  daten:
+    labels:
+      de.brickhub.testinstanz: "1"
+  export:
+    labels:
+      de.brickhub.testinstanz: "1"
+  sicherungen:
+    labels:
+      de.brickhub.testinstanz: "1"

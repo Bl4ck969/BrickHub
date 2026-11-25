@@ -7,6 +7,10 @@ const API_BASE = import.meta.env.VITE_API_URL || ''
 const client = axios.create({
   baseURL: API_BASE,
   withCredentials: true, // Send HTTP-only cookies
+  // Zeitgrenze: hängt der Server, wartet die Oberfläche nicht endlos. Bewusst großzügig,
+  // weil Bild-Finalisierung (rembg), PDF-Export und Backup-Import legitim lange dauern.
+  // Netz-/Zeitfehler übersetzt lib/fehler.js (fehlerText) in deutschen Text.
+  timeout: 300000,
 })
 
 // Redirect to login on 401
@@ -105,7 +109,8 @@ export const backupApi = {
   startImport: (form, mode, onUploadProgress) => client.post(
     `/api/backup/import/start?mode=${mode}`,
     form,
-    { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress },
+    // timeout 0 = keine Grenze: Der Upload einer grossen Sicherung (~600 MB) darf bei langsamem Netz laenger dauern.
+    { headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress, timeout: 0 },
   ),
   // Automatische Backups
   getSchedule: () => client.get('/api/backup/schedule'),

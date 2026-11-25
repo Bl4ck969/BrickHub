@@ -10,6 +10,7 @@ from app.models.set_model import BrickSet
 from app.services.image_service import (
     process_image, save_original, detect_corners,
     apply_perspective_transform, apply_rotation, finalize_image,
+    validate_image_bytes, ImageRejected,
 )
 from app.services.ollama_service import check_ollama_connection
 from app.utils.auth import require_admin, get_current_user
@@ -37,7 +38,13 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
                 detail="Datei zu groß (max. 30 MB)",
             )
         chunks.append(chunk)
-    return b"".join(chunks)
+    data = b"".join(chunks)
+    # BH-4: am Inhalt prüfen (Magic Bytes + Pixelgrenze), nicht am MIME-Typ
+    try:
+        validate_image_bytes(data)
+    except ImageRejected as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return data
 
 
 class PreviewRequest(BaseModel):
@@ -74,7 +81,7 @@ async def upload_image(
     side_label = "Frontcover" if side == "frontcover" else "Backcover"
     manufacturer = brick_set.manufacturer or "Unbekannt"
 
-    paths = process_image(file_bytes, side_label, manufacturer, brick_set.name)
+    paths = process_image(file_bytes, side_label, manufacturer, brick_set.name, set_id=brick_set.id)
 
     if side == "frontcover":
         brick_set.frontcover_original = paths["original"]
@@ -119,7 +126,7 @@ async def upload_raw_image(
     side_label = "Frontcover" if side == "frontcover" else "Backcover"
     manufacturer = brick_set.manufacturer or "Unbekannt"
 
-    result = save_original(file_bytes, side_label, manufacturer, brick_set.name)
+    result = save_original(file_bytes, side_label, manufacturer, brick_set.name, set_id=brick_set.id)
 
     # Update original path in DB
     if side == "frontcover":
@@ -222,6 +229,7 @@ async def finalize_set_image(
     paths = finalize_image(
         source_path, side_label, manufacturer, brick_set.name,
         brightness=body.brightness, saturation=body.saturation,
+        set_id=brick_set.id,
     )
 
     if side == "frontcover":

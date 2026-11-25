@@ -204,8 +204,25 @@ def delete_set(
     brick_set = db.query(BrickSet).filter(BrickSet.id == set_id).first()
     if not brick_set:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Set nicht gefunden")
+    paths = [
+        brick_set.frontcover_original, brick_set.frontcover_edited, brick_set.frontcover_thumbnail,
+        brick_set.backcover_original, brick_set.backcover_edited, brick_set.backcover_thumbnail,
+    ]
     db.delete(brick_set)
     db.commit()
+    # BH-4: Bilder erst nach dem Commit löschen (schlägt die DB fehl, bleiben sie).
+    # Dateien, auf die ein anderes Set noch zeigt (alte, gleichnamige Sets), bleiben.
+    wanted = {str(p).replace("\\", "/") for p in paths if p}
+    still_used: set = set()
+    if wanted:
+        for other in db.query(BrickSet).all():
+            for f in ("frontcover_original", "frontcover_edited", "frontcover_thumbnail",
+                      "backcover_original", "backcover_edited", "backcover_thumbnail"):
+                v = getattr(other, f)
+                if v and str(v).replace("\\", "/") in wanted:
+                    still_used.add(str(v).replace("\\", "/"))
+    from app.services.image_service import delete_set_images
+    delete_set_images(paths, still_used)
 
 
 @router.get("/export/json")

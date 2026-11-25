@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Modal } from './Modal'
 import { imagesApi } from '../api/client'
+import { fehlerText } from '../lib/fehler'
 import { useToast } from '../hooks/useToast'
 
 const HANDLE_R = 13
@@ -403,7 +404,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setZoom(1)
       setPhase('edit')
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler beim Upload', 'error')
+      toast(fehlerText(err, 'Fehler beim Upload'), 'error')
     } finally {
       setLoading('')
     }
@@ -429,7 +430,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setZoom(1)
       setPhase('edit')
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler beim Laden des Bildes', 'error')
+      toast(fehlerText(err, 'Fehler beim Laden des Bildes'), 'error')
     } finally {
       setLoading('')
     }
@@ -471,7 +472,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setPreviewPath(res.data.preview_path)
       setPhase('preview')
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler bei Vorschau', 'error')
+      toast(fehlerText(err, 'Fehler bei Vorschau'), 'error')
     } finally {
       setLoading('')
     }
@@ -485,7 +486,7 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       setFinalResult(res.data)
       setPhase('final')
     } catch (err) {
-      toast(err.response?.data?.detail || 'Fehler beim Finalisieren', 'error')
+      toast(fehlerText(err, 'Fehler beim Finalisieren'), 'error')
     } finally {
       setLoading('')
     }

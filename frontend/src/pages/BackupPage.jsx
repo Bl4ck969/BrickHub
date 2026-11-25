@@ -94,14 +94,19 @@ export function BackupPage() {
       const { data: { task_id } } = await backupApi.startExport()
 
       await new Promise((resolve, reject) => {
-        const es = new EventSource(`/api/backup/export/progress/${task_id}`)
-        es.onmessage = (e) => {
-          const data = JSON.parse(e.data)
-          setExportProgress(data)
-          if (data.status === 'done') { es.close(); resolve() }
-          else if (data.status === 'error') { es.close(); reject(new Error(data.error || 'Export fehlgeschlagen')) }
+        // Der Server beendet den Strom nach einer Höchstdauer mit reconnect:true – dann neu verbinden
+        const verbinden = () => {
+          const es = new EventSource(`/api/backup/export/progress/${task_id}`)
+          es.onmessage = (e) => {
+            const data = JSON.parse(e.data)
+            setExportProgress(data)
+            if (data.status === 'done') { es.close(); resolve() }
+            else if (data.status === 'error') { es.close(); reject(new Error(data.error || 'Export fehlgeschlagen')) }
+            else if (data.reconnect) { es.close(); verbinden() }
+          }
+          es.onerror = () => { es.close(); reject(new Error('Verbindung unterbrochen')) }
         }
-        es.onerror = () => { es.close(); reject(new Error('Verbindung unterbrochen')) }
+        verbinden()
       })
 
       window.location.href = `/api/backup/export/download/${task_id}`
@@ -149,14 +154,18 @@ export function BackupPage() {
       )
 
       const result = await new Promise((resolve, reject) => {
-        const es = new EventSource(`/api/backup/import/progress/${task_id}`)
-        es.onmessage = (e) => {
-          const data = JSON.parse(e.data)
-          setImportProgress(data)
-          if (data.status === 'done') { es.close(); resolve(data.result) }
-          else if (data.status === 'error') { es.close(); reject(new Error(data.error || 'Import fehlgeschlagen')) }
+        const verbinden = () => {
+          const es = new EventSource(`/api/backup/import/progress/${task_id}`)
+          es.onmessage = (e) => {
+            const data = JSON.parse(e.data)
+            setImportProgress(data)
+            if (data.status === 'done') { es.close(); resolve(data.result) }
+            else if (data.status === 'error') { es.close(); reject(new Error(data.error || 'Import fehlgeschlagen')) }
+            else if (data.reconnect) { es.close(); verbinden() }
+          }
+          es.onerror = () => { es.close(); reject(new Error('Verbindung unterbrochen')) }
         }
-        es.onerror = () => { es.close(); reject(new Error('Verbindung unterbrochen')) }
+        verbinden()
       })
 
       setImportResult(result)

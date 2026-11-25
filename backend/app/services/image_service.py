@@ -97,7 +97,7 @@ def delete_set_images(paths: list, still_used: set) -> None:
         candidates = [Path(raw)]
         if "Original" in Path(raw).name:  # Preview-Datei gehört zum Original
             p = Path(raw)  # nur im Dateinamen ersetzen, der Ordner enthält den Set-Namen
-            candidates.append(p.with_name(p.name.replace("Original", "Preview", 1)))
+            candidates.append(p.with_name(p.name.replace("Original", "Preview")))  # wie bei der Erzeugung: alle Treffer
         for c in candidates:
             try:
                 r = c.resolve()

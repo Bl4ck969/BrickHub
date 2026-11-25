@@ -91,7 +91,8 @@ class Loeschen(unittest.TestCase):
             ordner = Path(root) / "Lego - Original Burg"
             ordner.mkdir()
             orig = ordner / "Original - Frontcover - Lego - Original Burg - 1.jpg"
-            prev = ordner / "Preview - Frontcover - Lego - Original Burg - 1.jpg"
+            # so benennt apply_perspective_transform: alle „Original“ im Namen werden ersetzt
+            prev = ordner / "Preview - Frontcover - Lego - Preview Burg - 1.jpg"
             orig.write_bytes(b"x")
             prev.write_bytes(b"x")
             with mock.patch.object(svc.settings, "upload_dir", root):

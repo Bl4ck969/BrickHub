@@ -27,7 +27,11 @@ Leitstand mergt nach `main` und setzt den Tag – **der Merge baut das Image**, 
 
 ## Testinstanz (`handprobe/testinstanz.py`, seit BH-1)
 
-Baut eine BrickHub-Instanz auf dem PC mit den Daten der neuesten automatischen Sicherung, nie am Unraid. Ablauf,
+Baut eine BrickHub-Instanz auf dem PC oder der Agent-VM mit den Daten der neuesten automatischen Sicherung, nie am
+Unraid: Erlaubt ist nur der Docker des eigenen Rechners – Endpunkt `npipe:////./pipe/…` und Docker meldet sich als
+`docker-desktop` (PC), oder `unix://…` (auch rootless) und Docker meldet sich mit dem Rechnernamen (VM). Ein
+DOCKER_HOST/Kontext per `tcp://`/`ssh://` oder ein weitergeleiteter Socket bricht ab (seit 28.11.2026; vorher nur
+Docker Desktop). Ablauf,
 Gründe und Exitcodes (0 fertig, 1 Schritt gescheitert – Instanz bleibt zur Diagnose stehen, 2 Vorbedingung) stehen im
 Kopf des Skripts. Nur Python-Standardbibliothek:
 

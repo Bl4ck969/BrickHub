@@ -110,7 +110,8 @@ class PruefungenTest(unittest.TestCase):
         ti.pruefe_name("handprobe-bh-1")
 
     def test_ablageort_gespiegelt_oder_repo(self):
-        for pfad in ("E:/Setups/x/" + NAME, "C:/Users/a/OneDrive/x/" + NAME, str(ti.HIER.parent / NAME)):
+        for pfad in ("E:/Setups/x/" + NAME, "C:/Users/a/OneDrive/x/" + NAME, str(ti.HIER.parent / NAME),
+                     "/mnt/claude/workspace/x/" + NAME):
             with self.subTest(pfad=pfad), self.assertRaises(ti.Abbruch):
                 ti.pruefe_ablageort(Path(pfad))
         ti.pruefe_ablageort(self.wurzel / NAME)
@@ -176,7 +177,7 @@ class BauenAblaufTest(unittest.TestCase):
         self.schritte: list[str] = []
         self.stand = dict(BewertungTest.GUT)
         flicken = {
-            "pruefe_docker_desktop": lambda: None,
+            "pruefe_docker_lokal": lambda: None,
             "container_des_projekts": lambda name: [],
             "volumes_des_projekts": lambda name: [],
             "port_belegt": lambda port: False,
@@ -284,7 +285,7 @@ class WegwerfAdminTest(unittest.TestCase):
 class AbraeumenTest(unittest.TestCase):
     def test_fremdes_projekt_wird_abgelehnt(self):
         aufrufe = []
-        with mock.patch.object(ti, "pruefe_docker_desktop", lambda: None), \
+        with mock.patch.object(ti, "pruefe_docker_lokal", lambda: None), \
                 mock.patch.object(ti, "container_des_projekts",
                                   lambda n: [{"Names": "brickhub", "Labels": "com.docker.compose.project=x"}]), \
                 mock.patch.object(ti, "volumes_des_projekts", lambda n: []), \
@@ -299,6 +300,81 @@ class AbraeumenTest(unittest.TestCase):
             self.assertEqual(ti.main(["bauen", "--name", "brickhub", "--port", "1", "--image", "x",
                                       "--sicherung", "."]), 2)
             self.assertEqual(ti.main(["unbekannt"]), 2)
+
+
+class DockerLokalTest(unittest.TestCase):
+    """Nur der Docker dieses Rechners: PC (Docker Desktop) oder Agent-VM, nie ein ferner."""
+
+    def _docker(self, endpunkt, name="docker-desktop", code=0):
+        def docker(args, *a, **k):
+            if args[:2] == ["context", "inspect"]:
+                return Fertig(code, endpunkt + "\n", "Kontext kaputt")
+            if args[0] == "info":
+                return Fertig(0, name + "\n")
+            raise AssertionError(f"unerwarteter docker-Aufruf {args}")
+        return mock.patch.object(ti, "docker", docker)
+
+    def _pruefe(self, endpunkt, name="docker-desktop", code=0):
+        with self._docker(endpunkt, name, code):
+            ti.pruefe_docker_lokal()
+
+    def _gesperrt(self, endpunkt, name="docker-desktop", code=0):
+        with self.assertRaises(ti.Abbruch) as fall:
+            self._pruefe(endpunkt, name, code)
+        self.assertEqual(fall.exception.code, 2)
+
+    def test_pc_und_vm_sind_erlaubt(self):
+        self._pruefe("npipe:////./pipe/dockerDesktopLinuxEngine")
+        for endpunkt in ("unix:///var/run/docker.sock", "unix:///run/user/1000/docker.sock"):
+            self._pruefe(endpunkt, name=ti.socket.gethostname())
+
+    def test_ferner_docker_ist_gesperrt(self):
+        for endpunkt in ("ssh://root@192.168.178.95", "tcp://192.168.178.95:2375", "",
+                         "npipe:////anderer-pc/pipe/docker_engine"):
+            self._gesperrt(endpunkt)
+
+    def test_weitergeleiteter_socket_ist_gesperrt(self):
+        # ssh -L /tmp/d.sock:/var/run/docker.sock unraid -> lokaler Weg, fremder Docker
+        self._gesperrt("unix:///tmp/d.sock", name="Tower")
+        # ... auch von einem anderen Rechner mit Docker Desktop (z. B. dem Laptop)
+        self._gesperrt("unix:///tmp/d.sock", name="docker-desktop")
+
+    def test_kaputter_kontext_ist_vorbedingung(self):
+        self._gesperrt("", code=1)
+
+    def test_docker_host_geht_vor_kontext(self):
+        with mock.patch.dict(os.environ, {"DOCKER_HOST": "tcp://192.168.178.95:2375"}):
+            self._gesperrt("npipe:////./pipe/dockerDesktopLinuxEngine")
+        with mock.patch.dict(os.environ, {"DOCKER_HOST": "unix:///run/user/1000/docker.sock"}):
+            self._pruefe("ssh://root@192.168.178.95", name=ti.socket.gethostname())
+
+    def test_bauen_und_abraeumen_fragen_vor_jedem_docker(self):
+        aufrufe = []
+        with tempfile.TemporaryDirectory() as tmp, \
+                self._docker("ssh://root@192.168.178.95"), \
+                mock.patch.object(ti, "compose", lambda *a, **k: aufrufe.append(a)), \
+                mock.patch.object(ti, "port_belegt", lambda port: False), \
+                mock.patch("sys.stdout", new=io.StringIO()):
+            for aufruf in (lambda: ti.bauen("handprobe-bh-1", 3999, "img", lege_sicherung(Path(tmp))),
+                           lambda: ti.abraeumen("handprobe-bh-1")):
+                with self.assertRaises(ti.Abbruch) as fall:
+                    aufruf()
+                self.assertEqual(fall.exception.code, 2)
+        self.assertEqual(aufrufe, [])
+
+
+# docker_endpunkt() liest DOCKER_HOST vor dem Kontext: Ein in der Shell gesetztes DOCKER_HOST
+# darf die Tests nicht an der falschen Docker vorbeiführen.
+_ohne_docker_host = mock.patch.dict(ti.os.environ)
+
+
+def setUpModule():
+    _ohne_docker_host.start()
+    ti.os.environ.pop("DOCKER_HOST", None)
+
+
+def tearDownModule():
+    _ohne_docker_host.stop()
 
 
 if __name__ == "__main__":

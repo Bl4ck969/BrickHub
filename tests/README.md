@@ -47,7 +47,8 @@ für einen Screenshot der schmalen Ansicht.
 | Bild-Vergrößerung | Modal öffnet |
 | Galerie | Karten werden gerendert |
 | Theme, Seitenleiste | Umschalten wirkt und wird gemerkt |
-| Alle 6 Navigationsziele | laden mit Überschrift |
+| Dashboard | öffnet, die drei Kennzahl-Icons werden gezeichnet |
+| Die 6 übrigen Navigationsziele | laden mit Überschrift |
 | Set-Formular, Ersteinrichtung | rendern |
 | Schmale Ansicht (390 px) | kein seitliches Scrollen |
 | Konsole | keine Fehler außer den erwarteten 401 vor der Anmeldung |

@@ -61,9 +61,6 @@ try {
   const zeilen = await page.locator('table tbody tr').count()
   zeilen > 0 ? ok('Tabelle gefüllt', zeilen + ' Zeilen') : fail('Tabelle gefüllt', '0 Zeilen')
 
-  const icons = await page.locator('section svg').count()
-  icons >= 3 ? ok('Kennzahl-Icons gerendert', icons + ' SVG') : fail('Kennzahl-Icons gerendert', String(icons))
-
   // ---------- Sortierung ----------
   const vorher = (await page.locator('table tbody tr td:nth-child(2)').first().innerText()).trim()
   await page.getByRole('columnheader', { name: /Teile/ }).click()
@@ -133,6 +130,19 @@ try {
     : fail('Seitenleiste einklappen')
   await page.getByTitle('Ausklappen').click()
   await page.waitForTimeout(400)
+
+  // ---------- Dashboard ----------
+  // Die Kennzahl-Icons (BrickIcons) stehen seit 1.2.0 im Dashboard, nicht mehr ueber der Sets-Tabelle.
+  // Sie tragen als einzige SVGs die Klasse text-icon-line (DashboardPage.jsx, Kennzahl).
+  try {
+    await page.getByRole('link', { name: 'Dashboard', exact: true }).click()
+    await page.waitForURL('**/dashboard', { timeout: 12000 })
+    await page.waitForTimeout(800)
+    const icons = await page.locator('svg.text-icon-line').count()
+    icons >= 3 ? ok('Dashboard: Kennzahl-Icons', icons + ' SVG') : fail('Dashboard: Kennzahl-Icons', String(icons))
+  } catch (e) {
+    fail('Seite Dashboard', e.message.split('\n')[0])
+  }
 
   // ---------- Alle Seiten ----------
   for (const [label, pfad] of [

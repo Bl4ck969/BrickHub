@@ -77,7 +77,7 @@ BH_USER=<benutzer> BH_PASS=<passwort> npm test
 
 Prüft mit **echten Klicks** gegen die laufende Entwicklungsumgebung (beide Server nötig):
 Anmeldung, Sortierung, Inline-Bearbeitung **inklusive belegtem `PATCH`**, Status- und
-Kistenauswahl, Bild-Vergrößerung, Galerie, Theme, alle sechs Navigationsziele und die
+Kistenauswahl, Bild-Vergrößerung, Galerie, Theme, Dashboard, alle Navigationsziele und die
 schmale Ansicht. Details und Grenzen in `tests/README.md`.
 
 ⚠ **Der Test schreibt einen Wert in die Datenbank und setzt ihn zurück.** Meldet er
@@ -125,7 +125,7 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - **Auth**: `frontend/src/hooks/useAuth.jsx` (muss .jsx sein wegen JSX im Hook)
 - **Proxy**: Vite leitet `/api` → `http://localhost:8000` weiter (konfiguriert in `vite.config.js`)
 - **Navigation**: `components/Sidebar.jsx` (seit 2.0 eine Seitenleiste, keine Navbar mehr).
-  Die `adminOnly`-Marken je Punkt sind dieselben wie vorher — wer dort etwas ändert,
+  Die `adminOnly`-Marken je Punkt („Benutzer“ seit 1.2.0 für alle, wegen „Mein Konto“) — wer dort etwas ändert,
   ändert die Sichtbarkeit für Nicht-Admins
 - **Gerüste**: `components/PageShell.jsx` (Seiten hinter der Anmeldung) und
   `components/AuthShell.jsx` (Anmeldung, Ersteinrichtung, Passwort vergessen/ändern).
@@ -198,7 +198,7 @@ alles steht in `frontend/src/index.css`:
   `components/BrickIcons.jsx`
 - Entwürfe mit Begründungen: `docs/design-2.0-mockup.html` (Gesamtbild) und
   `docs/statistikleiste-varianten.html` (sechs Varianten der Kennzahlenleiste,
-  umgesetzt ist **A — eine Zeile**)
+  umgesetzt war **A — eine Zeile**; seit 1.2.0 entfernt, die Zahlen stehen im Dashboard)
 
 ## Screenshots für die README
 

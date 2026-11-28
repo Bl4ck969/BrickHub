@@ -74,7 +74,7 @@ SICHERUNGS_VERSION = 1
 
 # Gespiegelte Ordner (Syncthing, OneDrive, Agent-VM): dort darf keine Kopie der Sicherung liegen –
 # sie enthält Passwort-Hashes und die Antworten-Hashes der Sicherheitsfragen.
-GESPIEGELT = ("e:/setups", "/workspace", "/vault")
+GESPIEGELT = ("e:/setups", "/workspace", "/mnt/claude/workspace", "/vault")
 
 START_ZEITLIMIT = 300       # Sekunden bis /api/health
 UPLOAD_ZEITLIMIT = 1800     # Sekunden für den Upload der ZIP (~600 MB über localhost)
@@ -110,7 +110,7 @@ def docker(args: list[str], umgebung: dict[str, str] | None = None,
             env=umgebung, stdin=subprocess.DEVNULL, timeout=zeitlimit,
         )
     except FileNotFoundError as exc:
-        raise Abbruch("docker nicht gefunden (Docker Desktop installiert und gestartet?)", 2) from exc
+        raise Abbruch("docker nicht gefunden (Docker installiert und gestartet?)", 2) from exc
     except subprocess.TimeoutExpired as exc:
         raise Abbruch(f"docker {' '.join(args[:4])} … kehrte nach {zeitlimit} s nicht zurück") from exc
 
@@ -313,7 +313,7 @@ def pruefe_ablageort(ordner: Path) -> None:
             or any(t.startswith("onedrive") for t in teile)
             or pfad == repo or pfad.startswith(repo + "/")):
         raise Abbruch(f"Die Sicherung liegt in einem gespiegelten Ordner oder im Repo ('{ordner}') – "
-                      "bitte außerhalb ablegen (z. B. unter %TEMP%) und danach löschen", 2)
+                      "bitte außerhalb ablegen (z. B. unter %TEMP% bzw. /tmp) und danach löschen", 2)
 
 
 def pruefe_name(name: str) -> None:
@@ -325,16 +325,52 @@ def pruefe_name(name: str) -> None:
                       "bitte einen eigenen Namen wählen", 2)
 
 
-def pruefe_docker_desktop() -> None:
-    """Nur gegen Docker Desktop auf diesem PC – nie gegen einen fernen Docker.
+# Docker dieses Rechners: Docker Desktop am PC (npipe:////./pipe/…) oder der Docker der Agent-VM
+# (unix://, auch rootless). Ein ferner Docker (tcp://, ssh://, z. B. der Unraid) bleibt gesperrt.
+LOKALE_ENDPUNKTE = ("unix://", "npipe:////./pipe/")
 
-    Zeigt DOCKER_HOST oder der Kontext z. B. auf den Unraid, landete die Instanz samt echter
-    Sicherung dort (und `abraeumen` räumte dort ab).
+
+def _docker_vorbedingung(args: list[str], was: str) -> str:
+    """Wie pruefe(), aber ein Fehler ist eine verletzte Vorbedingung (Exit 2) – gebaut wurde nichts."""
+    ergebnis = docker(args)
+    if ergebnis.returncode != 0:
+        grund = (ergebnis.stderr or ergebnis.stdout or "").strip()[:300]
+        raise Abbruch(f"{was} fehlgeschlagen: {grund}", 2)
+    return (ergebnis.stdout or "").strip()
+
+
+def docker_endpunkt() -> str:
+    """Wohin `docker` spricht: DOCKER_HOST, sonst der Endpunkt des aktuellen Kontexts."""
+    gesetzt = os.environ.get("DOCKER_HOST", "").strip()
+    if gesetzt:
+        return gesetzt
+    return _docker_vorbedingung(["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+                                "docker context inspect")
+
+
+def pruefe_docker_lokal() -> None:
+    """Nur gegen den Docker dieses Rechners – nie gegen einen fernen Docker.
+
+    Zeigt `DOCKER_HOST` oder der Kontext z. B. auf den Unraid, landete die Instanz samt echter
+    Sicherung dort (und `abraeumen` räumte dort ab). Erlaubt sind Docker Desktop am PC und der
+    Docker der Agent-VM. Bis 28.11.2026 war es nur Docker Desktop – der VM-Agent konnte
+    keine Testinstanz bauen, obwohl der Leitstand ihm Release-Karten gibt.
+
+    Zwei Prüfungen: der Weg (nur lokaler Socket bzw. lokale Pipe) und wer antwortet (auch ein
+    lokaler Socket kann per `ssh -L` weitergeleitet sein). Docker Desktop meldet sich als
+    „docker-desktop“, der Docker der VM mit dem Rechnernamen (gemessen 28.11.2026: claude-agent).
     """
-    system = pruefe(docker(["info", "--format", "{{.OperatingSystem}}"]), "docker info").strip()
-    if "Docker Desktop" not in system:
-        raise Abbruch(f"docker spricht nicht mit Docker Desktop auf diesem PC, sondern mit "
-                      f"'{system}' (DOCKER_HOST/Kontext prüfen) – abgebrochen", 2)
+    endpunkt = docker_endpunkt()
+    if not endpunkt.lower().startswith(LOKALE_ENDPUNKTE):
+        raise Abbruch(f"docker spricht nicht mit dem Docker dieses Rechners, sondern mit "
+                      f"'{endpunkt or 'unbekannt'}' (DOCKER_HOST/Kontext prüfen) – abgebrochen", 2)
+    name = _docker_vorbedingung(["info", "--format", "{{.Name}}"], "docker info")
+    rechner = socket.gethostname()
+    # Paarweise: die Windows-Pipe gehört zu Docker Desktop, ein unix-Socket zu diesem Rechner.
+    erwartet = "docker-desktop" if endpunkt.lower().startswith("npipe:") else rechner.lower()
+    if name.lower() != erwartet:
+        raise Abbruch(f"docker antwortet als '{name}', nicht als dieser Rechner ('{rechner}') "
+                      f"– weitergeleiteter Socket? Abgebrochen", 2)
 
 
 # ── Wegwerf-Zugang ─────────────────────────────────────────────────────────
@@ -547,7 +583,7 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
     pruefe_ablageort(sicherung)
     datei = zip_der_sicherung(sicherung)
     vorher = fingerabdruck(datei)
-    pruefe_docker_desktop()
+    pruefe_docker_lokal()
     if container_des_projekts(name) or volumes_des_projekts(name):
         raise Abbruch(f"Projekt '{name}' hat schon Container oder Volumes – erst "
                       f"`abraeumen --name {name}` oder einen anderen Namen wählen", 2)
@@ -594,7 +630,7 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
 def abraeumen(name: str) -> None:
     """Entfernt die Instanz samt Volumes. Die Sicherungskopie gehört dem Aufrufer und bleibt."""
     pruefe_name(name)
-    pruefe_docker_desktop()
+    pruefe_docker_lokal()
     container = container_des_projekts(name)
     volumes = volumes_des_projekts(name)
     fremde = ([c.get("Names", "?") for c in container if not traegt_marke(c)]

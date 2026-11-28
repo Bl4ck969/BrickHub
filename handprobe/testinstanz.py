@@ -178,14 +178,15 @@ def http(methode: str, url: str, daten: dict | None = None, cookie: str | None =
          zeitlimit: float = 30, rumpf=None, kopf: dict[str, str] | None = None):
     """Eine Anfrage. Gibt (Status, JSON oder Text, Antwortkopf) zurück.
 
-    Angemeldet wird per Cookie `access_token` (app/utils/auth.py liest nur das Cookie).
+    Angemeldet wird per Cookie; `cookie` ist das fertige Paar `name=wert` aus `cookie_aus`
+    (seit der Sitzungs-Umstellung heißt es `brickhub_access`, davor `access_token`).
     """
     kopfzeilen = {"Accept": "application/json", **(kopf or {})}
     if daten is not None:
         rumpf = json.dumps(daten).encode("utf-8")
         kopfzeilen["Content-Type"] = "application/json"
     if cookie:
-        kopfzeilen["Cookie"] = f"access_token={cookie}"
+        kopfzeilen["Cookie"] = cookie
     anfrage = urllib.request.Request(url, data=rumpf, headers=kopfzeilen, method=methode)
     try:
         with urllib.request.urlopen(anfrage, timeout=zeitlimit) as antwort:
@@ -201,16 +202,21 @@ def http(methode: str, url: str, daten: dict | None = None, cookie: str | None =
         return status, text, koepfe
 
 
+# Neuer Name zuerst; der alte bleibt, damit das Rezept auch ältere Images anmeldet.
+ZUGANGS_COOKIES = ("brickhub_access", "access_token")
+
+
 def cookie_aus(koepfe) -> str | None:
-    """Wert von `access_token` aus den Set-Cookie-Zeilen der Anmeldung."""
+    """Zugangs-Cookie als `name=wert` aus den Set-Cookie-Zeilen der Anmeldung."""
     for zeile in (koepfe.get_all("Set-Cookie") or []) if koepfe is not None else []:
         keks = SimpleCookie()
         try:
             keks.load(zeile)
         except Exception:  # noqa: BLE001 – fremde Cookies dürfen nicht stören
             continue
-        if "access_token" in keks and keks["access_token"].value:
-            return keks["access_token"].value
+        for name in ZUGANGS_COOKIES:
+            if name in keks and keks[name].value:
+                return f"{name}={keks[name].value}"
     return None
 
 
@@ -360,7 +366,7 @@ def wegwerf_admin(basis: str) -> tuple[str, str, str]:
                                    {"username": benutzer, "password": passwort})
     cookie = cookie_aus(koepfe) if status == 200 else None
     if not cookie:
-        raise Abbruch(f"POST /api/auth/login: HTTP {status} {antwort} (ohne Cookie access_token)")
+        raise Abbruch(f"POST /api/auth/login: HTTP {status} {antwort} (ohne Zugangs-Cookie)")
     return benutzer, passwort, cookie
 
 
@@ -419,8 +425,15 @@ def sse_ereignisse(zeilen):
                 continue
 
 
+def anmelden(basis: str, benutzer: str, passwort: str) -> str | None:
+    """Meldet an und gibt das Zugangs-Cookie zurück; None, wenn es das Konto nicht (mehr) gibt."""
+    status, _, koepfe = http("POST", f"{basis}/api/auth/login", {"username": benutzer, "password": passwort})
+    return cookie_aus(koepfe) if status == 200 else None
+
+
 def warte_auf_einspielen(basis: str, cookie: str, aufgabe: str,
-                         zeitlimit: int = EINSPIELEN_ZEITLIMIT) -> dict | None:
+                         zeitlimit: int = EINSPIELEN_ZEITLIMIT,
+                         neu_anmelden=None) -> dict | None:
     """Folgt dem Fortschritt bis `done` oder `error`. Gibt `result` zurück.
 
     Der Strom der App endet nach 20 Minuten von selbst; dann wird neu verbunden. Antwortet die
@@ -429,12 +442,14 @@ def warte_auf_einspielen(basis: str, cookie: str, aufgabe: str,
     """
     ende = time.monotonic() + zeitlimit
     zuletzt = ""
+    frisch_angemeldet = False
     while time.monotonic() < ende:
         anfrage = urllib.request.Request(f"{basis}/api/backup/import/progress/{aufgabe}",
-                                         headers={"Cookie": f"access_token={cookie}",
+                                         headers={"Cookie": cookie,
                                                   "Accept": "text/event-stream"})
         try:
             with urllib.request.urlopen(anfrage, timeout=120) as antwort:
+                frisch_angemeldet = False
                 for ereignis in sse_ereignisse(antwort):
                     zustand = ereignis.get("status")
                     text = f"{ereignis.get('phase', '')} {ereignis.get('current', 0)}/{ereignis.get('total', 0)}"
@@ -447,6 +462,13 @@ def warte_auf_einspielen(basis: str, cookie: str, aufgabe: str,
                         raise Abbruch(f"Einspielen gescheitert: {ereignis.get('error')}")
         except urllib.error.HTTPError as fehler:
             if fehler.code == 401:
+                # Das Zugangs-Token gilt nur 15 min, der Strom endet nach 20: Ein 401 kann auch
+                # nur „abgelaufen“ heißen. Klappt die Anmeldung noch, läuft das Einspielen weiter.
+                neu = neu_anmelden() if (neu_anmelden and not frisch_angemeldet) else None
+                if neu:
+                    melde("  Zugang abgelaufen – neu angemeldet, verfolge weiter …")
+                    cookie, frisch_angemeldet = neu, True
+                    continue
                 melde("  Fortschritt nicht mehr abrufbar (401) – Benutzer sind schon ersetzt, prüfe in der Datenbank.")
                 return None
             raise Abbruch(f"Fortschritt des Einspielens: HTTP {fehler.code}") from fehler
@@ -543,12 +565,13 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
     warte_auf_app(name, basis, umgebung)
     melde("App antwortet.")
 
-    benutzer, _, cookie = wegwerf_admin(basis)
+    benutzer, passwort, cookie = wegwerf_admin(basis)
     sicherungsplan_aus(basis, cookie)
 
     try:
         aufgabe = starte_einspielen(basis, cookie, datei)
-        ergebnis_app = warte_auf_einspielen(basis, cookie, aufgabe)
+        ergebnis_app = warte_auf_einspielen(basis, cookie, aufgabe,
+                                            neu_anmelden=lambda: anmelden(basis, benutzer, passwort))
         if ergebnis_app is not None:
             melde(f"  App meldet: {ergebnis_app}")
             if ergebnis_app.get("users_skipped"):

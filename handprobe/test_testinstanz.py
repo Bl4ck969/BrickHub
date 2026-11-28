@@ -125,7 +125,12 @@ class HttpHilfenTest(unittest.TestCase):
     def test_cookie_aus_set_cookie(self):
         koepfe = mock.Mock()
         koepfe.get_all.return_value = ["access_token=abc.def; HttpOnly; Max-Age=28800; Path=/; SameSite=lax"]
-        self.assertEqual(ti.cookie_aus(koepfe), "abc.def")
+        self.assertEqual(ti.cookie_aus(koepfe), "access_token=abc.def")
+        koepfe.get_all.return_value = [
+            "brickhub_refresh=xyz; HttpOnly; Path=/api/auth; SameSite=strict",
+            "brickhub_access=neu.jwt; HttpOnly; Max-Age=900; Path=/; SameSite=lax",
+        ]
+        self.assertEqual(ti.cookie_aus(koepfe), "brickhub_access=neu.jwt")
         koepfe.get_all.return_value = None
         self.assertIsNone(ti.cookie_aus(koepfe))
 
@@ -186,7 +191,7 @@ class BauenAblaufTest(unittest.TestCase):
             "wegwerf_admin": lambda basis: (self.schritte.append("admin"), ("handprobe-x", "pw", "keks"))[1],
             "sicherungsplan_aus": lambda basis, keks: self.schritte.append("plan aus"),
             "starte_einspielen": lambda basis, keks, datei: (self.schritte.append("upload"), "t1")[1],
-            "warte_auf_einspielen": lambda *a: {"sets": 2, "users_imported": 1, "users_skipped": 0},
+            "warte_auf_einspielen": lambda *a, **k: {"sets": 2, "users_imported": 1, "users_skipped": 0},
             "stand_in_der_datenbank": lambda *a: self.stand,
         }
         self.patches = [mock.patch.object(ti, k, v) for k, v in flicken.items()]
@@ -224,14 +229,14 @@ class BauenAblaufTest(unittest.TestCase):
         self.assertEqual(self.schritte[-1], "compose stop app")
 
     def test_einspielen_meldet_fehler(self):
-        def scheitert(*a):
+        def scheitert(*a, **k):
             raise ti.Abbruch("Einspielen gescheitert: Ungültige ZIP-Datei")
         with mock.patch.object(ti, "warte_auf_einspielen", scheitert), self.assertRaises(ti.Abbruch):
             self._bauen()
         self.assertEqual(self.schritte[-1], "compose stop app")
 
     def test_uebersprungene_benutzer(self):
-        with mock.patch.object(ti, "warte_auf_einspielen", lambda *a: {"users_skipped": 1}), \
+        with mock.patch.object(ti, "warte_auf_einspielen", lambda *a, **k: {"users_skipped": 1}), \
                 self.assertRaises(ti.Abbruch):
             self._bauen()
 
@@ -258,6 +263,24 @@ class FortschrittTest(unittest.TestCase):
         with mock.patch.object(ti.urllib.request, "urlopen", side_effect=fehler), \
                 mock.patch("sys.stdout", new=io.StringIO()):
             self.assertIsNone(ti.warte_auf_einspielen("http://127.0.0.1:1", "keks", "t1"))
+
+    def test_abgelaufenes_token_meldet_neu_an_und_verfolgt_weiter(self):
+        fehler = ti.urllib.error.HTTPError("u", 401, "x", None, None)
+        strom = mock.MagicMock()
+        strom.__enter__.return_value = [b'data: {"status": "done", "result": {"sets": 3}}']
+        anmeldungen = []
+        with mock.patch.object(ti.urllib.request, "urlopen", side_effect=[fehler, strom]), \
+                mock.patch("sys.stdout", new=io.StringIO()):
+            ergebnis = ti.warte_auf_einspielen("http://127.0.0.1:1", "keks", "t1",
+                                               neu_anmelden=lambda: anmeldungen.append(1) or "brickhub_access=neu")
+        self.assertEqual(ergebnis, {"sets": 3})
+        self.assertEqual(len(anmeldungen), 1)
+
+    def test_401_und_anmeldung_scheitert_heisst_ersetzt(self):
+        fehler = ti.urllib.error.HTTPError("u", 401, "x", None, None)
+        with mock.patch.object(ti.urllib.request, "urlopen", side_effect=fehler), \
+                mock.patch("sys.stdout", new=io.StringIO()):
+            self.assertIsNone(ti.warte_auf_einspielen("http://127.0.0.1:1", "keks", "t1", neu_anmelden=lambda: None))
 
     def test_fehlerereignis(self):
         strom = mock.MagicMock()

@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useLocation } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { authApi } from '../api/client'
 import { fehlerText } from '../lib/fehler'
 import { AuthShell, AuthFehler, authInput } from '../components/AuthShell'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 const EMPTY_Q = { question: '', answer: '' }
 
 export function ChangePasswordPage() {
   const { user, refreshUser } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [form, setForm] = useState({
     current_password: '',
     new_password: '',
@@ -62,6 +64,18 @@ export function ChangePasswordPage() {
 
   return (
     <AuthShell titel={isForcedChange ? 'Passwort festlegen' : 'Passwort ändern'} breit>
+      {/* Beim Pflichtwechsel gibt es kein Zurueck - erst mit neuem Passwort geht es weiter */}
+      {!isForcedChange && (
+        <button
+          type="button"
+          // key 'default' = direkt aufgerufen; dann nicht aus der App hinaus zurueck
+          onClick={() => (location.key !== 'default' ? navigate(-1) : navigate('/users'))}
+          className="-mt-2 inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1 text-[13px] text-[#93a6c0]
+            transition-colors hover:bg-white/8 hover:text-[#e7edf6]"
+        >
+          <ArrowLeftIcon className="h-4 w-4" /> Zurück
+        </button>
+      )}
       {isForcedChange && (
         <p className="rounded-[10px] border border-[rgb(251_146_60/0.35)] bg-[rgb(230_110_30/0.18)] px-3.5 py-2.5 text-[13px] text-[#fbbf7c]">
           Bitte legen Sie ein neues Passwort und Sicherheitsfragen fest.

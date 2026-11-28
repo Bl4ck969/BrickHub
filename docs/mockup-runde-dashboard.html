@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BrickHub – Mockup: Cover-Größe, Galerie, Kamera, Login, Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ground:#eef1f6;--surface:#fff;--surface-2:#f7f9fc;--surface-3:#edf1f7;--ink:#101e33;--ink-2:#4a5c73;--ink-3:#7c8ca3;--line:#dce3ed;--line-2:#c6d1e0;--heading:#1e3a5f;--gold:#d99b1c;--gold-soft:#fbf0d6;--gold-line:#ebcb84;
+--new:#2563eb;--new-bg:#e4edfe;--build:#e2620b;--build-bg:#fdebdc;--done:#12855a;--done-bg:#ddf3e9;--rest:#5a6b82;--rest-bg:#e7ecf3;--crit:#c62828;--crit-bg:#fbe4e4;
+--s1:#4f7fe0;--s2:#8b6fe8;--s3:#2aa396;--s4:#d96ba8;--s5:#e0913c;--s6:#7a8aa3;--stud:rgb(30 58 95/.085);
+--sh-s:0 1px 2px rgb(16 30 51/.06),0 1px 1px rgb(16 30 51/.04);--sh-m:0 4px 16px rgb(16 30 51/.08),0 1px 3px rgb(16 30 51/.05);
+--navy:#1e3a5f;--rail:#16243b;--rail-line:#27405f;--rail-ink:#e7edf6;--rail-ink-2:#93a6c0;--rail-accent:#f0b429}
+.dark{--ground:#0c121d;--surface:#141d2c;--surface-2:#1a2435;--surface-3:#202c40;--ink:#e9eff7;--ink-2:#9eb0c6;--ink-3:#6b7d94;--line:#243145;--line-2:#33445e;--heading:#9cc0ee;--gold:#f0b429;--gold-soft:rgb(240 180 41/.15);--gold-line:rgb(240 180 41/.38);
+--new:#7aacff;--new-bg:rgb(59 110 220/.2);--build:#fb923c;--build-bg:rgb(230 110 30/.2);--done:#45ce95;--done-bg:rgb(30 170 115/.18);--rest:#94a7bf;--rest-bg:rgb(120 140 170/.18);--crit:#ff7b7b;--crit-bg:rgb(200 60 60/.2);
+--s1:#6e97ec;--s2:#a58bf2;--s3:#3fbdaf;--s4:#e884bc;--s5:#eca659;--s6:#91a2bb;--stud:rgb(150 175 210/.07);--sh-s:0 1px 2px rgb(0 0 0/.35);--sh-m:0 6px 20px rgb(0 0 0/.4)}
+*{box-sizing:border-box}
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;color:var(--ink);background:var(--ground)}
+h1,h2,h3,.num{font-family:Archivo,sans-serif}
+.doc{max-width:1240px;margin:0 auto;padding:28px 20px 80px}
+.doc>header{display:flex;align-items:flex-end;gap:16px;margin-bottom:22px}
+.doc>header h1{margin:0;font-size:26px;color:var(--heading)}
+.doc>header p{margin:4px 0 0;color:var(--ink-2)}
+.toggle{margin-left:auto}
+section.mock{margin:34px 0}
+.mock>h2{font-size:18px;margin:0 0 4px;color:var(--heading)}
+.mock>.why{color:var(--ink-2);margin:0 0 12px;max-width:860px;line-height:1.5}
+.nr{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--gold);color:#1a1200;font-size:12px;font-weight:700;margin-right:8px;vertical-align:2px}
+.frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--sh-m);background:var(--surface)}
+.app{display:flex;min-height:300px}
+.rail{width:206px;background:var(--rail);color:var(--rail-ink);padding:14px 10px;flex:none;display:flex;flex-direction:column;gap:2px}
+.rail .logo{font-family:Archivo;font-weight:800;font-size:16px;padding:4px 8px 12px}
+.rail .grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--rail-ink-2);padding:10px 8px 4px}
+.rail a{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;color:var(--rail-ink-2);text-decoration:none;font-size:13px;position:relative}
+.rail a.on{background:rgb(240 180 41/.15);color:var(--rail-accent);font-weight:600}
+.rail a.neu::after{content:'neu';margin-left:auto;font-size:9.5px;font-weight:700;background:var(--rail-accent);color:#1a1200;border-radius:4px;padding:1px 5px}
+.rail a.weg{text-decoration:line-through;opacity:.55}
+.rail .sp{flex:1}
+.main{flex:1;min-width:0;background:var(--ground)}
+.top{display:flex;align-items:flex-end;gap:12px;background:var(--surface);border-bottom:1px solid var(--line);padding:14px 18px;flex-wrap:wrap}
+.top h3{margin:0;font-size:22px}
+.top .sub{color:var(--ink-3);font-size:12px}
+.top .sub b{color:var(--ink-2)}
+.studs{background-image:radial-gradient(var(--stud) 1px,transparent 1.1px);background-size:16px 16px;padding:14px 16px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;font:500 12.5px 'IBM Plex Sans';box-shadow:var(--sh-s);cursor:pointer}
+.btn.y{background:#ffd700;border-color:#e8c200;color:#1a1200}
+.btn.navy{background:var(--navy);color:#fff;border-color:transparent}
+.btn.ghost{box-shadow:none}
+.btn.strike{text-decoration:line-through;opacity:.5}
+.seg{display:inline-flex;gap:2px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:3px;box-shadow:var(--sh-s)}
+.seg span{padding:5px 10px;border-radius:6px;font-size:12px;color:var(--ink-2);cursor:pointer}
+.seg span.on{background:var(--navy);color:#fff}
+.dark .seg span.on{background:var(--surface-3);color:var(--ink)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.search{flex:1;min-width:180px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;color:var(--ink-3)}
+.sel{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;color:var(--ink-2);font-size:12.5px;box-shadow:var(--sh-s)}
+/* Cover-Schieber */
+.cov{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--gold-line);background:var(--surface);border-radius:8px;padding:5px 10px;box-shadow:0 0 0 3px var(--gold-soft)}
+.cov label{font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.cov input{width:92px;accent-color:var(--gold)}
+.cov .ic{width:12px;height:10px;border:1.5px solid var(--ink-3);border-radius:2px}
+.cov .ic.big{width:18px;height:14px}
+.cov .val{font:600 11.5px 'IBM Plex Mono';color:var(--ink-2);min-width:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-s);overflow:hidden}
+table{width:100%;border-collapse:separate;border-spacing:0}
+th{background:var(--surface-2);text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.cp{display:flex;gap:6px}
+.cv{border:1px solid var(--line-2);border-radius:6px;background:var(--surface-2);padding:1px;transition:all .2s;overflow:hidden}
+.cv i{display:block;width:100%;height:100%;border-radius:4px}
+.mono{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--ink-2)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-rest{color:var(--rest);background:var(--rest-bg);border-color:color-mix(in srgb,var(--rest) 30%,transparent)}
+.p-done{color:var(--done);background:var(--done-bg);border-color:color-mix(in srgb,var(--done) 30%,transparent)}
+.p-new{color:var(--new);background:var(--new-bg);border-color:color-mix(in srgb,var(--new) 30%,transparent)}
+.p-build{color:var(--build);background:var(--build-bg);border-color:color-mix(in srgb,var(--build) 30%,transparent)}
+/* Galerie */
+.grid{display:grid;gap:14px;transition:all .2s}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--sh-s);overflow:hidden;display:flex;flex-direction:column}
+.card .img{position:relative;aspect-ratio:4/3;border-bottom:1px solid var(--line)}
+.card .img .st{position:absolute;top:8px;left:8px;background:rgb(10 18 32/.65);color:#fff;font-size:10.5px;font-weight:600;border-radius:6px;padding:2px 6px;display:flex;align-items:center;gap:5px}
+.card .img .sd{position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;border:2px solid rgb(10 18 32/.35)}
+.card .body{padding:9px 11px 10px;display:flex;flex-direction:column;gap:2px;flex:1}
+.card .t{font-weight:600;font-size:13px;line-height:1.3}
+.card .m{font-size:11.5px;color:var(--ink-3)}
+.card .row{display:flex;align-items:baseline;gap:8px;margin-top:5px;font-size:11.5px;color:var(--ink-2)}
+.card .row b{margin-left:auto;color:var(--ink)}
+.card .foot{display:flex;align-items:center;gap:4px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.ib{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;color:var(--ink-3);border:1px solid transparent}
+.ib:hover{background:var(--surface-3);color:var(--ink)}
+.ib.od{color:var(--new)}
+.ib.ed{color:var(--ink-2);border-color:var(--line)}
+.ib svg{width:16px;height:16px}
+.ml{margin-left:auto}
+/* Kisten-Tag Varianten */
+.tagA{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-2);background:var(--surface-2);border-radius:6px;padding:2px 7px 2px 5px;font-size:11px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.tagA svg{width:12px;height:12px}
+.tagA .fl{width:18px;height:4px;border-radius:9px;background:var(--surface-3);overflow:hidden}
+.tagA .fl i{display:block;height:100%;border-radius:9px}
+.tagB{position:relative;display:inline-flex;align-items:center;gap:5px;background:var(--gold-soft);color:var(--ink);border:1px solid var(--gold-line);font-size:11px;font-weight:600;padding:2px 8px 2px 16px;border-radius:3px 6px 6px 3px;clip-path:polygon(9px 0,100% 0,100% 100%,9px 100%,0 50%);white-space:nowrap}
+.tagB::before{content:'';position:absolute;left:6px;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:var(--surface)}
+.tagC{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid}
+.tagC::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.variants{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.variant{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.variant h4{margin:0 0 3px;font:700 13px Archivo}
+.variant p{margin:0 0 10px;color:var(--ink-3);font-size:12px;line-height:1.45}
+.variant .demo{display:flex;flex-wrap:wrap;gap:8px}
+.rec{display:inline-block;font-size:10px;font-weight:700;background:var(--done-bg);color:var(--done);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+/* Bilder-Karte */
+.imgcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--sh-s)}
+.imgcard h4{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);font:600 14px 'IBM Plex Sans';color:var(--heading)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.drop{height:170px;border:2px dashed var(--navy);border-radius:12px;display:grid;place-items:center;color:var(--ink-3);text-align:center;font-size:12.5px}
+.dark .drop{border-color:var(--line-2)}
+.drop svg{width:34px;height:34px;margin:0 auto 6px;display:block}
+.acts{display:flex;gap:6px;margin-top:8px}
+.acts .btn{flex:1;justify-content:center}
+.phone{width:250px;border:8px solid #0b111b;border-radius:30px;overflow:hidden;background:var(--ground);box-shadow:var(--sh-m);flex:none}
+.phone .bar{height:18px;background:#0b111b}
+/* Dashboard */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--sh-s);cursor:pointer;position:relative;transition:all .15s}
+.kpi:hover,.clk:hover{border-color:var(--gold);box-shadow:var(--sh-m)}
+.kpi .l{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.kpi .v{font:700 26px Archivo;letter-spacing:-.01em;margin-top:4px}
+.kpi .v small{font-size:14px;color:var(--ink-3)}
+.kpi .h{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.kpi .go,.clk .go{position:absolute;right:10px;top:10px;font-size:11px;color:var(--gold);opacity:0;transition:opacity .15s}
+.kpi:hover .go,.clk:hover .go{opacity:1}
+.dgrid{display:grid;grid-template-columns:1.1fr 1fr;gap:12px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--sh-s)}
+.box h4{margin:0 0 2px;font:700 14px Archivo}
+.box .hint{font-size:11.5px;color:var(--ink-3);margin-bottom:12px}
+.bar{display:grid;grid-template-columns:130px 1fr 74px;align-items:center;gap:10px;padding:4px 6px;border-radius:7px;cursor:pointer}
+.bar:hover{background:var(--surface-2)}
+.bar .n{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .tr{height:12px;background:var(--surface-3);border-radius:4px;overflow:hidden}
+.bar .tr i{display:block;height:100%;border-radius:4px}
+.bar .z{font:600 12px 'IBM Plex Sans';text-align:right;font-variant-numeric:tabular-nums}
+.bar .z span{color:var(--ink-3);font-weight:400}
+.ext{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.clk{position:relative;display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;box-shadow:var(--sh-s)}
+.clk .th{width:74px;height:56px;border-radius:7px;flex:none;border:1px solid var(--line-2)}
+.clk .l{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.clk .t{font-weight:600;font-size:14px}
+.clk .m{font-size:12px;color:var(--ink-2)}
+.opt{outline:2px dashed var(--gold-line);outline-offset:3px;position:relative}
+.opt::after{content:'Vorschlag – nur mit deinem OK';position:absolute;top:-11px;right:10px;background:var(--gold);color:#1a1200;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+.stack{display:flex;height:14px;border-radius:5px;overflow:hidden;gap:2px;margin:8px 0}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--ink-2)}
+.toast{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+/* Konto */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.auth{display:grid;place-items:center;padding:24px;background:var(--rail);min-height:300px}
+.authcard{width:330px;background:var(--surface);border-radius:14px;padding:20px;box-shadow:var(--sh-m)}
+.authcard h3{margin:0 0 12px;font-size:18px}
+.fld{margin-bottom:9px}
+.fld span{display:block;font-size:11.5px;font-weight:500;color:var(--ink-2);margin-bottom:3px}
+.fld div{border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--ink-3);background:var(--surface)}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:6px 0 12px}
+.chk i{width:15px;height:15px;border-radius:4px;background:var(--gold);display:grid;place-items:center;color:#1a1200;font-style:normal;font-size:11px;font-weight:800}
+.hl{box-shadow:0 0 0 3px var(--gold-soft);border-color:var(--gold-line)!important;border-radius:8px}
+.note{font-size:11.5px;color:var(--ink-3);line-height:1.45}
+.ucard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--sh-s)}
+.ucard h4{margin:0 0 10px;font:700 14px Archivo}
+.urow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.av{width:30px;height:30px;border-radius:8px;background:var(--gold-soft);color:var(--heading);display:grid;place-items:center;font:700 12px Archivo}
+.q{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:12px 16px;margin:10px 0}
+.q b{color:var(--heading)}
+.q ol{margin:6px 0 0;padding-left:18px;line-height:1.6}
+@media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.dgrid,.ext,.two,.variants,.sides{grid-template-columns:1fr}.rail{display:none}}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <div>
+    <h1>BrickHub – Mockup für die nächste Runde</h1>
+    <p>Alle neun Punkte aus deinem Auftrag. Gelb umrandet = neu. Daten: deine echte Sammlung (99 Sets), Stand 28.11.2026.</p>
+  </div>
+  <button class="btn toggle" onclick="document.documentElement.classList.toggle('dark')">Hell / Dunkel</button>
+</header>
+
+<!-- 1 + 2: Schieber Tabelle -->
+<section class="mock">
+  <h2><span class="nr">1</span>Cover-Größe: Schieber neben den Filtern – Tabelle</h2>
+  <p class="why">Drei Raststufen <b>S · M · L</b>. S ist die heutige Größe (76 × 58 px), M 114 × 87, L 160 × 122.
+    Die Wahl wird gemerkt (wie heute schon Tabelle/Galerie) und gilt für beide Ansichten. Probier den Schieber aus.
+    Die Kennzahlenleiste und der Knopf „Statistik“ fallen weg (Punkt 7) – die kleine Zeile unter „Sets“ bleibt, weil sie zeigt, was der aktuelle Filter umfasst.</p>
+  <div class="frame"><div class="app">
+    <nav class="rail">
+      <div class="logo">BrickHub</div>
+      <div class="grp">Sammlung</div>
+      <a class="neu">▦ Dashboard</a><a class="on">▤ Sets</a><a>✦ Neue Sets</a><a>⌂ Schilder</a>
+      <div class="grp">Lager</div><a>▣ Lagerung</a><a>☰ Kisteninventur</a>
+      <div class="grp">Verwaltung</div><a>👤 Benutzer</a><a>⇩ Backup</a>
+      <div class="sp"></div><a>☾ Dunkler Modus</a><a class="weg">🔑 Passwort ändern</a><a>⇥ Abmelden</a>
+    </nav>
+    <div class="main">
+      <div class="top">
+        <div style="margin-right:auto"><h3>Sets</h3><div class="sub"><b>99</b> Sets · <b>125.942</b> Teile · <b>4.459,09 €</b></div></div>
+        <div class="seg"><span class="on js-v" data-v="t">▤ Tabelle</span><span class="js-v" data-v="g">▦ Galerie</span></div>
+        <span class="btn strike">Statistik</span><span class="btn">JSON Export</span><span class="btn">PDF Export</span><span class="btn y">＋ Set anlegen</span>
+      </div>
+      <div class="studs">
+        <div class="filters">
+          <div class="search">🔍 Suche nach Name, Hersteller, Kategorie…</div>
+          <span class="sel">Alle Status ▾</span><span class="sel">Alle Steinarten ▾</span><span class="sel">Alle Hersteller ▾</span><span class="sel">Alle Kategorien ▾</span>
+          <span class="cov" title="Cover-Größe"><label>Cover</label><span class="ic"></span>
+            <input type="range" min="0" max="2" step="1" value="0" class="js-cov" list="stufen"><span class="ic big"></span><span class="val js-val">S</span></span>
+        </div>
+        <div class="js-table panel">
+          <table><thead><tr><th>Cover</th><th>Set</th><th>Hersteller</th><th>Nr.</th><th style="text-align:right">Teile</th><th>Steinart</th><th>Status</th><th>Kiste</th></tr></thead>
+          <tbody class="js-rows"></tbody></table>
+        </div>
+        <div class="js-gal grid" style="display:none"></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- 3-5: Galerie-Karte -->
+<section class="mock">
+  <h2><span class="nr">2</span>Galerie: Bearbeiten, OneDrive, Kiste als Tag</h2>
+  <p class="why">Oben im Mockup auf <b>Galerie</b> umschalten – dort sitzt alles schon (mit Schieber). Neu ist eine Fußzeile je Karte:
+    links die Kiste als Tag, rechts OneDrive (nur wenn ein Link hinterlegt ist) und Bearbeiten (nur für Admins).
+    Die Knöpfe sind immer sichtbar, nicht erst beim Überfahren – am Handy gibt es kein Überfahren.
+    Klick aufs Bild vergrößert wie bisher. Für den Kisten-Tag drei Varianten:</p>
+  <div class="variants">
+    <div class="variant"><h4>A · Kisten-Chip mit Füllstand <span class="rec">Empfehlung</span></h4>
+      <p>Kistensymbol, Name und der kleine Füllstandsbalken wie in der Tabelle. Ruhig, passt zu den Steinart-Chips, zeigt sofort „wie voll“.</p>
+      <div class="demo js-tagA"></div></div>
+    <div class="variant"><h4>B · Anhänger-Form</h4>
+      <p>Echte Etikett-Form mit Loch, in Gold. Wörtlich „wie ein Tag“, fällt am stärksten auf – konkurriert aber mit dem Gold für „aktiv/wichtig“.</p>
+      <div class="demo js-tagB"></div></div>
+    <div class="variant"><h4>C · Pille in Füllstandsfarbe</h4>
+      <p>Farbe = Füllstand (grün/orange/rot). Kompakt, aber leicht mit den Status-Pillen zu verwechseln.</p>
+      <div class="demo js-tagC"></div></div>
+  </div>
+  <p class="note" style="margin-top:8px">Soll der Tag auch in der <b>Tabelle</b> die Kiste zeigen? Dort ist er für Admins heute ein Auswahlfeld (Kiste direkt umhängen) – das bliebe, nur bei Nicht-Admins würde der Text zum Tag.</p>
+</section>
+
+<!-- 6: Kamera -->
+<section class="mock">
+  <h2><span class="nr">3</span>Cover direkt mit der Handykamera</h2>
+  <p class="why">Unter jedem Bildfeld in der Bearbeitungskarte zwei Knöpfe: <b>Datei wählen</b> und <b>Kamera</b>.
+    „Kamera“ öffnet am Handy direkt die Rückkamera (<span class="mono">capture="environment"</span>) – das geht <b>auch über HTTP</b>, braucht also kein HTTPS.
+    Das Foto läuft danach genau wie ein hochgeladenes Bild in den Editor (Ecken setzen, Hintergrund entfernen). Am PC öffnet „Kamera“ die normale Dateiauswahl; der Knopf erscheint deshalb nur auf Touch-Geräten.</p>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+    <div class="imgcard" style="flex:1;min-width:420px">
+      <h4>Bilder</h4>
+      <div class="sides">
+        <div><div style="font-size:12.5px;font-weight:500;color:var(--ink-2);margin-bottom:6px">Frontcover</div>
+          <div class="drop"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Bild hochladen<br><small>JPG, PNG, WebP bis 30 MB</small></div></div>
+          <div class="acts"><span class="btn">⇪ Datei wählen</span><span class="btn navy hl">📷 Kamera</span></div></div>
+        <div><div style="font-size:12.5px;font-weight:500;color:var(--ink-2);margin-bottom:6px">Backcover</div>
+          <div class="drop"><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Bild hochladen<br><small>JPG, PNG, WebP bis 30 MB</small></div></div>
+          <div class="acts"><span class="btn">⇪ Datei wählen</span><span class="btn navy hl">📷 Kamera</span></div></div>
+      </div>
+    </div>
+    <div class="phone"><div class="bar"></div>
+      <div style="padding:12px">
+        <div class="imgcard" style="padding:12px"><h4 style="margin-bottom:8px">Bilder</h4>
+          <div style="font-size:12px;color:var(--ink-2);margin-bottom:5px">Frontcover</div>
+          <div class="drop" style="height:110px">Bild hochladen</div>
+          <div class="acts"><span class="btn">⇪ Datei</span><span class="btn navy hl">📷 Kamera</span></div>
+        </div>
+        <p class="note" style="margin-top:8px">Tippen auf „Kamera“ → Systemkamera öffnet sich → Foto → Editor.</p>
+      </div>
+    </div>
+  </div>
+  <p class="note">Hinweis: Das Hochladen geht heute erst, nachdem das Set einmal gespeichert ist. Das bleibt so – die Knöpfe sind bis dahin ausgegraut.</p>
+</section>
+
+<!-- 7: Login -->
+<section class="mock">
+  <h2><span class="nr">4</span>Angemeldet bleiben</h2>
+  <p class="why">Heute gilt eine Anmeldung <b>2 Stunden</b>, danach musst du neu rein. Vorschlag nach der Funktionskarte „Login“ (wie AllMyBooks, aber sicherer):
+    ein kurzes Zugangs-Token (15 min) und ein <b>Erneuerungs-Token</b>, das <b>7 Tage</b> gilt und sich bei jeder Nutzung verlängert.
+    Wer BrickHub mindestens einmal pro Woche öffnet, meldet sich praktisch nie mehr an. Ein Passwortwechsel meldet alle Geräte ab; „Abmelden“ beendet die Sitzung wirklich (auch auf dem Server).</p>
+  <div class="two">
+    <div class="frame"><div class="auth"><div class="authcard">
+      <h3>Anmelden</h3>
+      <div class="fld"><span>Benutzername</span><div>admin</div></div>
+      <div class="fld"><span>Passwort</span><div>••••••••••</div></div>
+      <div class="chk hl" style="padding:5px 6px"><i>✓</i> Angemeldet bleiben (7 Tage)</div>
+      <span class="btn navy" style="width:100%;justify-content:center">Anmelden</span>
+      <p class="note" style="margin-top:10px">Variante mit Haken: ohne Haken endet die Sitzung beim Schließen des Browsers. Ohne Haken-Variante: immer 7 Tage.</p>
+    </div></div></div>
+    <div class="ucard">
+      <h4>Was sich technisch ändert (kurz)</h4>
+      <p class="note">• Neues Cookie nur für <span class="mono">/api/auth/refresh</span>, <span class="mono">SameSite=Strict</span>, wird bei jeder Erneuerung ausgetauscht; in der DB liegt nur sein Hash.<br>
+      • Wird ein altes Erneuerungs-Token wiederverwendet (gestohlen), fliegt die ganze Kette raus.<br>
+      • Herkunftsprüfung (<span class="mono">Origin</span>) am Erneuern – andere Apps auf 192.168.178.95 können es nicht auslösen.<br>
+      • Kleine DB-Erweiterung (Tabelle Sitzungen, Spalte <span class="mono">token_version</span>) – kommt automatisch beim Start, Sicherung vorher.<br>
+      • Keine neue Bibliothek nötig. Kein neues Template-Feld nötig (das Geheimnis für die Erneuerung wird aus dem vorhandenen <span class="mono">SECRET_KEY</span> abgeleitet).</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8: Passwort -->
+<section class="mock">
+  <h2><span class="nr">5</span>Passwort ändern: in „Benutzer“, mit Zurück</h2>
+  <p class="why">„Passwort ändern“ verschwindet unten aus der Seitenleiste und wird oben auf der Benutzer-Seite die Karte <b>„Mein Konto“</b>.
+    Die eigenständige Seite bleibt nur für den Pflichtwechsel nach einem Reset (dort gibt es kein „Zurück“, weil man erst weiter darf, wenn das Passwort neu ist) –
+    in allen anderen Fällen hat sie jetzt <b>„← Zurück“</b>. Wichtig: „Benutzer“ ist heute nur für Admins sichtbar. Ein Nicht-Admin sähe den Punkt dann auch, aber nur mit „Mein Konto“.</p>
+  <div class="two">
+    <div class="frame"><div class="main" style="min-height:280px">
+      <div class="top"><div style="margin-right:auto"><h3>Benutzer</h3><div class="sub">Konten und eigenes Passwort</div></div><span class="btn y">＋ Benutzer anlegen</span></div>
+      <div class="studs" style="display:grid;gap:12px">
+        <div class="ucard hl" style="border:1px solid">
+          <h4>Mein Konto</h4>
+          <div class="urow" style="border:0"><div class="av">AD</div><div><b>admin</b><div class="note">Administrator · angemeldet bis 05.12.2026</div></div>
+            <span class="btn ml">🔑 Passwort ändern</span><span class="btn">Sicherheitsfragen</span></div>
+        </div>
+        <div class="ucard"><h4>Alle Benutzer <span class="note" style="font-weight:400">(nur Admins)</span></h4>
+          <div class="urow"><div class="av">AD</div><b>admin</b><span class="pill p-new ml">Admin</span></div>
+          <div class="urow" style="border:0"><div class="av">FA</div><b>familie</b><span class="pill p-new ml">Admin</span></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="frame"><div class="auth"><div class="authcard">
+      <span class="btn ghost hl" style="margin-bottom:10px">← Zurück</span>
+      <h3>Passwort ändern</h3>
+      <div class="fld"><span>Aktuelles Passwort</span><div>••••••</div></div>
+      <div class="fld"><span>Neues Passwort</span><div>••••••••••</div></div>
+      <div class="fld"><span>Neues Passwort bestätigen</span><div>••••••••••</div></div>
+      <p class="note">Sicherheitsfragen darunter wie bisher.</p>
+    </div></div></div>
+  </div>
+  <p class="note">Offen: Ich würde „Passwort ändern“ in der Benutzer-Seite als Dialog öffnen (wie „Benutzer anlegen“) statt auf die Einzelseite zu springen. Dann braucht es dort gar kein „Zurück“ mehr.</p>
+</section>
+
+<!-- 9: Dashboard -->
+<section class="mock">
+  <h2><span class="nr">6</span>Dashboard – eigene Seite</h2>
+  <p class="why">Neuer erster Punkt in der Seitenleiste. <b>Jede Karte, jeder Balken, jeder Eintrag ist klickbar</b> und öffnet die Sets-Übersicht mit genau diesem Filter
+    (die Filter stehen dann in der Adresse, z. B. <span class="mono">/sets?stone_size=Diamond</span> – auch als Lesezeichen nutzbar). Fahr mit der Maus drüber und klick.
+    Grafiken ohne zusätzliche Bibliothek (reines SVG/CSS) – keine neue Abhängigkeit. Gestrichelt umrandet sind zwei Zusatzvorschläge.</p>
+  <div class="frame" style="position:relative"><div class="app">
+    <nav class="rail">
+      <div class="logo">BrickHub</div><div class="grp">Sammlung</div>
+      <a class="on">▦ Dashboard</a><a>▤ Sets</a><a>✦ Neue Sets</a><a>⌂ Schilder</a>
+      <div class="grp">Lager</div><a>▣ Lagerung</a><a>☰ Kisteninventur</a>
+      <div class="grp">Verwaltung</div><a>👤 Benutzer</a><a>⇩ Backup</a>
+    </nav>
+    <div class="main">
+      <div class="top"><div><h3>Dashboard</h3><div class="sub">Deine Sammlung in Zahlen · Klick führt zu den passenden Sets</div></div></div>
+      <div class="studs">
+        <div class="kpis">
+          <div class="kpi js-go" data-go="/sets"><span class="go">Sets →</span><div class="l">Anzahl Sets</div><div class="v">99</div><div class="h">18 neu · 25 aufgebaut · 56 eingelagert</div></div>
+          <div class="kpi js-go" data-go="/sets?sort=parts_count&dir=desc"><span class="go">Sets →</span><div class="l">Anzahl Steine</div><div class="v">125.942</div><div class="h">über alle Steinarten</div></div>
+          <div class="kpi js-go" data-go="/sets?sort=price&dir=desc"><span class="go">Sets →</span><div class="l">Gesamtwert</div><div class="v">4.459,09<small> €</small></div><div class="h">≈ 3,5 Cent pro Stein</div></div>
+          <div class="kpi js-go" data-go="/sets?sort=price&dir=desc"><span class="go">Sets →</span><div class="l">Durchschnitt</div><div class="v">45,04<small> €</small></div><div class="h">1.272 Steine pro Set</div></div>
+        </div>
+        <div class="dgrid">
+          <div class="box"><h4>Steine nach Steinart</h4><div class="hint">Balken = Steine, rechts in grau die Zahl der Sets</div><div class="js-stein"></div></div>
+          <div class="box"><h4>Top 10 Hersteller</h4><div class="hint">nach Anzahl Sets</div><div class="js-herst"></div></div>
+        </div>
+        <div class="ext">
+          <div class="clk js-go" data-go="/sets?search=Burg Hohenzollern"><span class="go">Set →</span><div class="th" style="background:linear-gradient(135deg,#8e7a5a,#c9b48a)"></div>
+            <div><div class="l">Größtes Set</div><div class="t">Burg Hohenzollern</div><div class="m">Blue Brixx - Pro · 8.933 Steine</div></div></div>
+          <div class="clk js-go" data-go="/sets?search=Orange Cat"><span class="go">Set →</span><div class="th" style="background:linear-gradient(135deg,#e8913c,#f6c27a)"></div>
+            <div><div class="l">Kleinstes Set</div><div class="t">Orange Cat</div><div class="m">Star Tribe · 23 Steine</div></div></div>
+        </div>
+        <div class="ext">
+          <div class="box opt"><h4>Status</h4><div class="hint">Klick auf ein Segment filtert</div>
+            <div class="stack"><i class="js-go" data-go="/sets?status=Neu" style="flex:18;background:var(--new)"></i><i class="js-go" data-go="/sets?status=Aufgebaut" style="flex:25;background:var(--done)"></i><i class="js-go" data-go="/sets?status=Eingelagert" style="flex:56;background:var(--rest)"></i></div>
+            <div class="legend"><span><span class="dot" style="background:var(--new)"></span>Neu 18</span><span><span class="dot" style="background:var(--done)"></span>Aufgebaut 25</span><span><span class="dot" style="background:var(--rest)"></span>Eingelagert 56</span></div></div>
+          <div class="box opt"><h4>Teuerstes · günstigstes Set, Preis pro Stein</h4><div class="hint">wie „größtes/kleinstes“, nur nach Geld</div>
+            <p class="note">Teuerstes Set, günstigstes Set, bester und schlechtester Preis pro Stein – je ein Klick zum Set.</p></div>
+        </div>
+      </div>
+    </div>
+  </div><div class="toast js-toast"></div></div>
+  <p class="note">Auffällig in deinen Daten: <b>„Blue Brixx - Pro“</b> (7) und <b>„Blue Brixx Pro“</b> (2) sind zwei Schreibweisen desselben Herstellers und würden in der Top 10 getrennt gezählt. Das betrifft auch die Herstellerfilter schon heute.</p>
+</section>
+
+<section class="mock">
+  <h2>Meine Fragen</h2>
+  <div class="q"><b>Kisten-Tag:</b> Variante A, B oder C? Und auch in der Tabelle für Nicht-Admins als Tag?</div>
+  <div class="q"><b>Angemeldet bleiben:</b> immer 7 Tage (empfohlen, Familien-App im Heimnetz) oder mit Haken „Angemeldet bleiben“? Und 7 Tage passt – oder lieber 30?</div>
+  <div class="q"><b>Passwort ändern:</b> als Dialog in „Benutzer → Mein Konto“ (empfohlen)? Der Punkt „Benutzer“ wird dann für alle sichtbar (Nicht-Admins sehen nur „Mein Konto“).</div>
+  <div class="q"><b>Dashboard:</b> wird es die Startseite nach der Anmeldung (empfohlen) oder bleiben die Sets Start? Sollen die beiden gestrichelten Zusatzkarten (Status, teuerstes/günstigstes/Preis pro Stein) rein?</div>
+  <div class="q"><b>Blue Brixx:</b> soll ich die zwei Schreibweisen in den Daten zusammenführen (2 Sets umbenennen, nur mit deinem OK) – oder bleibt das so?</div>
+</section>
+</div>
+
+<datalist id="stufen"><option value="0"><option value="1"><option value="2"></datalist>
+<script>
+const SETS=[
+ {n:'Burg Hohenzollern',h:'Blue Brixx - Pro',nr:'105007',t:8933,s:'Standard',st:'Eingelagert',k:'Kiste 12',f:85,od:1,c:['#8e7a5a','#c9b48a']},
+ {n:'Titanic',h:'Mould King',nr:'99023',t:3500,s:'Standard',st:'Aufgebaut',k:'Kiste 3',f:40,od:0,c:['#1e3a5f','#6b8fb8']},
+ {n:'Neuschwanstein',h:'Kiddicraft',nr:'K-0451',t:2100,s:'Diamond',st:'Neu',k:'Kiste 7',f:100,od:1,c:['#5a6b82','#b7c4d6']},
+ {n:'Orange Cat',h:'Star Tribe',nr:'ST-21',t:23,s:'Mini',st:'Im Bau',k:null,f:0,od:0,c:['#e8913c','#f6c27a']},
+ {n:'Panzer IV',h:'Cobi',nr:'2714',t:612,s:'Standard, Technik',st:'Eingelagert',k:'Kiste 1',f:15,od:1,c:['#4b5d3a','#93a37a']},
+ {n:'Leuchtturm',h:'Balody',nr:'16111',t:1460,s:'Standard, beleuchtet',st:'Aufgebaut',k:'Kiste 5',f:72,od:0,c:['#c62828','#f1a3a3']}];
+const FARBE={'Standard':'var(--s1)','Diamond':'var(--s2)','Standard, Technik':'var(--s3)','Mini':'var(--s4)','Standard, beleuchtet':'var(--s5)','Sonder-Steine':'var(--s6)'};
+const PILL={'Eingelagert':'p-rest','Aufgebaut':'p-done','Neu':'p-new','Im Bau':'p-build'};
+const fuell=p=>p>=100?'var(--crit)':p>=70?'var(--build)':p>0?'var(--done)':'var(--line-2)';
+const z=n=>n.toLocaleString('de-DE');
+const BOX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>';
+const PEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m16.9 4.6 2.5 2.5M5 19l3.6-.8L19.4 7.4a1.8 1.8 0 0 0-2.5-2.5L6.1 15.6z"/></svg>';
+const OD='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.1 7.2a5.2 5.2 0 0 1 8.8 2.6 3.9 3.9 0 0 1 .9 7.7H7.3a4.3 4.3 0 0 1-.6-8.6 5 5 0 0 1 3.4-1.7z"/></svg>';
+const tagA=s=>s.k?`<span class="tagA">${BOX}${s.k}<span class="fl"><i style="width:${s.f}%;background:${fuell(s.f)}"></i></span></span>`:`<span class="tagA" style="border-style:dashed;color:var(--ink-3)">${BOX}keine Kiste</span>`;
+const tagB=s=>s.k?`<span class="tagB">${s.k}</span>`:`<span class="tagB" style="opacity:.55">ohne Kiste</span>`;
+const tagC=s=>s.k?`<span class="tagC" style="color:${fuell(s.f)};border-color:color-mix(in srgb,${fuell(s.f)} 35%,transparent);background:color-mix(in srgb,${fuell(s.f)} 12%,transparent)">${s.k} · ${s.f}%</span>`:`<span class="tagC" style="color:var(--ink-3)">ohne Kiste</span>`;
+const GR=[[76,58,176],[114,87,240],[160,122,320]];
+let stufe=0;
+const cv=(s,i)=>`<span class="cv" style="width:${GR[stufe][0]}px;height:${GR[stufe][1]}px"><i style="background:linear-gradient(${i?'315deg':'135deg'},${s.c[0]},${s.c[1]})"></i></span>`;
+function render(){
+ document.querySelector('.js-rows').innerHTML=SETS.map(s=>`<tr><td><div class="cp">${cv(s,0)}${cv(s,1)}</div></td><td><b>${s.n}</b></td><td style="color:var(--ink-2)">${s.h}</td><td class="mono">${s.nr}</td><td style="text-align:right">${z(s.t)}</td><td><span class="dot" style="background:${FARBE[s.s]}"></span>${s.s}</td><td><span class="pill ${PILL[s.st]}">${s.st}</span></td><td>${s.k||'–'}</td></tr>`).join('');
+ const g=document.querySelector('.js-gal');g.style.gridTemplateColumns=`repeat(auto-fill,minmax(${GR[stufe][2]}px,1fr))`;
+ g.innerHTML=SETS.map(s=>`<article class="card"><div class="img" style="background:linear-gradient(135deg,${s.c[0]},${s.c[1]})"><span class="st"><span class="dot" style="margin:0;background:${FARBE[s.s]}"></span>${s.s}</span><span class="sd" style="background:var(--${PILL[s.st].slice(2)})"></span></div>
+  <div class="body"><div class="t">${s.n}</div><div class="m">${s.h}</div><div class="row"><span>${z(s.t)} Teile</span><b>${(40+s.t/120).toFixed(2).replace('.',',')} €</b></div>
+  <div class="foot">${tagA(s)}<span class="ml"></span>${s.od?`<a class="ib od" title="OneDrive-Ordner öffnen">${OD}</a>`:''}<a class="ib ed" title="Bearbeiten">${PEN}</a></div></div></article>`).join('');
+ document.querySelector('.js-val').textContent='SML'[stufe];
+}
+document.querySelector('.js-cov').addEventListener('input',e=>{stufe=+e.target.value;render()});
+document.querySelectorAll('.js-v').forEach(b=>b.onclick=()=>{document.querySelectorAll('.js-v').forEach(x=>x.classList.toggle('on',x===b));const g=b.dataset.v==='g';document.querySelector('.js-table').style.display=g?'none':'';document.querySelector('.js-gal').style.display=g?'grid':'none'});
+document.querySelector('.js-tagA').innerHTML=SETS.slice(0,4).map(tagA).join('');
+document.querySelector('.js-tagB').innerHTML=SETS.slice(0,4).map(tagB).join('');
+document.querySelector('.js-tagC').innerHTML=SETS.slice(0,4).map(tagC).join('');
+const STEIN=[['Standard',84191,67],['Diamond',34007,24],['Standard, Technik',4795,2],['Mini',1960,3],['Sonder-Steine',820,1],['Standard, beleuchtet',169,2]];
+document.querySelector('.js-stein').innerHTML=STEIN.map(([n,t,c])=>`<div class="bar js-go" data-go="/sets?stone_size=${n}"><span class="n"><span class="dot" style="background:${FARBE[n]}"></span>${n}</span><span class="tr"><i style="width:${Math.max(1,t/84191*100)}%;background:${FARBE[n]}"></i></span><span class="z">${z(t)} <span>· ${c}</span></span></div>`).join('');
+const HER=[['Cobi',11],['Mould King',11],['Balody',8],['Kiddicraft',8],['Blue Brixx - Pro',7],['Blue Brixx - Special',4],['Kazi',4],['Wange',3],['Blue Brixx Pro',2],['DAIA',2]];
+document.querySelector('.js-herst').innerHTML=HER.map(([n,c])=>`<div class="bar js-go" data-go="/sets?manufacturer=${n}"><span class="n">${n}</span><span class="tr"><i style="width:${c/11*100}%;background:var(--heading)"></i></span><span class="z">${c} <span>Sets</span></span></div>`).join('');
+document.querySelectorAll('.dark .bar .tr i').forEach(()=>{});
+const t=document.querySelector('.js-toast');let tm;
+document.addEventListener('click',e=>{const el=e.target.closest('.js-go');if(!el)return;t.textContent='→ öffnet '+el.dataset.go;t.classList.add('on');clearTimeout(tm);tm=setTimeout(()=>t.classList.remove('on'),1800)});
+render();
+</script>
+</body>
+</html>

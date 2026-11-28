@@ -4,13 +4,13 @@ import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import {
   ArchiveBoxIcon,
+  ChartBarIcon,
   CubeIcon,
   TagIcon,
   SparklesIcon,
   ClipboardDocumentListIcon,
   UsersIcon,
   ArrowRightOnRectangleIcon,
-  KeyIcon,
   ArchiveBoxArrowDownIcon,
   SunIcon,
   MoonIcon,
@@ -26,6 +26,7 @@ const NAV_GRUPPEN = [
   {
     titel: 'Sammlung',
     punkte: [
+      { to: '/dashboard', label: 'Dashboard', icon: ChartBarIcon },
       { to: '/sets', label: 'Sets', icon: ArchiveBoxIcon, prefix: '/sets' },
       { to: '/new-sets', label: 'Neue Sets', icon: SparklesIcon },
       { to: '/labels', label: 'Schilder', icon: TagIcon },
@@ -41,7 +42,8 @@ const NAV_GRUPPEN = [
   {
     titel: 'Verwaltung',
     punkte: [
-      { to: '/users', label: 'Benutzer', icon: UsersIcon, adminOnly: true },
+      // fuer alle sichtbar: Nicht-Admins finden dort „Mein Konto“ (Passwort aendern)
+      { to: '/users', label: 'Benutzer', icon: UsersIcon },
       { to: '/backup', label: 'Backup', icon: ArchiveBoxArrowDownIcon, adminOnly: true },
     ],
   },
@@ -198,17 +200,6 @@ export function Sidebar() {
           )}
           {!eng && <span className="hidden md:inline">{dunkel ? 'Heller Modus' : 'Dunkler Modus'}</span>}
         </button>
-
-        <Link
-          to="/change-password"
-          title="Passwort ändern"
-          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] text-rail-ink-2
-            transition-colors duration-150 hover:bg-white/6 hover:text-rail-ink
-            ${eng ? 'md:justify-center' : ''}`}
-        >
-          <KeyIcon className="h-[17px] w-[17px] shrink-0" />
-          {!eng && <span className="hidden md:inline">Passwort ändern</span>}
-        </Link>
 
         <button
           type="button"

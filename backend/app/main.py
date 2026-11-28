@@ -61,7 +61,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="BrickHub API",
     description="Klemmbausteinset-Inventarisierung",
-    version="1.1.0",
+    version="1.2.0",
     # API-Dokumentation in Produktion deaktivieren (kein Angriffsflächen-Exposé)
     docs_url=None if _is_production else "/docs",
     redoc_url=None if _is_production else "/redoc",

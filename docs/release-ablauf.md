@@ -62,12 +62,14 @@ python -I -m unittest discover -s handprobe -p "test_*.py"     # Tests, ohne Doc
 
 ## Was beim Veröffentlichen gebaut wird
 
-Der Leitstand mergt den Release-PR nach `main` und setzt den Tag `vX.Y.Z` auf den Merge-Commit. **Auf den Tag hört kein
-Workflow**; gebaut wird durch den Push auf `main`:
+Der Leitstand mergt den Release-PR nach `main` und setzt den Tag `vX.Y.Z` auf den Merge-Commit. **Das Image baut nur der
+Push auf `main`**; auf den Tag hört seit 25.11.2026 allein `release-zum-tag.yml`, und der legt nur die Release-Seite an
+(fehlt `docs/release-notes/<version>.md` im getaggten Stand, nimmt er den Text aus den Commits):
 
 | Workflow | Wann | Ergebnis |
 |---|---|---|
 | `docker-publish.yml` | Push auf `main` (ohne Pfadfilter) | Image `ghcr.io/bl4ck969/brickhub` mit `:latest` und `:sha-<kurz>`, Label `org.opencontainers.image.revision` = Merge-Commit |
+| `release-zum-tag.yml` | Tag `v*` | GitHub-Release zum Tag, Text aus `docs/release-notes/<version>.md` (ohne Dateien) |
 | `pr-pruefung.yml` | jeder PR nach `runde/bh` oder `main` | nur Bau, kein Push |
 
 ## Aufbau des Release-Texts

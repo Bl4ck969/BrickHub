@@ -36,8 +36,14 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
 
 
+# Cookie-Namen mit App-Praefix: Alle Apps unter 192.168.178.95 teilen sich Cookies
+# ueber die Ports hinweg - ein schlichtes "access_token" wuerde von einer anderen
+# App ueberschrieben. Bis Ende November 2026 hiess es "access_token".
+ACCESS_COOKIE = "brickhub_access"
+
+
 def get_current_user(
-    access_token: Optional[str] = Cookie(default=None),
+    access_token: Optional[str] = Cookie(default=None, alias=ACCESS_COOKIE),
     db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
@@ -56,6 +62,9 @@ def get_current_user(
 
     user = db.query(User).filter(User.username == username).first()
     if user is None:
+        raise credentials_exception
+    # Passwortwechsel/Reset erhoeht token_version - aeltere Token gelten dann nicht mehr
+    if payload.get("tv") != user.token_version:
         raise credentials_exception
     return user
 

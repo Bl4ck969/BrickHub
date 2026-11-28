@@ -80,7 +80,7 @@ function StepIndicator({ phase }) {
   )
 }
 
-export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, onFinalized, manufacturer, setName }) {
+export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, onFinalized, manufacturer, setName, startDatei }) {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -155,6 +155,17 @@ export function ImageEditor({ open, onClose, setId, side, existingOriginalPath, 
       }
     }
   }, [open])
+
+  /* Foto direkt aus der Handykamera: Die Bearbeitungsseite reicht die Datei herein,
+     der Editor laedt sie hoch wie eine gewaehlte Datei und springt in die Eckenwahl.
+     Der Ref verhindert ein doppeltes Hochladen (StrictMode ruft Effekte zweimal). */
+  const startDateiErledigt = useRef(null)
+  useEffect(() => {
+    if (open && startDatei && startDateiErledigt.current !== startDatei) {
+      startDateiErledigt.current = startDatei
+      handleFileSelect(startDatei)
+    }
+  }, [open, startDatei]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Canvas-Zeichnung ────────────────────────────────────────────────────
   const drawCanvas = useCallback(() => {

@@ -3,6 +3,7 @@ import { usersApi } from '../api/client'
 import { fehlerText } from '../lib/fehler'
 import { useAuth } from '../hooks/useAuth'
 import { PlusIcon, TrashIcon, KeyIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
+import { PasswortDialog } from '../components/PasswortDialog'
 import { PageShell, Ladet } from '../components/PageShell'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { useToast } from '../hooks/useToast'
@@ -10,9 +11,10 @@ import { useToast } from '../hooks/useToast'
 const EMPTY_USER = { username: '', initial_password: '', role: 'user' }
 
 export function UsersPage() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, isAdmin } = useAuth()
   const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(isAdmin)
+  const [pwDialog, setPwDialog] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState(EMPTY_USER)
   const [deleteId, setDeleteId] = useState(null)
@@ -23,7 +25,8 @@ export function UsersPage() {
   const toast = useToast()
 
   const fetch = async () => {
-    setLoading(true)
+    // Nicht-Admins sehen nur „Mein Konto“ - die Liste darf nur ein Admin abrufen
+    if (!isAdmin) return
     try { const res = await usersApi.list(); setUsers(res.data) }
     finally { setLoading(false) }
   }
@@ -72,18 +75,40 @@ export function UsersPage() {
     }
   }
 
+  const initialen = (currentUser?.username || '?').slice(0, 2).toUpperCase()
+
   return (
     <PageShell
-      titel="Benutzerverwaltung"
-      untertitel={<><b className="font-semibold text-ink-2">{users.length}</b> {users.length === 1 ? 'Konto' : 'Konten'}</>}
-      aktionen={
+      titel="Benutzer"
+      untertitel={isAdmin
+        ? <><b className="font-semibold text-ink-2">{users.length}</b> {users.length === 1 ? 'Konto' : 'Konten'} · eigenes Passwort</>
+        : 'Eigenes Konto und Passwort'}
+      aktionen={isAdmin && (
         <button onClick={() => { setShowCreate(true); setForm(EMPTY_USER); setError('') }} className="btn-yellow">
           <PlusIcon className="h-4 w-4 stroke-[2.2]" /> Benutzer anlegen
         </button>
-      }
+      )}
     >
 
-      {loading ? (
+      {/* Mein Konto: hier wohnt seit Ende November 2026 „Passwort ändern“
+          (vorher unten in der Seitenleiste) */}
+      <section className="card mx-auto mb-4 max-w-4xl" aria-labelledby="mein-konto">
+        <h2 id="mein-konto" className="mb-3 font-display text-[15px] font-bold">Mein Konto</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-gold-soft font-display text-[13px] font-bold text-heading">
+            {initialen}
+          </span>
+          <div className="mr-auto min-w-0">
+            <div className="font-semibold">{currentUser?.username}</div>
+            <div className="text-xs text-ink-3">{isAdmin ? 'Administrator' : 'Benutzer'}</div>
+          </div>
+          <button type="button" className="btn-secondary" onClick={() => setPwDialog(true)}>
+            <KeyIcon className="h-4 w-4" /> Passwort ändern
+          </button>
+        </div>
+      </section>
+
+      {!isAdmin ? null : loading ? (
         <Ladet />
       ) : (
         <div className="panel mx-auto max-w-4xl">
@@ -189,6 +214,15 @@ export function UsersPage() {
           </div>
         </div>
       </Modal>
+
+      <PasswortDialog
+        open={pwDialog}
+        onClose={() => setPwDialog(false)}
+        onGespeichert={() => {
+          setPwDialog(false)
+          toast('Passwort geändert. Andere Geräte sind abgemeldet.', 'success')
+        }}
+      />
 
       <ConfirmModal
         open={!!deleteId}

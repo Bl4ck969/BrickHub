@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { setsApi, boxesApi, imagesApi, settingsApi } from '../api/client'
 import { fehlerText } from '../lib/fehler'
-import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { PhotoIcon, PencilSquareIcon, ClipboardDocumentIcon, CheckIcon, ArrowTopRightOnSquareIcon, CameraIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline'
 import { OneDriveIcon } from '../components/OneDriveIcon'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
@@ -35,6 +35,10 @@ export function AddEditSetPage() {
   const [imagePreviews, setImagePreviews] = useState({ frontcover: null, backcover: null })
   const [originalPaths, setOriginalPaths] = useState({ frontcover: null, backcover: null })
   const [editorOpen, setEditorOpen] = useState(null) // 'frontcover' | 'backcover' | null
+  const [kameraFoto, setKameraFoto] = useState(null) // Datei aus der Handykamera fuer den Editor
+  /* Der Kamera-Knopf nur auf Touch-Geraeten: Am PC oeffnet `capture` nur die normale
+     Dateiauswahl - das kann "Datei waehlen" schon. */
+  const [beruehrung] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches)
   const [oneDriveBaseUrl, setOneDriveBaseUrl] = useState('')
   const [baseUrlInput, setBaseUrlInput] = useState('')
   const [editingBaseUrl, setEditingBaseUrl] = useState(false)
@@ -112,6 +116,15 @@ export function AddEditSetPage() {
       toast('Bitte erst Set speichern, dann Bilder hochladen', 'warning')
       return
     }
+    setKameraFoto(null)
+    setEditorOpen(side)
+  }
+
+  const handleKameraFoto = (side, e) => {
+    const datei = e.target.files?.[0]
+    e.target.value = '' // dieselbe Seite erneut fotografieren koennen
+    if (!datei || !savedSetId) return
+    setKameraFoto(datei)
     setEditorOpen(side)
   }
 
@@ -395,6 +408,34 @@ export function AddEditSetPage() {
                   </div>
                 )}
               </div>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary flex-1"
+                  disabled={!savedSetId}
+                  onClick={() => handleOpenEditor(side)}
+                >
+                  <ArrowUpTrayIcon className="h-4 w-4" /> Datei wählen
+                </button>
+                {beruehrung && (
+                  /* capture="environment" oeffnet direkt die Rueckkamera. Geht auch ueber
+                     HTTP - anders als getUserMedia braucht es keinen sicheren Kontext. */
+                  <label
+                    className={`btn-primary flex-1 ${savedSetId ? 'cursor-pointer' : 'pointer-events-none opacity-50'}`}
+                    aria-disabled={!savedSetId}
+                  >
+                    <CameraIcon className="h-4 w-4" /> Kamera
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      disabled={!savedSetId}
+                      onChange={e => handleKameraFoto(side, e)}
+                    />
+                  </label>
+                )}
+              </div>
               {imagePreviews[side] && savedSetId && (
                 <div className="flex items-center justify-between mt-1">
                   <p className="text-xs text-st-done">Bild verarbeitet</p>
@@ -417,7 +458,8 @@ export function AddEditSetPage() {
       {editorOpen && (
         <ImageEditor
           open={!!editorOpen}
-          onClose={() => setEditorOpen(null)}
+          onClose={() => { setEditorOpen(null); setKameraFoto(null) }}
+          startDatei={kameraFoto}
           setId={savedSetId}
           side={editorOpen}
           existingOriginalPath={originalPaths[editorOpen] || null}

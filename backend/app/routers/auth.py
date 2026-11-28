@@ -1,6 +1,5 @@
 import time
 from collections import defaultdict
-from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -19,10 +18,16 @@ from app.utils.auth import (
     hash_password,
     hash_answer,
     verify_answer,
-    create_access_token,
     get_current_user,
 )
-from app.config import settings, _is_production
+from app.utils.sitzungen import (
+    abgelaufene_entfernen,
+    abmelden,
+    alle_widerrufen,
+    erneuern,
+    origin_pruefen,
+    sitzung_beginnen,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -33,24 +38,28 @@ _DUMMY_HASH = hash_password("dummy-timing-constant")
 _RATE_LIMIT_MAX = 5
 _RATE_LIMIT_WINDOW = 60  # Sekunden
 _login_attempts: dict[str, list[float]] = defaultdict(list)
+# Erneuern laeuft bei jedem Neuladen und alle paar Minuten je offenem Tab -
+# eigener, lockerer Zaehler, damit er den Login-Zaehler nicht aufbraucht.
+_REFRESH_LIMIT_MAX = 30
+_refresh_attempts: dict[str, list[float]] = defaultdict(list)
 
 
-def _check_rate_limit(request: Request):
+def _check_rate_limit(request: Request, zaehler: dict[str, list[float]] = _login_attempts, maximum: int = _RATE_LIMIT_MAX):
     """Prüft ob die IP zu viele Versuche in der letzten Minute hatte."""
     client_ip = request.client.host if request.client else "unknown"
     now = time.time()
     # Alte Einträge bereinigen
-    _login_attempts[client_ip] = [
-        t for t in _login_attempts[client_ip] if now - t < _RATE_LIMIT_WINDOW
+    zaehler[client_ip] = [
+        t for t in zaehler[client_ip] if now - t < _RATE_LIMIT_WINDOW
     ]
-    if not _login_attempts[client_ip]:
-        del _login_attempts[client_ip]
-    if len(_login_attempts.get(client_ip, [])) >= _RATE_LIMIT_MAX:
+    if not zaehler[client_ip]:
+        del zaehler[client_ip]
+    if len(zaehler.get(client_ip, [])) >= maximum:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Zu viele Versuche. Bitte eine Minute warten.",
         )
-    _login_attempts[client_ip].append(now)
+    zaehler[client_ip].append(now)
 
 
 @router.get("/status")
@@ -69,18 +78,9 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
     if not user or not password_valid:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Ungültiger Benutzername oder Passwort")
 
-    token = create_access_token(
-        {"sub": user.username},
-        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
-    )
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        secure=settings.secure_cookies,
-        samesite="lax",
-        max_age=settings.access_token_expire_minutes * 60,
-    )
+    abgelaufene_entfernen(db)
+    sitzung_beginnen(db, request, response, user)
+    db.commit()
     return {
         "id": user.id,
         "username": user.username,
@@ -89,9 +89,21 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
     }
 
 
+@router.post("/refresh")
+def refresh(request: Request, response: Response, db: Session = Depends(get_db)):
+    """Tauscht das Erneuerungs-Token gegen ein neues und setzt ein frisches Zugangs-Token."""
+    # Erst die Herkunft: Sonst koennte eine Seite auf einem anderen Port den Zaehler
+    # leerlaufen lassen und so echte Erneuerungen mit 429 aussperren.
+    origin_pruefen(request)
+    _check_rate_limit(request, _refresh_attempts, _REFRESH_LIMIT_MAX)
+    user = erneuern(db, request, response)
+    return {"id": user.id, "username": user.username, "role": user.role}
+
+
 @router.post("/logout")
-def logout(response: Response):
-    response.delete_cookie("access_token")
+def logout(request: Request, response: Response, db: Session = Depends(get_db)):
+    origin_pruefen(request)  # keine erzwungene Abmeldung von fremden Ports
+    abmelden(db, request, response)
     return {"message": "Erfolgreich abgemeldet"}
 
 
@@ -143,6 +155,8 @@ def register_first_admin(data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/change-password")
 def change_password(
     data: PasswordChangeRequest,
+    request: Request,
+    response: Response,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -158,6 +172,9 @@ def change_password(
 
     current_user.password_hash = hash_password(data.new_password)
     current_user.must_change_password = False
+    # Alle anderen Geraete abmelden, dieses bleibt mit einer neuen Sitzung angemeldet
+    alle_widerrufen(db, current_user)
+    sitzung_beginnen(db, request, response, current_user)
 
     # Update security questions if provided
     if data.security_questions and len(data.security_questions) == 3:
@@ -223,5 +240,6 @@ def forgot_password_reset(data: ForgotPasswordStep2, request: Request, db: Sessi
 
     user.password_hash = hash_password(data.new_password)
     user.must_change_password = False
+    alle_widerrufen(db, user)
     db.commit()
     return {"message": "Passwort erfolgreich zurückgesetzt"}

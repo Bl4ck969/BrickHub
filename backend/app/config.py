@@ -22,7 +22,10 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llava:7b"
     ollama_enabled: bool = False
-    access_token_expire_minutes: int = 120  # 2 Stunden; in .env mit ACCESS_TOKEN_EXPIRE_MINUTES überschreibbar
+    # Zugangs-Token kurz, Erneuerungs-Token lang und gleitend (jede Nutzung verlängert).
+    # Wer BrickHub mindestens einmal pro Woche öffnet, muss sich nicht neu anmelden.
+    access_token_expire_minutes: int = 15  # in .env mit ACCESS_TOKEN_EXPIRE_MINUTES überschreibbar
+    refresh_token_expire_days: int = 7  # in .env mit REFRESH_TOKEN_EXPIRE_DAYS überschreibbar
     secure_cookies: bool = False  # True nur bei HTTPS (Reverse Proxy). Mit SECURE_COOKIES=true aktivieren.
 
     class Config:

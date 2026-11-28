@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.user import User, SecurityQuestion
+from app.models.user import User, SecurityQuestion, RefreshToken
 from app.schemas.user import (
     UserCreateByAdmin,
     UserResponse,
@@ -9,6 +9,7 @@ from app.schemas.user import (
     InitialPasswordRequest,
 )
 from app.utils.auth import require_admin, hash_password, get_current_user
+from app.utils.sitzungen import alle_widerrufen
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -56,6 +57,8 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden")
 
+    # Sitzungen mitloeschen - eine spaeter vergebene gleiche ID erbt sie sonst
+    db.query(RefreshToken).filter(RefreshToken.user_id == user.id).delete(synchronize_session=False)
     db.delete(user)
     db.commit()
 
@@ -93,6 +96,7 @@ def reset_password(
 
     user.password_hash = hash_password(data.new_password)
     user.must_change_password = True
+    alle_widerrufen(db, user)
     # Clear security questions so user must set new ones on next login
     db.query(SecurityQuestion).filter(SecurityQuestion.user_id == user.id).delete()
     db.commit()

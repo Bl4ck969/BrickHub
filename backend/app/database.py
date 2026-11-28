@@ -44,6 +44,8 @@ def run_migrations():
     _migrate_add_column("sets", "onedrive_url", "VARCHAR(1000)")
     _migrate_add_column("sets", "frontcover_corners", "TEXT")
     _migrate_add_column("sets", "backcover_corners", "TEXT")
+    _migrate_add_column("users", "token_version", "INTEGER NOT NULL DEFAULT 0")
+    _migrate_add_column("refresh_tokens", "replaced_by_id", "INTEGER")
 
 
 def _migrate_add_column(table: str, column: str, col_type: str):

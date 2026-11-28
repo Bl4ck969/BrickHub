@@ -77,7 +77,7 @@ BH_USER=<benutzer> BH_PASS=<passwort> npm test
 
 Prüft mit **echten Klicks** gegen die laufende Entwicklungsumgebung (beide Server nötig):
 Anmeldung, Sortierung, Inline-Bearbeitung **inklusive belegtem `PATCH`**, Status- und
-Kistenauswahl, Bild-Vergrößerung, Galerie, Theme, alle sechs Navigationsziele und die
+Kistenauswahl, Bild-Vergrößerung, Galerie, Theme, Dashboard, alle Navigationsziele und die
 schmale Ansicht. Details und Grenzen in `tests/README.md`.
 
 ⚠ **Der Test schreibt einen Wert in die Datenbank und setzt ihn zurück.** Meldet er
@@ -100,7 +100,15 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - **Datenbank**: SQLite unter `backend/data/database.db` (NICHT brickhub.db)
 - **Routers**: `backend/app/routers/` – auth, users, sets, boxes, images, labels, settings, backup (alle unter `/api/`)
 - **Services**: `backend/app/services/` – image_service (rembg, OpenCV, Pillow), pdf_service (ReportLab), ollama_service, backup_scheduler
-- **Auth-Flow**: bcrypt(rounds=12) + JWT/HS256 in HTTP-only Cookie. Dependencies: `get_current_user`, `require_admin`
+- **Auth-Flow**: bcrypt(rounds=12) + JWT/HS256 in HTTP-only Cookie. Dependencies: `get_current_user`, `require_admin`.
+  Seit Ende November 2026 Sitzungen in `app/utils/sitzungen.py`: Zugangs-Cookie `brickhub_access` (15 min) plus
+  rotierendes Erneuerungs-Cookie `brickhub_refresh` (7 Tage gleitend, nur Hash in `refresh_tokens`), `token_version`
+  am Benutzer. `OriginMiddleware` in `main.py` weist ändernde API-Anfragen mit fremdem Origin ab (andere Ports derselben
+  IP sind für den Browser „same-site“)
+- ⚠ **Backend-Tests nie über Umgebungsvariablen auf eine Test-DB umbiegen** – die DB-Adresse legt der erste Import von
+  `app.config` fest; ein anderer Test kann das schon getan haben, dann schreibt der Test in die echte `data/database.db`
+  (28.11.2026 passiert). Muster: eigene Engine + `app.dependency_overrides[get_db]`, TestClient ohne `with`
+  (`tests/test_sitzungen.py`)
 
 > ⚠️ **Routen-Reihenfolge:** Am Ende von `main.py` steht die SPA-Catch-All
 > `@app.get("/{full_path:path}")`. Starlette prüft Routen in Registrierungsreihenfolge —
@@ -117,7 +125,7 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - **Auth**: `frontend/src/hooks/useAuth.jsx` (muss .jsx sein wegen JSX im Hook)
 - **Proxy**: Vite leitet `/api` → `http://localhost:8000` weiter (konfiguriert in `vite.config.js`)
 - **Navigation**: `components/Sidebar.jsx` (seit 2.0 eine Seitenleiste, keine Navbar mehr).
-  Die `adminOnly`-Marken je Punkt sind dieselben wie vorher — wer dort etwas ändert,
+  Die `adminOnly`-Marken je Punkt („Benutzer“ seit 1.2.0 für alle, wegen „Mein Konto“) — wer dort etwas ändert,
   ändert die Sichtbarkeit für Nicht-Admins
 - **Gerüste**: `components/PageShell.jsx` (Seiten hinter der Anmeldung) und
   `components/AuthShell.jsx` (Anmeldung, Ersteinrichtung, Passwort vergessen/ändern).
@@ -190,7 +198,7 @@ alles steht in `frontend/src/index.css`:
   `components/BrickIcons.jsx`
 - Entwürfe mit Begründungen: `docs/design-2.0-mockup.html` (Gesamtbild) und
   `docs/statistikleiste-varianten.html` (sechs Varianten der Kennzahlenleiste,
-  umgesetzt ist **A — eine Zeile**)
+  umgesetzt war **A — eine Zeile**; seit 1.2.0 entfernt, die Zahlen stehen im Dashboard)
 
 ## Screenshots für die README
 

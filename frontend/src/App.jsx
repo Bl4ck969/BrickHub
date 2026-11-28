@@ -16,6 +16,7 @@ import { authApi } from './api/client'
 import { lazy, Suspense } from 'react'
 
 const SetsPage = lazy(() => import('./pages/SetsPage').then(m => ({ default: m.SetsPage })))
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const AddEditSetPage = lazy(() => import('./pages/AddEditSetPage').then(m => ({ default: m.AddEditSetPage })))
 const StoragePage = lazy(() => import('./pages/StoragePage').then(m => ({ default: m.StoragePage })))
 const LabelsPage = lazy(() => import('./pages/LabelsPage').then(m => ({ default: m.LabelsPage })))
@@ -89,6 +90,11 @@ export default function App() {
           } />
 
           {/* Geschuetzte Routen mit Seitenleiste */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Layout><DashboardPage /></Layout>
+            </ProtectedRoute>
+          } />
           <Route path="/sets" element={
             <ProtectedRoute>
               <Layout><SetsPage /></Layout>
@@ -125,7 +131,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/users" element={
-            <ProtectedRoute requireAdmin>
+            <ProtectedRoute>
               <Layout><UsersPage /></Layout>
             </ProtectedRoute>
           } />

@@ -53,7 +53,9 @@ ENV DATABASE_URL=sqlite:///./data/database.db
 ENV UPLOAD_DIR=./data/uploads
 ENV EXPORT_DIR=./export
 ENV BACKUP_DIR=./backup
-ENV ACCESS_TOKEN_EXPIRE_MINUTES=480
+# Zugangs-Token kurz; angemeldet bleibt man ueber das Erneuerungs-Token (7 Tage, gleitend).
+# Frueher 480 - das hielt jedes abgegriffene Cookie 8 Stunden am Leben.
+ENV ACCESS_TOKEN_EXPIRE_MINUTES=15
 
 # glibc-Malloc-Tuning: gibt freigegebenen Speicher aggressiver ans OS zurück,
 # damit Docker/Unraid einen realistischen RAM-Verbrauch anzeigt.

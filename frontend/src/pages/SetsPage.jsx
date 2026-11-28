@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import {
   useReactTable,
   getCoreRowModel,
@@ -17,19 +17,18 @@ import {
   DocumentArrowDownIcon,
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
-  ChartBarIcon,
   PlusIcon,
+  CubeIcon,
   TableCellsIcon,
   Squares2X2Icon,
 } from '@heroicons/react/24/outline'
 import { setsApi, labelsApi, imagesApi, boxesApi } from '../api/client'
 import { fehlerText } from '../lib/fehler'
 import { OneDriveIcon } from '../components/OneDriveIcon'
-import { IconSets, IconParts, IconValue } from '../components/BrickIcons'
 import { useAuth } from '../hooks/useAuth'
 import { Modal, ConfirmModal } from '../components/Modal'
 import { useToast } from '../hooks/useToast'
-import { STEINARTEN, steinFarbe, fuellFarbe, zahl, euro } from '../lib/stein'
+import { STEINARTEN, steinFarbe, fuellFarbe, zahl } from '../lib/stein'
 
 /* Status ist ein Lebenszyklus, keine Schwereskala - die Farben bilden ihn ab.
    Umriss plus Punkt, damit es nie mit dem gefuellten Gold-Akzent kollidiert. */
@@ -42,23 +41,118 @@ const STATUS_STIL = {
 
 const STATUSES = ['Neu', 'Aufgebaut', 'Im Bau', 'Eingelagert']
 
+/* Filter und Sortierung stehen in der Adresse (/sets?stone_size=Diamond&sort=price&dir=desc).
+   So fuehrt jeder Klick im Dashboard auf eine gefilterte Uebersicht, und ein Lesezeichen
+   haelt den Filter fest. */
+const FILTER_SCHLUESSEL = ['status', 'stone_size', 'manufacturer', 'category', 'subcategory']
+const SORTIERBAR = ['name', 'manufacturer', 'manufacturer_number', 'parts_count', 'stone_size', 'category', 'status', 'bag_count', 'plate_count', 'price', 'notes']
+
+/* Cover-Groesse in drei Stufen; S ist die Groesse von Design 2.0. Die Thumbnails sind
+   400 px gross - mehr als L braucht. */
+const COVER_STUFEN = [
+  { kurz: 'S', name: 'klein', tabelle: 'h-[58px] w-[76px]', galerie: '176px' },
+  { kurz: 'M', name: 'mittel', tabelle: 'h-[87px] w-[114px]', galerie: '240px' },
+  { kurz: 'L', name: 'groß', tabelle: 'h-[122px] w-[160px]', galerie: '320px' },
+]
+const COVER_SPEICHER = 'brickhub-cover-groesse'
+
+function coverStufeLaden() {
+  try {
+    const n = Number(localStorage.getItem(COVER_SPEICHER))
+    return Number.isInteger(n) && n >= 0 && n < COVER_STUFEN.length ? n : 0
+  } catch {
+    return 0
+  }
+}
+
 
 export function SetsPage() {
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
   const [sets, setSets] = useState([])
-  const [summary, setSummary] = useState({ total_count: 0, total_price: 0, total_parts: 0, parts_by_stone_size: {} })
+  const [summary, setSummary] = useState({ total_count: 0, total_price: 0, total_parts: 0 })
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({ status: '', stone_size: '', category: '', subcategory: '', manufacturer: '' })
-  const [sorting, setSorting] = useState([])
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Fuer die Abfrage gilt die Suche aus der Adresse ...
+  const search = searchParams.get('search') || ''
+  // Als Text verglichen, damit `filters` nur bei echter Aenderung neu entsteht (fetchSets haengt daran)
+  const filterText = JSON.stringify(FILTER_SCHLUESSEL.map(k => searchParams.get(k) || ''))
+  const filters = useMemo(() => {
+    const werte = JSON.parse(filterText)
+    return Object.fromEntries(FILTER_SCHLUESSEL.map((k, i) => [k, werte[i]]))
+  }, [filterText])
+  // Einen Parameter aendern, die anderen behalten; leere Werte fliegen aus der Adresse
+  /* Vom aktuellen Stand der Adresse ausgehen, nicht von `prev`: react-router 8 reicht
+     dort die Parameter des letzten Renders - zwei Aenderungen kurz hintereinander
+     (verzoegerte Suche + Filter) wuerden sich sonst gegenseitig ueberschreiben. */
+  const paramSetzen = useCallback((schluessel, wert) => {
+    setSearchParams(() => {
+      const neu = new URLSearchParams(window.location.search)
+      if (wert) neu.set(schluessel, wert)
+      else neu.delete(schluessel)
+      return neu
+    }, { replace: true })
+  }, [setSearchParams])
+  /* ... das Eingabefeld hat aber einen eigenen Zustand. Haengt es direkt an der Adresse,
+     kommt jeder Tastendruck erst ueber eine Transition an (react-router 8 aktualisiert
+     die Adresse in startTransition) - der Cursor springt, Zeichen gehen verloren.
+     Geschrieben wird 300 ms nach dem letzten Tastendruck. Aendert sich die Adresse von
+     aussen (Dashboard-Link, Klick auf „Sets“), zieht das Feld nach. */
+  const [suchText, setSuchText] = useState(search)
+  const [eigeneSuche, setEigeneSuche] = useState(search)
+  const [gesehen, setGesehen] = useState(search)
+  if (search !== gesehen) {
+    setGesehen(search)
+    if (search !== eigeneSuche) {
+      setSuchText(search)
+      setEigeneSuche(search)
+    }
+  }
+  useEffect(() => {
+    if (suchText === eigeneSuche) return undefined
+    const t = setTimeout(() => {
+      setEigeneSuche(suchText)
+      paramSetzen('search', suchText.trim() ? suchText : '')
+    }, 300)
+    return () => clearTimeout(t)
+  }, [suchText, eigeneSuche, paramSetzen])
+
+  // Sortierung steht in der Adresse (Dashboard: "Anzahl Steine" -> nach Teilen absteigend)
+  const sortId = searchParams.get('sort')
+  const sortAbsteigend = searchParams.get('dir') === 'desc'
+  const sorting = useMemo(
+    () => (SORTIERBAR.includes(sortId) ? [{ id: sortId, desc: sortAbsteigend }] : []),
+    [sortId, sortAbsteigend],
+  )
+  const setSorting = useCallback((aenderung) => {
+    const neu = typeof aenderung === 'function' ? aenderung(sorting) : aenderung
+    setSearchParams(() => {
+      const p = new URLSearchParams(window.location.search)
+      if (neu?.[0]) {
+        p.set('sort', neu[0].id)
+        p.set('dir', neu[0].desc ? 'desc' : 'asc')
+      } else {
+        p.delete('sort')
+        p.delete('dir')
+      }
+      return p
+    }, { replace: true })
+  }, [sorting, setSearchParams])
+  const [coverStufe, setCoverStufe] = useState(coverStufeLaden)
+  const coverStufeSetzen = useCallback((n) => {
+    setCoverStufe(n)
+    try {
+      localStorage.setItem(COVER_SPEICHER, String(n))
+    } catch {
+      // nicht speicherbar - gilt dann nur fuer diese Sitzung
+    }
+  }, [])
   const [deleteId, setDeleteId] = useState(null)
   const [imageModal, setImageModal] = useState(null)
   const [importLoading, setImportLoading] = useState(false)
   const [boxes, setBoxes] = useState([])
   const [distinctValues, setDistinctValues] = useState({ manufacturers: [], categories: [], subcategories: [] })
-  const [showStats, setShowStats] = useState(true)
   // Die gewaehlte Ansicht ueberlebt den Seitenwechsel
   const [ansicht, setAnsicht] = useState(() => {
     try {
@@ -193,16 +287,16 @@ export function SetsPage() {
           type="button"
           onClick={() => setImageModal({ url: coverUrl(gross), title: `${s.name} – ${titel}` })}
           title={`${s.name} – ${titel} vergrößern`}
-          className="block h-[58px] w-[76px] shrink-0 cursor-zoom-in overflow-hidden rounded-md border
+          className={`block ${COVER_STUFEN[coverStufe].tabelle} shrink-0 cursor-zoom-in overflow-hidden rounded-md border
             border-line-2 bg-surface-2 p-px shadow-s transition-all duration-150
-            hover:border-gold hover:shadow-m focus-visible:border-gold"
+            hover:border-gold hover:shadow-m focus-visible:border-gold`}
         >
-          <img src={coverUrl(pfad)} alt="" className="h-full w-full rounded-sm object-contain" />
+          <img src={coverUrl(pfad)} alt="" loading="lazy" className="h-full w-full rounded-sm object-contain" />
         </button>
       ) : (
         <div
-          className="grid h-[58px] w-[76px] shrink-0 place-items-center rounded-md border border-dashed
-            border-line text-[10px] text-ink-3"
+          className={`grid ${COVER_STUFEN[coverStufe].tabelle} shrink-0 place-items-center rounded-md border border-dashed
+            border-line text-[10px] text-ink-3`}
           title={`Kein ${titel}`}
         >
           {titel === 'Frontcover' ? 'Vorne' : 'Hinten'}
@@ -417,43 +511,10 @@ export function SetsPage() {
     columns,
     state: { sorting },
     onSortingChange: setSorting,
+    enableMultiSort: false, // in der Adresse steht genau eine Sortierung
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
-
-  /* Beide Verteilungen nebeneinander vergleichbar - sortiert nach Sets,
-     damit die Reihenfolge in beiden Balken dieselbe ist. */
-  const verteilung = useMemo(() => {
-    const nachSets = {}
-    sets.forEach(s => {
-      const k = s.stone_size || 'Unbekannt'
-      nachSets[k] = (nachSets[k] || 0) + 1
-    })
-    const nachTeilen = summary.parts_by_stone_size || {}
-    const arten = [...new Set([...Object.keys(nachSets), ...Object.keys(nachTeilen)])]
-      .sort((a, b) => (nachSets[b] || 0) - (nachSets[a] || 0))
-    return arten.map((name, i) => ({
-      name,
-      sets: nachSets[name] || 0,
-      teile: nachTeilen[name] || 0,
-      farbe: steinFarbe(name, i),
-    }))
-  }, [sets, summary.parts_by_stone_size])
-
-  const Balken = ({ feld }) => {
-    const gesamt = verteilung.reduce((s, r) => s + r[feld], 0) || 1
-    return (
-      <div className="flex h-2.5 min-w-0 flex-1 gap-px overflow-hidden rounded-full">
-        {verteilung.map(r => (
-          <span
-            key={r.name}
-            title={`${r.name}: ${zahl(r[feld])}`}
-            style={{ width: `${(r[feld] / gesamt) * 100}%`, background: r.farbe }}
-          />
-        ))}
-      </div>
-    )
-  }
 
   const Werkzeug = () => (
     <div className="flex flex-wrap items-center gap-2">
@@ -476,10 +537,6 @@ export function SetsPage() {
           </button>
         ))}
       </div>
-
-      <button onClick={() => setShowStats(s => !s)} className="btn-secondary" aria-expanded={showStats}>
-        <ChartBarIcon className="h-4 w-4" /> Statistik
-      </button>
 
       {isAdmin && (
         <>
@@ -519,77 +576,6 @@ export function SetsPage() {
       </div>
 
       <div className="studs-bg flex-1 p-4 md:p-5">
-        {/* Kennzahlen und Verteilung auf einer Hoehe. Die Legende laeuft als
-            Chips - dadurch bleiben Name und Zahl zusammen, statt in gleich
-            breiten Spalten auseinandergezogen zu werden. */}
-        {showStats && (
-          <section
-            className="mb-3.5 flex flex-wrap items-stretch overflow-hidden rounded-xl border
-              border-line bg-surface shadow-s"
-            aria-label="Kennzahlen der Sammlung"
-          >
-            <div className="flex flex-none max-sm:w-full max-sm:flex-col">
-              {[
-                { wert: zahl(summary.total_count), label: 'Sets', Icon: IconSets },
-                { wert: zahl(summary.total_parts), label: 'Teile', Icon: IconParts },
-                {
-                  wert: (
-                    <>
-                      {summary.total_price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <small className="ml-0.5 text-[14px] font-semibold text-ink-3">&nbsp;€</small>
-                    </>
-                  ),
-                  label: 'Gesamtwert',
-                  Icon: IconValue,
-                },
-              ].map(({ wert, label, Icon }) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-2.5 border-line px-4 py-3
-                    max-sm:border-b sm:border-r"
-                >
-                  <Icon className="h-7 w-7 shrink-0 text-icon-line" />
-                  <div className="min-w-0">
-                    <div className="font-display text-[23px] leading-none font-bold tracking-tight tabular-nums">
-                      {wert}
-                    </div>
-                    <div className="mt-[3px] text-[10.5px] font-medium text-ink-3">{label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex min-w-[280px] flex-1 flex-col justify-center gap-[7px] bg-surface-2 px-4 py-3">
-              {verteilung.length === 0 ? (
-                <p className="text-sm text-ink-3">–</p>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-[34px] shrink-0 text-right text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase">Sets</span>
-                    <Balken feld="sets" />
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-[34px] shrink-0 text-right text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase">Teile</span>
-                    <Balken feld="teile" />
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1">
-                    {verteilung.map(r => (
-                      <span key={r.name} className="inline-flex items-baseline gap-1.5 text-[11.5px] whitespace-nowrap">
-                        <span className="h-[7px] w-[7px] self-center rounded-xs" style={{ background: r.farbe }} />
-                        <span className="text-ink-2">{r.name}</span>
-                        <span className="font-semibold tabular-nums">
-                          {zahl(r.sets)}
-                          <span className="font-normal text-ink-3"> · {zahl(r.teile)}</span>
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </section>
-        )}
-
         {/* Suche und Filter */}
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div className="relative min-w-[200px] flex-1">
@@ -598,8 +584,8 @@ export function SetsPage() {
               type="text"
               placeholder="Suche nach Name, Hersteller, Kategorie…"
               className="input-field pl-9"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+              value={suchText}
+              onChange={e => setSuchText(e.target.value)}
             />
           </div>
           {[
@@ -615,18 +601,21 @@ export function SetsPage() {
               className="rounded-lg border border-line bg-surface px-2.5 py-2 text-[12.5px] text-ink-2 shadow-s
                 focus:border-gold focus:ring-3 focus:ring-gold-soft focus:outline-hidden"
               value={filters[schluessel]}
-              onChange={e => setFilters(f => ({ ...f, [schluessel]: e.target.value }))}
+              onChange={e => paramSetzen(schluessel, e.target.value)}
             >
               <option value="">{leer}</option>
+              {/* Kommt ein Wert per Adresse, den die Liste nicht kennt, trotzdem zeigen */}
+              {filters[schluessel] && !werte.includes(filters[schluessel]) && <option>{filters[schluessel]}</option>}
               {werte.map(w => <option key={w}>{w}</option>)}
             </select>
           ))}
+          <CoverSchieber stufe={coverStufe} setzen={coverStufeSetzen} />
         </div>
 
         {/* Tabelle */}
         {ansicht === 'tabelle' && (
           <div className="panel">
-            <div className="overflow-auto" style={{ maxHeight: showStats ? 'calc(100vh - 21rem)' : 'calc(100vh - 15rem)' }}>
+            <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 15rem)' }}>
               <table className="w-full border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30">
                   {table.getHeaderGroups().map(hg => (
@@ -693,8 +682,11 @@ export function SetsPage() {
           ) : sets.length === 0 ? (
             <div className="py-12 text-center text-ink-3">Keine Sets gefunden</div>
           ) : (
-            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(176px,1fr))]">
-              {sets.map(s => (
+            <div
+              className="grid gap-4"
+              style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${COVER_STUFEN[coverStufe].galerie}, 1fr))` }}
+            >
+              {table.getRowModel().rows.map(({ original: s }) => (
                 <article
                   key={s.id}
                   className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-s
@@ -706,7 +698,7 @@ export function SetsPage() {
                     className="relative block aspect-4/3 w-full cursor-zoom-in overflow-hidden border-b border-line bg-surface-2"
                   >
                     {s.frontcover_thumbnail ? (
-                      <img src={coverUrl(s.frontcover_thumbnail)} alt="" className="h-full w-full object-cover" />
+                      <img src={coverUrl(s.frontcover_thumbnail)} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
                       <span className="grid h-full w-full place-items-center text-[11px] text-ink-3">Kein Cover</span>
                     )}
@@ -723,16 +715,45 @@ export function SetsPage() {
                       title={s.status}
                     />
                   </button>
-                  <div className="flex flex-1 flex-col gap-0.5 px-3 pt-2.5 pb-3">
+                  <div className="flex flex-1 flex-col gap-0.5 px-3 pt-2.5 pb-2.5">
                     <div className="text-[13px] leading-snug font-semibold">{s.name}</div>
                     <div className="text-[11.5px] text-ink-3">{s.manufacturer}</div>
-                    <div className="mt-1.5 flex items-baseline gap-2 text-[11.5px] text-ink-2 tabular-nums">
+                    <div className="mt-1.5 mb-2 flex items-baseline gap-2 text-[11.5px] text-ink-2 tabular-nums">
                       <span>{zahl(s.parts_count)} Teile</span>
-                      {s.box?.name && <span className="text-ink-3">· {s.box.name}</span>}
                       {s.price != null && (
                         <span className="ml-auto font-semibold text-ink">
                           {s.price.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                         </span>
+                      )}
+                    </div>
+                    {/* Fusszeile: Kiste als Tag, rechts die Aktionen. Immer sichtbar -
+                        am Handy gibt es kein Ueberfahren mit der Maus. */}
+                    <div className="mt-auto flex items-center gap-1 border-t border-dashed border-line pt-2">
+                      <KistenTag kiste={boxes.find(b => b.id === s.box_id) || s.box} />
+                      <span className="ml-auto" />
+                      {s.onedrive_url && (
+                        <a
+                          href={s.onedrive_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-st-new transition-colors hover:bg-st-new-bg"
+                          title="OneDrive-Ordner öffnen"
+                          aria-label={`OneDrive-Ordner von ${s.name} öffnen`}
+                        >
+                          <OneDriveIcon className="h-4 w-4" />
+                        </a>
+                      )}
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/sets/${s.id}/edit`)}
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-line text-ink-2
+                            transition-colors hover:bg-surface-3 hover:text-ink"
+                          title="Bearbeiten"
+                          aria-label={`${s.name} bearbeiten`}
+                        >
+                          <PencilSquareIcon className="h-4 w-4" />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -757,5 +778,60 @@ export function SetsPage() {
         message="Sind Sie sicher, dass Sie dieses Set löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
       />
     </div>
+  )
+}
+
+
+/** Kiste als Tag: Symbol, Name und Fuellstand wie in der Tabelle. */
+function KistenTag({ kiste }) {
+  if (!kiste) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-line px-1.5 py-0.5
+        text-[11px] text-ink-3">
+        <CubeIcon className="h-3 w-3" /> keine Kiste
+      </span>
+    )
+  }
+  const fuell = kiste.fill_level
+  return (
+    <span
+      className="inline-flex min-w-0 items-center gap-1.5 rounded-md border border-line-2 bg-surface-2 py-0.5 pr-1.5 pl-1
+        text-[11px] font-semibold text-ink-2"
+      title={fuell != null ? `${kiste.name} · Füllstand ${fuell} %` : kiste.name}
+    >
+      <CubeIcon className="h-3 w-3 shrink-0" />
+      <span className="truncate">{kiste.name}</span>
+      {fuell != null && (
+        <span className="h-1 w-[18px] shrink-0 overflow-hidden rounded-full bg-surface-3">
+          <span className="block h-full rounded-full" style={{ width: `${Math.min(fuell, 100)}%`, background: fuellFarbe(fuell) }} />
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** Schieber fuer die Cover-Groesse, drei Raststufen. Gilt fuer Tabelle und Galerie. */
+function CoverSchieber({ stufe, setzen }) {
+  return (
+    <label
+      className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-1.5 shadow-s"
+      title="Cover-Größe"
+    >
+      <span className="text-[10.5px] font-semibold tracking-wider text-ink-3 uppercase">Cover</span>
+      <span aria-hidden="true" className="h-2.5 w-3 rounded-[2px] border-[1.5px] border-ink-3" />
+      <input
+        type="range"
+        min="0"
+        max={COVER_STUFEN.length - 1}
+        step="1"
+        value={stufe}
+        onChange={e => setzen(Number(e.target.value))}
+        aria-label="Cover-Größe"
+        aria-valuetext={COVER_STUFEN[stufe].name}
+        className="w-20 cursor-pointer accent-gold"
+      />
+      <span aria-hidden="true" className="h-3.5 w-[18px] rounded-[2px] border-[1.5px] border-ink-3" />
+      <span className="w-3 font-mono text-[11.5px] font-semibold text-ink-2">{COVER_STUFEN[stufe].kurz}</span>
+    </label>
   )
 }

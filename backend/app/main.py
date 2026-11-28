@@ -10,6 +10,7 @@ from app.database import create_tables, run_migrations
 from app.fehler import register_handlers
 from app.routers import auth, users, sets, boxes, images, labels, settings as settings_router, backup
 from app.services.backup_scheduler import start_scheduler
+from app.utils.sitzungen import origin_erlaubt
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -60,7 +61,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="BrickHub API",
     description="Klemmbausteinset-Inventarisierung",
-    version="1.1.0",
+    version="1.2.0",
     # API-Dokumentation in Produktion deaktivieren (kein Angriffsflächen-Exposé)
     docs_url=None if _is_production else "/docs",
     redoc_url=None if _is_production else "/redoc",
@@ -69,6 +70,26 @@ app = FastAPI(
 
 # Einheitliche Fehlerantworten {"detail", "code"} (siehe app/fehler.py)
 register_handlers(app)
+
+class OriginMiddleware(BaseHTTPMiddleware):
+    """CSRF-Riegel: Das Zugangs-Cookie (SameSite=Lax) geht auch bei Formular-POSTs von
+    anderen Ports derselben IP mit - fuer den Browser sind die "same-site". Veraendernde
+    API-Anfragen mit fremdem Origin werden deshalb abgewiesen. Ohne Origin (Skripte wie
+    handprobe/testinstanz.py, curl) bleibt alles wie bisher; Browser schicken ihn bei
+    POST/PUT/PATCH/DELETE immer mit."""
+
+    async def dispatch(self, request: Request, call_next):
+        if (
+            request.method in ("POST", "PUT", "PATCH", "DELETE")
+            and request.url.path.startswith("/api/")
+            and origin_erlaubt(request) is False
+        ):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=403, content={"detail": "Herkunft nicht erlaubt", "code": "HERKUNFT"})
+        return await call_next(request)
+
+
+app.add_middleware(OriginMiddleware)
 
 # Security Headers
 app.add_middleware(SecurityHeadersMiddleware)

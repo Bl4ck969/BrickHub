@@ -74,7 +74,7 @@ SICHERUNGS_VERSION = 1
 
 # Gespiegelte Ordner (Syncthing, OneDrive, Agent-VM): dort darf keine Kopie der Sicherung liegen –
 # sie enthält Passwort-Hashes und die Antworten-Hashes der Sicherheitsfragen.
-GESPIEGELT = ("e:/setups", "/workspace", "/vault")
+GESPIEGELT = ("e:/setups", "/workspace", "/mnt/claude/workspace", "/vault")
 
 START_ZEITLIMIT = 300       # Sekunden bis /api/health
 UPLOAD_ZEITLIMIT = 1800     # Sekunden für den Upload der ZIP (~600 MB über localhost)
@@ -110,7 +110,7 @@ def docker(args: list[str], umgebung: dict[str, str] | None = None,
             env=umgebung, stdin=subprocess.DEVNULL, timeout=zeitlimit,
         )
     except FileNotFoundError as exc:
-        raise Abbruch("docker nicht gefunden (Docker Desktop installiert und gestartet?)", 2) from exc
+        raise Abbruch("docker nicht gefunden (Docker installiert und gestartet?)", 2) from exc
     except subprocess.TimeoutExpired as exc:
         raise Abbruch(f"docker {' '.join(args[:4])} … kehrte nach {zeitlimit} s nicht zurück") from exc
 
@@ -178,14 +178,15 @@ def http(methode: str, url: str, daten: dict | None = None, cookie: str | None =
          zeitlimit: float = 30, rumpf=None, kopf: dict[str, str] | None = None):
     """Eine Anfrage. Gibt (Status, JSON oder Text, Antwortkopf) zurück.
 
-    Angemeldet wird per Cookie `access_token` (app/utils/auth.py liest nur das Cookie).
+    Angemeldet wird per Cookie; `cookie` ist das fertige Paar `name=wert` aus `cookie_aus`
+    (seit der Sitzungs-Umstellung heißt es `brickhub_access`, davor `access_token`).
     """
     kopfzeilen = {"Accept": "application/json", **(kopf or {})}
     if daten is not None:
         rumpf = json.dumps(daten).encode("utf-8")
         kopfzeilen["Content-Type"] = "application/json"
     if cookie:
-        kopfzeilen["Cookie"] = f"access_token={cookie}"
+        kopfzeilen["Cookie"] = cookie
     anfrage = urllib.request.Request(url, data=rumpf, headers=kopfzeilen, method=methode)
     try:
         with urllib.request.urlopen(anfrage, timeout=zeitlimit) as antwort:
@@ -201,16 +202,21 @@ def http(methode: str, url: str, daten: dict | None = None, cookie: str | None =
         return status, text, koepfe
 
 
+# Neuer Name zuerst; der alte bleibt, damit das Rezept auch ältere Images anmeldet.
+ZUGANGS_COOKIES = ("brickhub_access", "access_token")
+
+
 def cookie_aus(koepfe) -> str | None:
-    """Wert von `access_token` aus den Set-Cookie-Zeilen der Anmeldung."""
+    """Zugangs-Cookie als `name=wert` aus den Set-Cookie-Zeilen der Anmeldung."""
     for zeile in (koepfe.get_all("Set-Cookie") or []) if koepfe is not None else []:
         keks = SimpleCookie()
         try:
             keks.load(zeile)
         except Exception:  # noqa: BLE001 – fremde Cookies dürfen nicht stören
             continue
-        if "access_token" in keks and keks["access_token"].value:
-            return keks["access_token"].value
+        for name in ZUGANGS_COOKIES:
+            if name in keks and keks[name].value:
+                return f"{name}={keks[name].value}"
     return None
 
 
@@ -307,7 +313,7 @@ def pruefe_ablageort(ordner: Path) -> None:
             or any(t.startswith("onedrive") for t in teile)
             or pfad == repo or pfad.startswith(repo + "/")):
         raise Abbruch(f"Die Sicherung liegt in einem gespiegelten Ordner oder im Repo ('{ordner}') – "
-                      "bitte außerhalb ablegen (z. B. unter %TEMP%) und danach löschen", 2)
+                      "bitte außerhalb ablegen (z. B. unter %TEMP% bzw. /tmp) und danach löschen", 2)
 
 
 def pruefe_name(name: str) -> None:
@@ -319,16 +325,52 @@ def pruefe_name(name: str) -> None:
                       "bitte einen eigenen Namen wählen", 2)
 
 
-def pruefe_docker_desktop() -> None:
-    """Nur gegen Docker Desktop auf diesem PC – nie gegen einen fernen Docker.
+# Docker dieses Rechners: Docker Desktop am PC (npipe:////./pipe/…) oder der Docker der Agent-VM
+# (unix://, auch rootless). Ein ferner Docker (tcp://, ssh://, z. B. der Unraid) bleibt gesperrt.
+LOKALE_ENDPUNKTE = ("unix://", "npipe:////./pipe/")
 
-    Zeigt DOCKER_HOST oder der Kontext z. B. auf den Unraid, landete die Instanz samt echter
-    Sicherung dort (und `abraeumen` räumte dort ab).
+
+def _docker_vorbedingung(args: list[str], was: str) -> str:
+    """Wie pruefe(), aber ein Fehler ist eine verletzte Vorbedingung (Exit 2) – gebaut wurde nichts."""
+    ergebnis = docker(args)
+    if ergebnis.returncode != 0:
+        grund = (ergebnis.stderr or ergebnis.stdout or "").strip()[:300]
+        raise Abbruch(f"{was} fehlgeschlagen: {grund}", 2)
+    return (ergebnis.stdout or "").strip()
+
+
+def docker_endpunkt() -> str:
+    """Wohin `docker` spricht: DOCKER_HOST, sonst der Endpunkt des aktuellen Kontexts."""
+    gesetzt = os.environ.get("DOCKER_HOST", "").strip()
+    if gesetzt:
+        return gesetzt
+    return _docker_vorbedingung(["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+                                "docker context inspect")
+
+
+def pruefe_docker_lokal() -> None:
+    """Nur gegen den Docker dieses Rechners – nie gegen einen fernen Docker.
+
+    Zeigt `DOCKER_HOST` oder der Kontext z. B. auf den Unraid, landete die Instanz samt echter
+    Sicherung dort (und `abraeumen` räumte dort ab). Erlaubt sind Docker Desktop am PC und der
+    Docker der Agent-VM. Bis 28.11.2026 war es nur Docker Desktop – der VM-Agent konnte
+    keine Testinstanz bauen, obwohl der Leitstand ihm Release-Karten gibt.
+
+    Zwei Prüfungen: der Weg (nur lokaler Socket bzw. lokale Pipe) und wer antwortet (auch ein
+    lokaler Socket kann per `ssh -L` weitergeleitet sein). Docker Desktop meldet sich als
+    „docker-desktop“, der Docker der VM mit dem Rechnernamen (gemessen 28.11.2026: claude-agent).
     """
-    system = pruefe(docker(["info", "--format", "{{.OperatingSystem}}"]), "docker info").strip()
-    if "Docker Desktop" not in system:
-        raise Abbruch(f"docker spricht nicht mit Docker Desktop auf diesem PC, sondern mit "
-                      f"'{system}' (DOCKER_HOST/Kontext prüfen) – abgebrochen", 2)
+    endpunkt = docker_endpunkt()
+    if not endpunkt.lower().startswith(LOKALE_ENDPUNKTE):
+        raise Abbruch(f"docker spricht nicht mit dem Docker dieses Rechners, sondern mit "
+                      f"'{endpunkt or 'unbekannt'}' (DOCKER_HOST/Kontext prüfen) – abgebrochen", 2)
+    name = _docker_vorbedingung(["info", "--format", "{{.Name}}"], "docker info")
+    rechner = socket.gethostname()
+    # Paarweise: die Windows-Pipe gehört zu Docker Desktop, ein unix-Socket zu diesem Rechner.
+    erwartet = "docker-desktop" if endpunkt.lower().startswith("npipe:") else rechner.lower()
+    if name.lower() != erwartet:
+        raise Abbruch(f"docker antwortet als '{name}', nicht als dieser Rechner ('{rechner}') "
+                      f"– weitergeleiteter Socket? Abgebrochen", 2)
 
 
 # ── Wegwerf-Zugang ─────────────────────────────────────────────────────────
@@ -360,7 +402,7 @@ def wegwerf_admin(basis: str) -> tuple[str, str, str]:
                                    {"username": benutzer, "password": passwort})
     cookie = cookie_aus(koepfe) if status == 200 else None
     if not cookie:
-        raise Abbruch(f"POST /api/auth/login: HTTP {status} {antwort} (ohne Cookie access_token)")
+        raise Abbruch(f"POST /api/auth/login: HTTP {status} {antwort} (ohne Zugangs-Cookie)")
     return benutzer, passwort, cookie
 
 
@@ -419,8 +461,15 @@ def sse_ereignisse(zeilen):
                 continue
 
 
+def anmelden(basis: str, benutzer: str, passwort: str) -> str | None:
+    """Meldet an und gibt das Zugangs-Cookie zurück; None, wenn es das Konto nicht (mehr) gibt."""
+    status, _, koepfe = http("POST", f"{basis}/api/auth/login", {"username": benutzer, "password": passwort})
+    return cookie_aus(koepfe) if status == 200 else None
+
+
 def warte_auf_einspielen(basis: str, cookie: str, aufgabe: str,
-                         zeitlimit: int = EINSPIELEN_ZEITLIMIT) -> dict | None:
+                         zeitlimit: int = EINSPIELEN_ZEITLIMIT,
+                         neu_anmelden=None) -> dict | None:
     """Folgt dem Fortschritt bis `done` oder `error`. Gibt `result` zurück.
 
     Der Strom der App endet nach 20 Minuten von selbst; dann wird neu verbunden. Antwortet die
@@ -429,12 +478,14 @@ def warte_auf_einspielen(basis: str, cookie: str, aufgabe: str,
     """
     ende = time.monotonic() + zeitlimit
     zuletzt = ""
+    frisch_angemeldet = False
     while time.monotonic() < ende:
         anfrage = urllib.request.Request(f"{basis}/api/backup/import/progress/{aufgabe}",
-                                         headers={"Cookie": f"access_token={cookie}",
+                                         headers={"Cookie": cookie,
                                                   "Accept": "text/event-stream"})
         try:
             with urllib.request.urlopen(anfrage, timeout=120) as antwort:
+                frisch_angemeldet = False
                 for ereignis in sse_ereignisse(antwort):
                     zustand = ereignis.get("status")
                     text = f"{ereignis.get('phase', '')} {ereignis.get('current', 0)}/{ereignis.get('total', 0)}"
@@ -447,6 +498,13 @@ def warte_auf_einspielen(basis: str, cookie: str, aufgabe: str,
                         raise Abbruch(f"Einspielen gescheitert: {ereignis.get('error')}")
         except urllib.error.HTTPError as fehler:
             if fehler.code == 401:
+                # Das Zugangs-Token gilt nur 15 min, der Strom endet nach 20: Ein 401 kann auch
+                # nur „abgelaufen“ heißen. Klappt die Anmeldung noch, läuft das Einspielen weiter.
+                neu = neu_anmelden() if (neu_anmelden and not frisch_angemeldet) else None
+                if neu:
+                    melde("  Zugang abgelaufen – neu angemeldet, verfolge weiter …")
+                    cookie, frisch_angemeldet = neu, True
+                    continue
                 melde("  Fortschritt nicht mehr abrufbar (401) – Benutzer sind schon ersetzt, prüfe in der Datenbank.")
                 return None
             raise Abbruch(f"Fortschritt des Einspielens: HTTP {fehler.code}") from fehler
@@ -525,7 +583,7 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
     pruefe_ablageort(sicherung)
     datei = zip_der_sicherung(sicherung)
     vorher = fingerabdruck(datei)
-    pruefe_docker_desktop()
+    pruefe_docker_lokal()
     if container_des_projekts(name) or volumes_des_projekts(name):
         raise Abbruch(f"Projekt '{name}' hat schon Container oder Volumes – erst "
                       f"`abraeumen --name {name}` oder einen anderen Namen wählen", 2)
@@ -543,12 +601,13 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
     warte_auf_app(name, basis, umgebung)
     melde("App antwortet.")
 
-    benutzer, _, cookie = wegwerf_admin(basis)
+    benutzer, passwort, cookie = wegwerf_admin(basis)
     sicherungsplan_aus(basis, cookie)
 
     try:
         aufgabe = starte_einspielen(basis, cookie, datei)
-        ergebnis_app = warte_auf_einspielen(basis, cookie, aufgabe)
+        ergebnis_app = warte_auf_einspielen(basis, cookie, aufgabe,
+                                            neu_anmelden=lambda: anmelden(basis, benutzer, passwort))
         if ergebnis_app is not None:
             melde(f"  App meldet: {ergebnis_app}")
             if ergebnis_app.get("users_skipped"):
@@ -571,7 +630,7 @@ def bauen(name: str, port: int, image: str, sicherung: Path) -> None:
 def abraeumen(name: str) -> None:
     """Entfernt die Instanz samt Volumes. Die Sicherungskopie gehört dem Aufrufer und bleibt."""
     pruefe_name(name)
-    pruefe_docker_desktop()
+    pruefe_docker_lokal()
     container = container_des_projekts(name)
     volumes = volumes_des_projekts(name)
     fremde = ([c.get("Names", "?") for c in container if not traegt_marke(c)]

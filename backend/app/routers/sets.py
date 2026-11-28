@@ -15,6 +15,7 @@ from app.schemas.set import (
     SetImportPayload,
 )
 from app.utils.auth import get_current_user, require_admin
+from app.services.statistik import statistik_berechnen
 
 router = APIRouter(prefix="/api/sets", tags=["sets"])
 
@@ -111,6 +112,15 @@ def get_distinct_values(
         "stone_sizes": VALID_STONE_SIZES,
         "statuses": VALID_STATUSES,
     }
+
+
+@router.get("/statistik")
+def get_statistik(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Kennzahlen fuer das Dashboard. Muss vor /{set_id} stehen, sonst greift diese Route."""
+    return statistik_berechnen(db.query(BrickSet).all())
 
 
 @router.get("/{set_id}", response_model=SetResponse)

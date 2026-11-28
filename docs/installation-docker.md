@@ -160,7 +160,8 @@ Wenn eine neue Version des Images verfügbar ist (z.B. weil neue Pakete hinzugek
 | `UPLOAD_DIR` | Ordner für hochgeladene Bilder | `./data/uploads` |
 | `EXPORT_DIR` | Ordner für generierte PDFs | `./export` |
 | `SECURE_COOKIES` | `true` bei HTTPS/Reverse-Proxy | `false` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Wie lange bleibt man eingeloggt (Minuten) | `480` (8 Stunden) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Gültigkeit des kurzen Zugangs-Tokens (Minuten); wird im Hintergrund erneuert | `15` |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Wie lange man angemeldet bleibt, ohne BrickHub zu öffnen (Tage, verlängert sich bei jeder Nutzung) | `7` |
 | `OLLAMA_ENABLED` | KI-Bilderkennung (Ollama) aktivieren | `false` |
 | `OLLAMA_URL` | URL des Ollama-Servers | `http://localhost:11434` |
 

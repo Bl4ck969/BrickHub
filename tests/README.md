@@ -69,3 +69,6 @@ Echtdaten, keine Testaccounts.
 - Das Absenden von Formularen, die Daten anlegen (Set anlegen, Kiste anlegen,
   Benutzer anlegen, Backup einspielen) — die würden Echtdaten verändern
 - Den Bildeditor über Schritt 1 hinaus (Zuschneiden, Freistellen)
+- Die Neuerungen aus 1.2.0 außer den Dashboard-Icons: Dashboard-Links, Cover-Schieber,
+  Filter in der Adresse, Galerie-Fußzeile, „Mein Konto“ mit Passwort-Dialog und das stille
+  Erneuern der Anmeldung nach 15 Minuten — das gehört in die Handprobe

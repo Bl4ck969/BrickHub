@@ -13,11 +13,39 @@ const client = axios.create({
   timeout: 300000,
 })
 
-// Redirect to login on 401
+/* Sitzung erneuern: Das Zugangs-Cookie gilt nur 15 Minuten, das Erneuerungs-Cookie
+   7 Tage (gleitend). Bei 401 einmal erneuern und die Anfrage wiederholen. Laufen
+   mehrere Anfragen gleichzeitig auf 401, teilen sie sich EINE Erneuerung - sonst
+   wuerde das Erneuerungs-Token mehrfach eingeloest. */
+const OHNE_ERNEUERUNG = /\/api\/auth\/(login|refresh|logout|register-first-admin|forgot-password)/
+let laufendeErneuerung = null
+
+export function sitzungErneuern() {
+  if (!laufendeErneuerung) {
+    laufendeErneuerung = client
+      .post('/api/auth/refresh', null, { _ohneErneuerung: true })
+      .finally(() => { laufendeErneuerung = null })
+  }
+  return laufendeErneuerung
+}
+
 client.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const cfg = error.config
+    if (
+      error.response?.status === 401 && cfg && !cfg._erneuert && !cfg._ohneErneuerung &&
+      !OHNE_ERNEUERUNG.test(cfg.url || '')
+    ) {
+      cfg._erneuert = true
+      try {
+        await sitzungErneuern()
+        return client(cfg)
+      } catch {
+        // Erneuern ging nicht - weiter wie bisher zur Anmeldung
+      }
+    }
+    if (error.response?.status === 401 && !cfg?._ohneErneuerung) {
       // Avoid redirect loop on login page
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/setup')) {
         window.location.href = '/login'
@@ -34,6 +62,7 @@ export const authApi = {
   status: () => client.get('/api/auth/status'),
   login: (data) => client.post('/api/auth/login', data),
   logout: () => client.post('/api/auth/logout'),
+  refresh: () => sitzungErneuern(),
   me: () => client.get('/api/auth/me'),
   registerFirstAdmin: (data) => client.post('/api/auth/register-first-admin', data),
   changePassword: (data) => client.post('/api/auth/change-password', data),
@@ -60,6 +89,7 @@ export const setsApi = {
   inlineUpdate: (id, data) => client.patch(`/api/sets/${id}/inline`, data),
   delete: (id) => client.delete(`/api/sets/${id}`),
   distinctValues: () => client.get('/api/sets/distinct-values'),
+  statistik: () => client.get('/api/sets/statistik'),
   exportJson: () => client.get('/api/sets/export/json'),
   importJson: (data) => client.post('/api/sets/import/json', data),
 }

@@ -22,6 +22,27 @@ export function AuthProvider({ children }) {
     fetchMe()
   }, [fetchMe])
 
+  /* Solange jemand angemeldet ist, das Zugangs-Cookie (15 min) rechtzeitig erneuern.
+     Sonst laeden <img>-Cover nach einer Pause mit 401 - Bilder laufen nicht durch den
+     axios-Interceptor. Beim Zurueckkehren in den Tab sofort, wenn es faellig ist. */
+  useEffect(() => {
+    if (!user) return undefined
+    let zuletzt = Date.now()
+    const erneuern = () => {
+      zuletzt = Date.now()
+      authApi.refresh().catch(() => {})
+    }
+    const takt = setInterval(erneuern, 10 * 60 * 1000)
+    const sichtbar = () => {
+      if (document.visibilityState === 'visible' && Date.now() - zuletzt > 5 * 60 * 1000) erneuern()
+    }
+    document.addEventListener('visibilitychange', sichtbar)
+    return () => {
+      clearInterval(takt)
+      document.removeEventListener('visibilitychange', sichtbar)
+    }
+  }, [user])
+
   const login = async (username, password) => {
     const res = await authApi.login({ username, password })
     setUser(res.data)

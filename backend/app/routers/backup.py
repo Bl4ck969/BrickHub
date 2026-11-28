@@ -23,7 +23,7 @@ from app.fehler import AppFehler
 from app.models.box import Box
 from app.models.set_model import BrickSet
 from app.models.setting import AppSetting
-from app.models.user import User, SecurityQuestion
+from app.models.user import User, SecurityQuestion, RefreshToken
 from app.services.backup_scheduler import (
     SCHEDULE_KEYS, _get_schedule_settings, _set_setting,
     list_auto_backups, _apply_retention, _create_backup,
@@ -344,6 +344,8 @@ def _run_import(task_id: str, zip_path: str, mode: str) -> None:
             db.query(BrickSet).delete()
             db.query(Box).delete()
             db.query(SecurityQuestion).delete()
+            # Sitzungen gehoeren zu den alten Benutzer-IDs - die neuen bekommen dieselben Nummern
+            db.query(RefreshToken).delete()
             db.query(User).delete()
             db.flush()
             if _UPLOAD_BASE.is_dir():

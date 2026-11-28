@@ -100,7 +100,15 @@ Monorepo mit getrenntem Python-Backend und React-Frontend. In Produktion (Docker
 - **Datenbank**: SQLite unter `backend/data/database.db` (NICHT brickhub.db)
 - **Routers**: `backend/app/routers/` – auth, users, sets, boxes, images, labels, settings, backup (alle unter `/api/`)
 - **Services**: `backend/app/services/` – image_service (rembg, OpenCV, Pillow), pdf_service (ReportLab), ollama_service, backup_scheduler
-- **Auth-Flow**: bcrypt(rounds=12) + JWT/HS256 in HTTP-only Cookie. Dependencies: `get_current_user`, `require_admin`
+- **Auth-Flow**: bcrypt(rounds=12) + JWT/HS256 in HTTP-only Cookie. Dependencies: `get_current_user`, `require_admin`.
+  Seit Ende November 2026 Sitzungen in `app/utils/sitzungen.py`: Zugangs-Cookie `brickhub_access` (15 min) plus
+  rotierendes Erneuerungs-Cookie `brickhub_refresh` (7 Tage gleitend, nur Hash in `refresh_tokens`), `token_version`
+  am Benutzer. `OriginMiddleware` in `main.py` weist ändernde API-Anfragen mit fremdem Origin ab (andere Ports derselben
+  IP sind für den Browser „same-site“)
+- ⚠ **Backend-Tests nie über Umgebungsvariablen auf eine Test-DB umbiegen** – die DB-Adresse legt der erste Import von
+  `app.config` fest; ein anderer Test kann das schon getan haben, dann schreibt der Test in die echte `data/database.db`
+  (28.11.2026 passiert). Muster: eigene Engine + `app.dependency_overrides[get_db]`, TestClient ohne `with`
+  (`tests/test_sitzungen.py`)
 
 > ⚠️ **Routen-Reihenfolge:** Am Ende von `main.py` steht die SPA-Catch-All
 > `@app.get("/{full_path:path}")`. Starlette prüft Routen in Registrierungsreihenfolge —

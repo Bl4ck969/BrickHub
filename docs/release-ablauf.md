@@ -62,8 +62,9 @@ python -I -m unittest discover -s handprobe -p "test_*.py"     # Tests, ohne Doc
 
 ## Was beim Veröffentlichen gebaut wird
 
-Der Leitstand mergt den Release-PR nach `main` und setzt den Tag `vX.Y.Z` auf den Merge-Commit. **Auf den Tag hört kein
-Workflow**; gebaut wird durch den Push auf `main`:
+Der Leitstand mergt den Release-PR nach `main` und setzt den Tag `vX.Y.Z` auf den Merge-Commit. **Das Image baut nur der
+Push auf `main`**; auf den Tag hört seit 25.11.2026 allein `release-zum-tag.yml`, und der legt nur die Release-Seite an
+(fehlt `docs/release-notes/<version>.md` im getaggten Stand, nimmt er den Text aus den Commits):
 
 | Workflow | Wann | Ergebnis |
 |---|---|---|
